@@ -11,11 +11,8 @@ export interface IUser {
   status: UserStatus;
   emailVerified: boolean;
   avatarUrl?: string;
-
-
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date | null;
 }
 
 const userSchema = new Schema<IUser>(
