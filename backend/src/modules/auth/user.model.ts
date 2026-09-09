@@ -1,7 +1,4 @@
 import { Schema, model } from "mongoose";
-
-export type PlatformRole = "SUPER_ADMIN" | "USER";
-
 export type UserStatus =
   | "ACTIVE"
   | "SUSPENDED"
@@ -13,12 +10,8 @@ export interface IUser {
   passwordHash: string;
   status: UserStatus;
   emailVerified: boolean;
-  lastLoginAt: Date | null;
+  avatarUrl?: string;
 
-  profile: {
-    avatarUrl?: string;
-    timezone?: string;
-  };
 
   createdAt: Date;
   updatedAt: Date;
@@ -60,26 +53,10 @@ const userSchema = new Schema<IUser>(
       required: true,
     },
 
-    lastLoginAt: {
-      type: Date,
-      default: null,
-    },
-
-    profile: {
-      avatarUrl: {
+    avatarUrl: {
         type: String,
-      },
+        default: null,},
 
-      timezone: {
-        type: String,
-      },
-
-    },
-
-    deletedAt: {
-      type: Date,
-      default: null,
-    },
   },
   {
     timestamps: true,
