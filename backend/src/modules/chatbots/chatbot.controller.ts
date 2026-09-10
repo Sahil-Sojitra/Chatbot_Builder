@@ -1,0 +1,21 @@
+import type { Request, Response } from "express";
+
+import { unauthorized } from "../../shared/errors.js";
+import { sendSuccess } from "../../shared/http.js";
+import { chatbotService } from "./chatbot.service.js";
+import type { CreateChatbotInput } from "./chatbot.types.js";
+
+export const chatbotController = {
+  async create(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const chatbot = await chatbotService.createForOwner(
+      req.auth.userId,
+      req.body as CreateChatbotInput,
+    );
+
+    sendSuccess(res, { chatbot }, 201);
+  },
+};

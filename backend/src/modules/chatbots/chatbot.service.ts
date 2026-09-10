@@ -1,0 +1,113 @@
+import crypto from "node:crypto";
+
+import { Types } from "mongoose";
+import type { HydratedDocument } from "mongoose";
+
+import { organizationNotFound } from "../../shared/errors.js";
+import { generateUniqueSlug } from "../../shared/slug.js";
+import { organizationRepository } from "../organizations/organization.repository.js";
+import { chatbotRepository } from "./chatbot.repository.js";
+import type { CreateChatbotInput as RepositoryCreateChatbotInput } from "./chatbot.repository.js";
+import type { IChatbot } from "./chatbot.model.js";
+import type { CreateChatbotInput, PublicChatbot } from "./chatbot.types.js";
+
+/** 128 bits of randomness, URL-safe — suitable for a public-facing identifier. */
+const generatePublicId = (): string => crypto.randomBytes(16).toString("base64url");
+
+const generateUniquePublicId = async (): Promise<string> => {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const candidate = generatePublicId();
+    if (!(await chatbotRepository.publicIdExists(candidate))) {
+      return candidate;
+    }
+  }
+  // Astronomically unlikely to be reached at 128 bits of entropy, but keep
+  // the guarantee explicit rather than assuming the loop always succeeds.
+  return `${generatePublicId()}${crypto.randomUUID()}`;
+};
+
+const toPublicChatbot = (
+  chatbot: HydratedDocument<IChatbot>,
+): PublicChatbot => ({
+  id: chatbot._id.toString(),
+  organizationId: chatbot.organizationId.toString(),
+  name: chatbot.name,
+  slug: chatbot.slug,
+  description: chatbot.description,
+  status: chatbot.status,
+  publicId: chatbot.publicId,
+  systemPrompt: chatbot.systemPrompt,
+  provider: chatbot.provider,
+  model: chatbot.model,
+  temperature: chatbot.temperature,
+  maxTokens: chatbot.maxTokens,
+  ragEnabled: chatbot.ragEnabled,
+  ragTopK: chatbot.ragTopK,
+  ragSimilarityThreshold: chatbot.ragSimilarityThreshold,
+  uiConfig: chatbot.uiConfig,
+  createdBy: chatbot.createdBy.toString(),
+  publishedBy: chatbot.publishedBy ? chatbot.publishedBy.toString() : null,
+  publishedAt: chatbot.publishedAt ? chatbot.publishedAt.toISOString() : null,
+  createdAt: chatbot.createdAt.toISOString(),
+  updatedAt: chatbot.updatedAt.toISOString(),
+});
+
+export const chatbotService = {
+  /**
+   * Creates a chatbot under the authenticated user's organization. The
+   * organization is always resolved server-side from ownerId — a client
+   * can never supply organizationId directly. Starts as DRAFT;
+   * publishedBy/publishedAt are never set here.
+   */
+  async createForOwner(
+    ownerId: string,
+    input: CreateChatbotInput,
+  ): Promise<PublicChatbot> {
+    const organization = await organizationRepository.findByOwnerId(ownerId);
+    if (!organization) {
+      throw organizationNotFound();
+    }
+
+    const slug = await generateUniqueSlug(input.name, (candidate) =>
+      chatbotRepository.slugExistsForOrganization(organization._id, candidate),
+    );
+    const publicId = await generateUniquePublicId();
+
+    const creationInput: RepositoryCreateChatbotInput = {
+      organizationId: organization._id,
+      name: input.name,
+      slug,
+      publicId,
+      ragEnabled: input.ragEnabled ?? false,
+      createdBy: new Types.ObjectId(ownerId),
+    };
+    if (input.description !== undefined) {
+      creationInput.description = input.description;
+    }
+    if (input.systemPrompt !== undefined) {
+      creationInput.systemPrompt = input.systemPrompt;
+    }
+    if (input.provider !== undefined) {
+      creationInput.provider = input.provider;
+    }
+    if (input.model !== undefined) {
+      creationInput.model = input.model;
+    }
+    if (input.temperature !== undefined) {
+      creationInput.temperature = input.temperature;
+    }
+    if (input.maxTokens !== undefined) {
+      creationInput.maxTokens = input.maxTokens;
+    }
+    if (input.ragTopK !== undefined) {
+      creationInput.ragTopK = input.ragTopK;
+    }
+    if (input.ragSimilarityThreshold !== undefined) {
+      creationInput.ragSimilarityThreshold = input.ragSimilarityThreshold;
+    }
+
+    const chatbot = await chatbotRepository.create(creationInput);
+
+    return toPublicChatbot(chatbot);
+  },
+};
