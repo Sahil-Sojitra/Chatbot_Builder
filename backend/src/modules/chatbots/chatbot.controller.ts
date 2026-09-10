@@ -18,4 +18,14 @@ export const chatbotController = {
 
     sendSuccess(res, { chatbot }, 201);
   },
+
+  async list(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const chatbots = await chatbotService.listForOwner(req.auth.userId);
+
+    sendSuccess(res, { chatbots }, 200);
+  },
 };

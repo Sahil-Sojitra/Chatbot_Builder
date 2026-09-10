@@ -15,4 +15,6 @@ router.post(
   asyncHandler(chatbotController.create),
 );
 
+router.get("/", requireAuth, asyncHandler(chatbotController.list));
+
 export default router;

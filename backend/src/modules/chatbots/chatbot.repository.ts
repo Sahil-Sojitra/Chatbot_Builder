@@ -34,6 +34,12 @@ export const chatbotRepository = {
     return existing !== null;
   },
 
+  async findByOrganizationId(
+    organizationId: Types.ObjectId,
+  ): Promise<HydratedDocument<IChatbot>[]> {
+    return ChatbotModel.find({ organizationId }).sort({ createdAt: -1 });
+  },
+
   async create(
     input: CreateChatbotInput,
   ): Promise<HydratedDocument<IChatbot>> {

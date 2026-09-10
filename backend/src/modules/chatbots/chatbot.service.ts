@@ -110,4 +110,24 @@ export const chatbotService = {
 
     return toPublicChatbot(chatbot);
   },
+
+  /**
+   * Lists every chatbot under the authenticated user's organization. The
+   * organization is always resolved server-side from ownerId — a client can
+   * never supply organizationId. Returns 404 if the user owns no
+   * organization; returns an empty array when the organization has no
+   * chatbots. Ordered newest first.
+   */
+  async listForOwner(ownerId: string): Promise<PublicChatbot[]> {
+    const organization = await organizationRepository.findByOwnerId(ownerId);
+    if (!organization) {
+      throw organizationNotFound();
+    }
+
+    const chatbots = await chatbotRepository.findByOrganizationId(
+      organization._id,
+    );
+
+    return chatbots.map(toPublicChatbot);
+  },
 };
