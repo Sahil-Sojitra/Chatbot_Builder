@@ -21,6 +21,20 @@ export interface CreateChatbotInput {
   createdBy: Types.ObjectId;
 }
 
+/** Whitelisted, already-validated fields a PATCH is allowed to `$set`. */
+export interface UpdateChatbotFields {
+  name?: string;
+  description?: string;
+  systemPrompt?: string;
+  provider?: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  ragEnabled?: boolean;
+  ragTopK?: number;
+  ragSimilarityThreshold?: number;
+}
+
 export const chatbotRepository = {
   async slugExistsForOrganization(
     organizationId: Types.ObjectId,
@@ -54,6 +68,27 @@ export const chatbotRepository = {
       return null;
     }
     return ChatbotModel.findOne({ _id: id, organizationId });
+  },
+
+  /**
+   * Applies a partial `$set` to a chatbot, scoped to both its id and its
+   * organization. Returns null when nothing matches (wrong id, or the
+   * chatbot belongs to another organization) — the caller cannot tell the
+   * two apart. Only explicitly-allowed fields ever reach here.
+   */
+  async updateByIdForOrganization(
+    id: string,
+    organizationId: Types.ObjectId,
+    fields: UpdateChatbotFields,
+  ): Promise<HydratedDocument<IChatbot> | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return ChatbotModel.findOneAndUpdate(
+      { _id: id, organizationId },
+      { $set: fields },
+      { new: true },
+    );
   },
 
   async create(

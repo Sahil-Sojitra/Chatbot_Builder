@@ -64,3 +64,19 @@ export const createChatbotSchema = z
       .optional(),
   })
   .strict();
+
+/**
+ * PATCH /api/v1/chatbots/:id — partial update. Reuses the exact creation
+ * field rules; every field is optional but at least one must be present.
+ * `.strict()` rejects any unrecognized/protected key outright (id,
+ * chatbotId, organizationId, slug, publicId, status, createdBy, createdAt,
+ * updatedAt, publishedBy, publishedAt, deletedAt, uiConfig — none are
+ * accepted here). slug is never client-editable and is not regenerated on
+ * a name change. Status/publishing transitions are handled by the
+ * dedicated publish/unpublish endpoints, not here.
+ */
+export const updateChatbotSchema = createChatbotSchema
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided",
+  });

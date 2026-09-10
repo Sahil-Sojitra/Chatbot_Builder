@@ -7,9 +7,16 @@ import { chatbotNotFound, organizationNotFound } from "../../shared/errors.js";
 import { generateUniqueSlug } from "../../shared/slug.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
 import { chatbotRepository } from "./chatbot.repository.js";
-import type { CreateChatbotInput as RepositoryCreateChatbotInput } from "./chatbot.repository.js";
+import type {
+  CreateChatbotInput as RepositoryCreateChatbotInput,
+  UpdateChatbotFields,
+} from "./chatbot.repository.js";
 import type { IChatbot } from "./chatbot.model.js";
-import type { CreateChatbotInput, PublicChatbot } from "./chatbot.types.js";
+import type {
+  CreateChatbotInput,
+  PublicChatbot,
+  UpdateChatbotInput,
+} from "./chatbot.types.js";
 
 /** 128 bits of randomness, URL-safe — suitable for a public-facing identifier. */
 const generatePublicId = (): string => crypto.randomBytes(16).toString("base64url");
@@ -146,6 +153,69 @@ export const chatbotService = {
     const chatbot = await chatbotRepository.findByIdForOrganization(
       chatbotId,
       organization._id,
+    );
+    if (!chatbot) {
+      throw chatbotNotFound();
+    }
+
+    return toPublicChatbot(chatbot);
+  },
+
+  /**
+   * Applies a partial update to one chatbot, scoped to the authenticated
+   * user's organization. The update object is built explicitly from the
+   * validated input — the request body is never spread into the query, and
+   * slug/status/publicId/organizationId/createdBy and the publishing fields
+   * are never touched. A name change does NOT regenerate the slug: the slug
+   * is a stable identifier fixed at creation. Returns 404 when the user
+   * owns no organization, or when the chatbot is not in that organization.
+   */
+  async updateForOwner(
+    ownerId: string,
+    chatbotId: string,
+    input: UpdateChatbotInput,
+  ): Promise<PublicChatbot> {
+    const organization = await organizationRepository.findByOwnerId(ownerId);
+    if (!organization) {
+      throw organizationNotFound();
+    }
+
+    const fields: UpdateChatbotFields = {};
+    if (input.name !== undefined) {
+      fields.name = input.name;
+    }
+    if (input.description !== undefined) {
+      fields.description = input.description;
+    }
+    if (input.systemPrompt !== undefined) {
+      fields.systemPrompt = input.systemPrompt;
+    }
+    if (input.provider !== undefined) {
+      fields.provider = input.provider;
+    }
+    if (input.model !== undefined) {
+      fields.model = input.model;
+    }
+    if (input.temperature !== undefined) {
+      fields.temperature = input.temperature;
+    }
+    if (input.maxTokens !== undefined) {
+      fields.maxTokens = input.maxTokens;
+    }
+    if (input.ragEnabled !== undefined) {
+      fields.ragEnabled = input.ragEnabled;
+    }
+    if (input.ragTopK !== undefined) {
+      fields.ragTopK = input.ragTopK;
+    }
+    if (input.ragSimilarityThreshold !== undefined) {
+      fields.ragSimilarityThreshold = input.ragSimilarityThreshold;
+    }
+
+    const chatbot = await chatbotRepository.updateByIdForOrganization(
+      chatbotId,
+      organization._id,
+      fields,
     );
     if (!chatbot) {
       throw chatbotNotFound();

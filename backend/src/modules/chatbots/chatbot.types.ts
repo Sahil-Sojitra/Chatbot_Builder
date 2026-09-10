@@ -20,6 +20,14 @@ export interface CreateChatbotInput {
   ragSimilarityThreshold?: number;
 }
 
+/**
+ * Client-editable fields for PATCH /api/v1/chatbots/:id — a partial subset
+ * of the creation fields, with the same value rules. slug, status,
+ * publicId, organizationId, createdBy and the publishing fields are never
+ * editable here; uiConfig remains protected (no validated shape exists).
+ */
+export type UpdateChatbotInput = Partial<CreateChatbotInput>;
+
 export interface PublicChatbot {
   id: string;
   organizationId: string;

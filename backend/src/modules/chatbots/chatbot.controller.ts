@@ -3,7 +3,10 @@ import type { Request, Response } from "express";
 import { unauthorized } from "../../shared/errors.js";
 import { sendSuccess } from "../../shared/http.js";
 import { chatbotService } from "./chatbot.service.js";
-import type { CreateChatbotInput } from "./chatbot.types.js";
+import type {
+  CreateChatbotInput,
+  UpdateChatbotInput,
+} from "./chatbot.types.js";
 
 export const chatbotController = {
   async create(req: Request, res: Response): Promise<void> {
@@ -37,6 +40,20 @@ export const chatbotController = {
     const chatbot = await chatbotService.getForOwner(
       req.auth.userId,
       req.params.id as string,
+    );
+
+    sendSuccess(res, { chatbot }, 200);
+  },
+
+  async update(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const chatbot = await chatbotService.updateForOwner(
+      req.auth.userId,
+      req.params.id as string,
+      req.body as UpdateChatbotInput,
     );
 
     sendSuccess(res, { chatbot }, 200);
