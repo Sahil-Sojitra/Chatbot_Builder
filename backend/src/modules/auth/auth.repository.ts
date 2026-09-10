@@ -1,7 +1,5 @@
-import type { ClientSession, HydratedDocument, Types } from "mongoose";
+import type { ClientSession, HydratedDocument } from "mongoose";
 
-import { SessionModel } from "./session.model.js";
-import type { ISession } from "./session.model.js";
 import { UserModel } from "./user.model.js";
 import type { IUser } from "./user.model.js";
 
@@ -21,6 +19,10 @@ export const authRepository = {
     return UserModel.findOne({ email });
   },
 
+  async findUserById(userId: string): Promise<HydratedDocument<IUser> | null> {
+    return UserModel.findById(userId);
+  },
+
   async createUser(
     input: CreateUserInput,
     session?: ClientSession,
@@ -31,24 +33,5 @@ export const authRepository = {
 
   async deleteUserById(userId: string): Promise<void> {
     await UserModel.deleteOne({ _id: userId });
-  },
-
-  async createSession(input: {
-    userId: Types.ObjectId;
-    refreshTokenHash: string;
-    expiresAt: Date;
-  }): Promise<HydratedDocument<ISession>> {
-    return SessionModel.create(input);
-  },
-
-  async deleteSessionById(sessionId: string): Promise<boolean> {
-    const result = await SessionModel.deleteOne({ _id: sessionId });
-    return result.deletedCount > 0;
-  },
-
-  async findSessionById(
-    sessionId: string,
-  ): Promise<HydratedDocument<ISession> | null> {
-    return SessionModel.findById(sessionId);
   },
 };

@@ -1,17 +1,19 @@
+import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
-import { env } from "../../config/env.js";
 import {
   accountDeactivated,
   accountSuspended,
   emailAlreadyExists,
   invalidCredentials,
+  invalidRefreshToken,
+  refreshTokenExpired,
 } from "../../shared/errors.js";
 import {
-  generateRefreshToken,
-  hashRefreshToken,
   signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
 } from "../../shared/jwt.js";
 import { hashPassword, verifyPassword } from "../../shared/password.js";
 import { generateUniqueSlug } from "../../shared/slug.js";
@@ -23,6 +25,8 @@ import type {
   LoginResult,
   PublicOrganization,
   PublicUser,
+  RefreshInput,
+  RefreshResult,
   RegisterInput,
   RegisterResult,
 } from "./auth.types.js";
@@ -80,7 +84,7 @@ export const authService = {
     try {
       // Start a transaction to ensure data consistency.
       session.startTransaction();
- 
+
       user = await authRepository.createUser(
         { name, email, passwordHash },
         session,
@@ -157,21 +161,9 @@ export const authService = {
       throw accountDeactivated();
     }
 
-    const refreshToken = generateRefreshToken();
-    const expiresAt = new Date(
-      Date.now() + env.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000,
-    );
-
-    const authSession = await authRepository.createSession({
-      userId: user._id,
-      refreshTokenHash: hashRefreshToken(refreshToken),
-      expiresAt,
-    });
-
-    const accessToken = signAccessToken({
-      sub: user._id.toString(),
-      sid: authSession._id.toString(),
-    });
+    const userId = user._id.toString();
+    const accessToken = signAccessToken({ sub: userId });
+    const refreshToken = signRefreshToken({ sub: userId });
 
     return {
       user: toPublicUser(user),
@@ -180,7 +172,38 @@ export const authService = {
     };
   },
 
-  async logout(sessionId: string): Promise<void> {
-    await authRepository.deleteSessionById(sessionId);
+  /**
+   * Exchange a still-valid refresh token for a fresh access token. The
+   * refresh token is a stateless, signed credential — no server-side
+   * session record is looked up or touched.
+   */
+  async refresh(input: RefreshInput): Promise<RefreshResult> {
+    const { refreshToken } = input;
+
+    let payload: { sub: string };
+    try {
+      payload = verifyRefreshToken(refreshToken);
+    } catch (err) {
+      if (err instanceof jwt.TokenExpiredError) {
+        throw refreshTokenExpired();
+      }
+      throw invalidRefreshToken();
+    }
+
+    // The owning user must still exist and be allowed to authenticate.
+    const user = await authRepository.findUserById(payload.sub);
+    if (!user) {
+      throw invalidRefreshToken();
+    }
+    if (user.status === "SUSPENDED") {
+      throw accountSuspended();
+    }
+    if (user.status === "DEACTIVATED") {
+      throw accountDeactivated();
+    }
+
+    const accessToken = signAccessToken({ sub: user._id.toString() });
+
+    return { accessToken };
   },
 };

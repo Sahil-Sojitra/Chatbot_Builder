@@ -6,7 +6,6 @@ declare global {
       /** Populated by the auth middleware for protected routes. */
       auth?: {
         userId: string;
-        sessionId: string;
       };
     }
   }

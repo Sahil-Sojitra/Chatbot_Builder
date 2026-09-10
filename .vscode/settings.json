@@ -1,0 +1,15 @@
+{
+  // Keep the editor's TypeScript scope on our own source, not vendored code.
+  "files.exclude": {
+    "**/node_modules": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true
+  },
+  // Use the backend's own TypeScript version for the language server.
+  "typescript.tsdk": "backend/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}

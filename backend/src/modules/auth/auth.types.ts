@@ -12,6 +12,10 @@ export interface LoginInput {
   password: string;
 }
 
+export interface RefreshInput {
+  refreshToken: string;
+}
+
 /** Public shape of a user — never contains passwordHash. */
 export interface PublicUser {
   id: string;
@@ -43,4 +47,8 @@ export interface LoginResult {
   user: PublicUser;
   accessToken: string;
   refreshToken: string;
+}
+
+export interface RefreshResult {
+  accessToken: string;
 }

@@ -6,6 +6,8 @@ export type ErrorCode =
   | "ACCOUNT_DEACTIVATED"
   | "UNAUTHORIZED"
   | "NOT_FOUND"
+  | "INVALID_REFRESH_TOKEN"
+  | "REFRESH_TOKEN_EXPIRED"
   | "INTERNAL_ERROR";
 
 export class AppError extends Error {
@@ -48,3 +50,13 @@ export const accountDeactivated = (): AppError =>
 export const unauthorized = (
   message = "Authentication required",
 ): AppError => new AppError(401, "UNAUTHORIZED", message);
+
+export const invalidRefreshToken = (): AppError =>
+  new AppError(401, "INVALID_REFRESH_TOKEN", "Invalid refresh token");
+
+export const refreshTokenExpired = (): AppError =>
+  new AppError(
+    401,
+    "REFRESH_TOKEN_EXPIRED",
+    "Refresh token has expired, please log in again",
+  );

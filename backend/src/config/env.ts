@@ -20,5 +20,6 @@ export const env = {
   JWT_ACCESS_SECRET: requiredEnv('JWT_ACCESS_SECRET'),
   JWT_ACCESS_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
 
+  JWT_REFRESH_SECRET: requiredEnv('JWT_REFRESH_SECRET'),
   REFRESH_TOKEN_TTL_DAYS: Number(process.env.REFRESH_TOKEN_TTL_DAYS ?? 30),
 };

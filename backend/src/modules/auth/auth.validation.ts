@@ -26,3 +26,9 @@ export const loginSchema = z.object({
   email: emailSchema,
   password: z.string({ message: "password is required" }).min(1, "password is required"),
 });
+
+export const refreshSchema = z.object({
+  refreshToken: z
+    .string({ message: "refreshToken is required" })
+    .min(1, "refreshToken is required"),
+});
