@@ -28,4 +28,17 @@ export const chatbotController = {
 
     sendSuccess(res, { chatbots }, 200);
   },
+
+  async get(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const chatbot = await chatbotService.getForOwner(
+      req.auth.userId,
+      req.params.id as string,
+    );
+
+    sendSuccess(res, { chatbot }, 200);
+  },
 };

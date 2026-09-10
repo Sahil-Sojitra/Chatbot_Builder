@@ -79,6 +79,9 @@ export const organizationNotFound = (): AppError =>
     "No organization found for this user",
   );
 
+export const chatbotNotFound = (): AppError =>
+  new AppError(404, "NOT_FOUND", "No chatbot found");
+
 export const incorrectPassword = (): AppError =>
   new AppError(401, "INCORRECT_PASSWORD", "Current password is incorrect");
 

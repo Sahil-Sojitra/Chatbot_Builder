@@ -1,4 +1,5 @@
-import type { HydratedDocument, Types } from "mongoose";
+import { Types } from "mongoose";
+import type { HydratedDocument } from "mongoose";
 
 import { ChatbotModel } from "./chatbot.model.js";
 import type { IChatbot } from "./chatbot.model.js";
@@ -38,6 +39,21 @@ export const chatbotRepository = {
     organizationId: Types.ObjectId,
   ): Promise<HydratedDocument<IChatbot>[]> {
     return ChatbotModel.find({ organizationId }).sort({ createdAt: -1 });
+  },
+
+  /**
+   * Fetches a single chatbot scoped to its organization. Both the id and the
+   * organization must match — knowing an id is never sufficient to read
+   * another organization's chatbot.
+   */
+  async findByIdForOrganization(
+    id: string,
+    organizationId: Types.ObjectId,
+  ): Promise<HydratedDocument<IChatbot> | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return ChatbotModel.findOne({ _id: id, organizationId });
   },
 
   async create(

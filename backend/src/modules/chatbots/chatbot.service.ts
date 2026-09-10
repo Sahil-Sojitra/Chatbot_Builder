@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
-import { organizationNotFound } from "../../shared/errors.js";
+import { chatbotNotFound, organizationNotFound } from "../../shared/errors.js";
 import { generateUniqueSlug } from "../../shared/slug.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
 import { chatbotRepository } from "./chatbot.repository.js";
@@ -129,5 +129,28 @@ export const chatbotService = {
     );
 
     return chatbots.map(toPublicChatbot);
+  },
+
+  /**
+   * Fetches one chatbot by id, scoped to the authenticated user's
+   * organization. Returns 404 if the user owns no organization, or if the
+   * chatbot does not exist within that organization — a client knowing an
+   * id can never read another organization's chatbot.
+   */
+  async getForOwner(ownerId: string, chatbotId: string): Promise<PublicChatbot> {
+    const organization = await organizationRepository.findByOwnerId(ownerId);
+    if (!organization) {
+      throw organizationNotFound();
+    }
+
+    const chatbot = await chatbotRepository.findByIdForOrganization(
+      chatbotId,
+      organization._id,
+    );
+    if (!chatbot) {
+      throw chatbotNotFound();
+    }
+
+    return toPublicChatbot(chatbot);
   },
 };
