@@ -3,7 +3,10 @@ import type { Request, Response } from "express";
 import { unauthorized } from "../../shared/errors.js";
 import { sendSuccess } from "../../shared/http.js";
 import { organizationService } from "./organization.service.js";
-import type { CreateOrganizationInput } from "./organization.types.js";
+import type {
+  CreateOrganizationInput,
+  UpdateOrganizationInput,
+} from "./organization.types.js";
 
 export const organizationController = {
   async create(req: Request, res: Response): Promise<void> {
@@ -25,6 +28,19 @@ export const organizationController = {
     }
 
     const organization = await organizationService.getForOwner(req.auth.userId);
+
+    sendSuccess(res, { organization }, 200);
+  },
+
+  async update(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const organization = await organizationService.updateForOwner(
+      req.auth.userId,
+      req.body as UpdateOrganizationInput,
+    );
 
     sendSuccess(res, { organization }, 200);
   },

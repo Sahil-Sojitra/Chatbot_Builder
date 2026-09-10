@@ -7,8 +7,13 @@ import {
 } from "../../shared/errors.js";
 import { generateUniqueSlug } from "../../shared/slug.js";
 import { organizationRepository } from "./organization.repository.js";
+import type { UpdateOrganizationFields } from "./organization.repository.js";
 import type { IOrganization } from "./organization.model.js";
-import type { CreateOrganizationInput, PublicOrganization } from "./organization.types.js";
+import type {
+  CreateOrganizationInput,
+  PublicOrganization,
+  UpdateOrganizationInput,
+} from "./organization.types.js";
 
 const toPublicOrganization = (
   org: HydratedDocument<IOrganization>,
@@ -47,6 +52,34 @@ export const organizationService = {
   /** Returns the organization owned by this authenticated user, or 404. */
   async getForOwner(ownerId: string): Promise<PublicOrganization> {
     const organization = await organizationRepository.findByOwnerId(ownerId);
+    if (!organization) {
+      throw organizationNotFound();
+    }
+
+    return toPublicOrganization(organization);
+  },
+
+  /**
+   * Updates only the caller's own organization. The lookup/update is always
+   * scoped to ownerId, so a client can never touch another organization —
+   * there is no organizationId input anywhere in this path. name is the
+   * only editable field in V1; slug is intentionally left untouched — it's
+   * derived once at creation and nothing in this codebase regenerates it,
+   * so a rename does not change the organization's stable slug.
+   */
+  async updateForOwner(
+    ownerId: string,
+    input: UpdateOrganizationInput,
+  ): Promise<PublicOrganization> {
+    const fields: UpdateOrganizationFields = {};
+    if (input.name !== undefined) {
+      fields.name = input.name;
+    }
+
+    const organization = await organizationRepository.updateByOwnerId(
+      ownerId,
+      fields,
+    );
     if (!organization) {
       throw organizationNotFound();
     }

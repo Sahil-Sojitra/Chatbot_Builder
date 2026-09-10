@@ -9,6 +9,10 @@ export interface CreateOrganizationInput {
   ownerId: Types.ObjectId;
 }
 
+export interface UpdateOrganizationFields {
+  name?: string;
+}
+
 export const organizationRepository = {
   async slugExists(slug: string): Promise<boolean> {
     const existing = await OrganizationModel.exists({ slug });
@@ -30,5 +34,16 @@ export const organizationRepository = {
     input: CreateOrganizationInput,
   ): Promise<HydratedDocument<IOrganization>> {
     return OrganizationModel.create(input);
+  },
+
+  async updateByOwnerId(
+    ownerId: string,
+    fields: UpdateOrganizationFields,
+  ): Promise<HydratedDocument<IOrganization> | null> {
+    return OrganizationModel.findOneAndUpdate(
+      { ownerId },
+      { $set: fields },
+      { new: true },
+    );
   },
 };

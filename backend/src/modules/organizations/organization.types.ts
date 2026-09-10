@@ -4,6 +4,10 @@ export interface CreateOrganizationInput {
   name: string;
 }
 
+export interface UpdateOrganizationInput {
+  name?: string;
+}
+
 export interface PublicOrganization {
   id: string;
   name: string;
