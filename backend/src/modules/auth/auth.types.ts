@@ -20,6 +20,11 @@ export interface UpdateMeInput {
   avatarUrl?: string;
 }
 
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
+
 /** Public shape of a user — never contains passwordHash. */
 export interface PublicUser {
   id: string;

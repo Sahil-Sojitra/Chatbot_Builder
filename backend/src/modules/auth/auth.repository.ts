@@ -42,4 +42,15 @@ export const authRepository = {
       { new: true },
     );
   },
+
+  async updatePasswordById(
+    userId: string,
+    passwordHash: string,
+  ): Promise<HydratedDocument<IUser> | null> {
+    return UserModel.findByIdAndUpdate(
+      userId,
+      { $set: { passwordHash } },
+      { new: true },
+    );
+  },
 };

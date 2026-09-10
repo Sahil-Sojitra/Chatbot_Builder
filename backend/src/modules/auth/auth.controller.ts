@@ -4,6 +4,7 @@ import { unauthorized } from "../../shared/errors.js";
 import { sendSuccess } from "../../shared/http.js";
 import { authService } from "./auth.service.js";
 import type {
+  ChangePasswordInput,
   LoginInput,
   RefreshInput,
   RegisterInput,
@@ -52,5 +53,16 @@ export const authController = {
       req.body as UpdateMeInput,
     );
     sendSuccess(res, result, 200);
+  },
+
+  async changePassword(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+    await authService.changePassword(
+      req.auth.userId,
+      req.body as ChangePasswordInput,
+    );
+    sendSuccess(res, { message: "Password changed successfully" }, 200);
   },
 };

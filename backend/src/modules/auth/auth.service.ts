@@ -5,9 +5,11 @@ import {
   accountDeactivated,
   accountSuspended,
   emailAlreadyExists,
+  incorrectPassword,
   invalidCredentials,
   invalidRefreshToken,
   refreshTokenExpired,
+  samePassword,
   unauthorized,
 } from "../../shared/errors.js";
 import {
@@ -19,6 +21,7 @@ import { hashPassword, verifyPassword } from "../../shared/password.js";
 import { authRepository } from "./auth.repository.js";
 import type { UpdateUserFields } from "./auth.repository.js";
 import type {
+  ChangePasswordInput,
   LoginInput,
   LoginResult,
   MeResult,
@@ -153,5 +156,35 @@ export const authService = {
     }
 
     return { user: toPublicUser(user) };
+  },
+
+  /**
+   * Changes the caller's own password. Only passwordHash is ever written —
+   * no other user field is touched. Already-issued JWTs are unaffected:
+   * this architecture has no server-side revocation, by design.
+   */
+  async changePassword(
+    userId: string,
+    input: ChangePasswordInput,
+  ): Promise<void> {
+    const { currentPassword, newPassword } = input;
+
+    const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw unauthorized("User not found");
+    }
+
+    const currentMatches = await verifyPassword(currentPassword, user.passwordHash);
+    if (!currentMatches) {
+      throw incorrectPassword();
+    }
+
+    const isSameAsCurrent = await verifyPassword(newPassword, user.passwordHash);
+    if (isSameAsCurrent) {
+      throw samePassword();
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    await authRepository.updatePasswordById(userId, passwordHash);
   },
 };

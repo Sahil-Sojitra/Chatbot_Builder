@@ -56,3 +56,17 @@ export const updateMeSchema = z
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided",
   });
+
+/**
+ * POST /api/v1/me/change-password — `.strict()` rejects any extra key
+ * (e.g. a spoofed userId) outright. newPassword reuses the same strength
+ * rule as registration.
+ */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string({ message: "currentPassword is required" })
+      .min(1, "currentPassword is required"),
+    newPassword: passwordSchema,
+  })
+  .strict();
