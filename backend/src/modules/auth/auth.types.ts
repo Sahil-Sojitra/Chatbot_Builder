@@ -40,3 +40,7 @@ export interface LoginResult {
 export interface RefreshResult {
   accessToken: string;
 }
+
+export interface MeResult {
+  user: PublicUser;
+}

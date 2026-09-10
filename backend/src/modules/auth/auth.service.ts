@@ -8,6 +8,7 @@ import {
   invalidCredentials,
   invalidRefreshToken,
   refreshTokenExpired,
+  unauthorized,
 } from "../../shared/errors.js";
 import {
   signAccessToken,
@@ -19,6 +20,7 @@ import { authRepository } from "./auth.repository.js";
 import type {
   LoginInput,
   LoginResult,
+  MeResult,
   PublicUser,
   RefreshInput,
   RefreshResult,
@@ -116,5 +118,15 @@ export const authService = {
     const accessToken = signAccessToken({ sub: user._id.toString() });
 
     return { accessToken };
+  },
+
+  /** Returns the profile of the user identified by the access JWT's sub. */
+  async me(userId: string): Promise<MeResult> {
+    const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw unauthorized("User not found");
+    }
+
+    return { user: toPublicUser(user) };
   },
 };

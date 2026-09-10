@@ -29,4 +29,12 @@ export const authController = {
     // access/refresh tokens. The short-lived access JWT expires naturally.
     sendSuccess(res, { message: "Logged out successfully" }, 200);
   },
+
+  async me(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+    const result = await authService.me(req.auth.userId);
+    sendSuccess(res, result, 200);
+  },
 };
