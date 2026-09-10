@@ -15,6 +15,11 @@ export interface RefreshInput {
   refreshToken: string;
 }
 
+export interface UpdateMeInput {
+  name?: string;
+  avatarUrl?: string;
+}
+
 /** Public shape of a user — never contains passwordHash. */
 export interface PublicUser {
   id: string;

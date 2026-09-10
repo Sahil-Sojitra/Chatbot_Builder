@@ -17,6 +17,7 @@ import {
 } from "../../shared/jwt.js";
 import { hashPassword, verifyPassword } from "../../shared/password.js";
 import { authRepository } from "./auth.repository.js";
+import type { UpdateUserFields } from "./auth.repository.js";
 import type {
   LoginInput,
   LoginResult,
@@ -26,6 +27,7 @@ import type {
   RefreshResult,
   RegisterInput,
   RegisterResult,
+  UpdateMeInput,
 } from "./auth.types.js";
 import type { IUser } from "./user.model.js";
 
@@ -123,6 +125,29 @@ export const authService = {
   /** Returns the profile of the user identified by the access JWT's sub. */
   async me(userId: string): Promise<MeResult> {
     const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw unauthorized("User not found");
+    }
+
+    return { user: toPublicUser(user) };
+  },
+
+  /**
+   * Updates only the caller's own genuinely-editable profile fields.
+   * Explicitly whitelisted here — never a raw pass-through of the request
+   * body — so a client can never touch status, email, emailVerified,
+   * passwordHash, or any other server-controlled field.
+   */
+  async updateMe(userId: string, input: UpdateMeInput): Promise<MeResult> {
+    const fields: UpdateUserFields = {};
+    if (input.name !== undefined) {
+      fields.name = input.name;
+    }
+    if (input.avatarUrl !== undefined) {
+      fields.avatarUrl = input.avatarUrl;
+    }
+
+    const user = await authRepository.updateUserById(userId, fields);
     if (!user) {
       throw unauthorized("User not found");
     }

@@ -3,7 +3,12 @@ import type { Request, Response } from "express";
 import { unauthorized } from "../../shared/errors.js";
 import { sendSuccess } from "../../shared/http.js";
 import { authService } from "./auth.service.js";
-import type { LoginInput, RefreshInput, RegisterInput } from "./auth.types.js";
+import type {
+  LoginInput,
+  RefreshInput,
+  RegisterInput,
+  UpdateMeInput,
+} from "./auth.types.js";
 
 export const authController = {
   async register(req: Request, res: Response): Promise<void> {
@@ -35,6 +40,17 @@ export const authController = {
       throw unauthorized();
     }
     const result = await authService.me(req.auth.userId);
+    sendSuccess(res, result, 200);
+  },
+
+  async updateMe(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+    const result = await authService.updateMe(
+      req.auth.userId,
+      req.body as UpdateMeInput,
+    );
     sendSuccess(res, result, 200);
   },
 };

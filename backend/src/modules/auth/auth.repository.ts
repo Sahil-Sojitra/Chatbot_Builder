@@ -9,6 +9,11 @@ export interface CreateUserInput {
   passwordHash: string;
 }
 
+export interface UpdateUserFields {
+  name?: string;
+  avatarUrl?: string;
+}
+
 export const authRepository = {
   async emailExists(email: string): Promise<boolean> {
     const existing = await UserModel.exists({ email });
@@ -25,5 +30,16 @@ export const authRepository = {
 
   async createUser(input: CreateUserInput): Promise<HydratedDocument<IUser>> {
     return UserModel.create(input);
+  },
+
+  async updateUserById(
+    userId: string,
+    fields: UpdateUserFields,
+  ): Promise<HydratedDocument<IUser> | null> {
+    return UserModel.findByIdAndUpdate(
+      userId,
+      { $set: fields },
+      { new: true },
+    );
   },
 };

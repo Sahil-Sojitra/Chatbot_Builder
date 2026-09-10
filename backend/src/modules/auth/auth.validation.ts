@@ -32,3 +32,27 @@ export const refreshSchema = z.object({
     .string({ message: "refreshToken is required" })
     .min(1, "refreshToken is required"),
 });
+
+/**
+ * PATCH /api/v1/me — only genuinely user-editable profile fields. `.strict()`
+ * rejects any other key outright (protected fields like status, email,
+ * emailVerified, passwordHash, id must never even parse successfully) and
+ * the refine blocks a no-op empty update.
+ */
+export const updateMeSchema = z
+  .object({
+    name: z
+      .string({ message: "name must be a string" })
+      .trim()
+      .min(1, "name cannot be empty")
+      .max(120, "name must be at most 120 characters")
+      .optional(),
+    avatarUrl: z
+      .url({ message: "avatarUrl must be a valid URL" })
+      .max(2048, "avatarUrl must be at most 2048 characters")
+      .optional(),
+  })
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided",
+  });
