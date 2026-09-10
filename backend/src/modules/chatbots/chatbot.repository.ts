@@ -91,6 +91,29 @@ export const chatbotRepository = {
     );
   },
 
+  /**
+   * Marks a chatbot ACTIVE, scoped to both its id and its organization.
+   * Only status/publishedBy/publishedAt are touched — slug, publicId,
+   * organizationId, createdBy and every configuration field are left as-is.
+   * Returns null when nothing matches (wrong id, or another organization's
+   * chatbot). Re-publishing an already-ACTIVE chatbot is accepted and simply
+   * refreshes publishedBy/publishedAt.
+   */
+  async publishByIdForOrganization(
+    id: string,
+    organizationId: Types.ObjectId,
+    publishedBy: Types.ObjectId,
+  ): Promise<HydratedDocument<IChatbot> | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return ChatbotModel.findOneAndUpdate(
+      { _id: id, organizationId },
+      { $set: { status: "ACTIVE", publishedBy, publishedAt: new Date() } },
+      { new: true },
+    );
+  },
+
   async create(
     input: CreateChatbotInput,
   ): Promise<HydratedDocument<IChatbot>> {

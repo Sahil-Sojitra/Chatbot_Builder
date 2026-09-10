@@ -223,4 +223,34 @@ export const chatbotService = {
 
     return toPublicChatbot(chatbot);
   },
+
+  /**
+   * Publishes one chatbot (status → ACTIVE, publishedBy → caller,
+   * publishedAt → now), scoped to the authenticated user's organization.
+   * Idempotent: publishing an already-ACTIVE chatbot succeeds and refreshes
+   * the publish metadata. Returns 404 when the user owns no organization,
+   * or when the chatbot is not in that organization. slug, publicId,
+   * organizationId, createdBy and all AI/RAG/UI config are left untouched;
+   * no AI provider is called and no new resource is created.
+   */
+  async publishForOwner(
+    ownerId: string,
+    chatbotId: string,
+  ): Promise<PublicChatbot> {
+    const organization = await organizationRepository.findByOwnerId(ownerId);
+    if (!organization) {
+      throw organizationNotFound();
+    }
+
+    const chatbot = await chatbotRepository.publishByIdForOrganization(
+      chatbotId,
+      organization._id,
+      new Types.ObjectId(ownerId),
+    );
+    if (!chatbot) {
+      throw chatbotNotFound();
+    }
+
+    return toPublicChatbot(chatbot);
+  },
 };

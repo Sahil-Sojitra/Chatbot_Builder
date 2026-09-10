@@ -29,4 +29,10 @@ router.patch(
   asyncHandler(chatbotController.update),
 );
 
+router.post(
+  "/:id/publish",
+  requireAuth,
+  asyncHandler(chatbotController.publish),
+);
+
 export default router;
