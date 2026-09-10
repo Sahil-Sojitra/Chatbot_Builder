@@ -18,4 +18,14 @@ export const organizationController = {
 
     sendSuccess(res, { organization }, 201);
   },
+
+  async get(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const organization = await organizationService.getForOwner(req.auth.userId);
+
+    sendSuccess(res, { organization }, 200);
+  },
 };

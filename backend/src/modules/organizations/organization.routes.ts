@@ -15,4 +15,6 @@ router.post(
   asyncHandler(organizationController.create),
 );
 
+router.get("/", requireAuth, asyncHandler(organizationController.get));
+
 export default router;

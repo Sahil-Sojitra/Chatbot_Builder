@@ -1,7 +1,10 @@
 import { Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
-import { organizationAlreadyExists } from "../../shared/errors.js";
+import {
+  organizationAlreadyExists,
+  organizationNotFound,
+} from "../../shared/errors.js";
 import { generateUniqueSlug } from "../../shared/slug.js";
 import { organizationRepository } from "./organization.repository.js";
 import type { IOrganization } from "./organization.model.js";
@@ -37,6 +40,16 @@ export const organizationService = {
       slug,
       ownerId: new Types.ObjectId(ownerId),
     });
+
+    return toPublicOrganization(organization);
+  },
+
+  /** Returns the organization owned by this authenticated user, or 404. */
+  async getForOwner(ownerId: string): Promise<PublicOrganization> {
+    const organization = await organizationRepository.findByOwnerId(ownerId);
+    if (!organization) {
+      throw organizationNotFound();
+    }
 
     return toPublicOrganization(organization);
   },

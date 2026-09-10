@@ -20,6 +20,12 @@ export const organizationRepository = {
     return existing !== null;
   },
 
+  async findByOwnerId(
+    ownerId: string,
+  ): Promise<HydratedDocument<IOrganization> | null> {
+    return OrganizationModel.findOne({ ownerId });
+  },
+
   async create(
     input: CreateOrganizationInput,
   ): Promise<HydratedDocument<IOrganization>> {

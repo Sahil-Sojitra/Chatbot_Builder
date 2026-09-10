@@ -9,6 +9,7 @@ export type ErrorCode =
   | "INVALID_REFRESH_TOKEN"
   | "REFRESH_TOKEN_EXPIRED"
   | "ORGANIZATION_ALREADY_EXISTS"
+  | "ORGANIZATION_NOT_FOUND"
   | "INCORRECT_PASSWORD"
   | "SAME_PASSWORD"
   | "INTERNAL_ERROR";
@@ -69,6 +70,13 @@ export const organizationAlreadyExists = (): AppError =>
     409,
     "ORGANIZATION_ALREADY_EXISTS",
     "This user already owns an organization",
+  );
+
+export const organizationNotFound = (): AppError =>
+  new AppError(
+    404,
+    "ORGANIZATION_NOT_FOUND",
+    "No organization found for this user",
   );
 
 export const incorrectPassword = (): AppError =>

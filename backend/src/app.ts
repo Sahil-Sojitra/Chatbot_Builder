@@ -22,6 +22,7 @@ app.get("/", (_req, res) => {
   });
 });
 
+// Auth endpoints
 app.use("/api/v1/auth", authRoutes);
 app.get("/api/v1/me", requireAuth, asyncHandler(authController.me));
 app.patch(
@@ -36,6 +37,7 @@ app.post(
   validateBody(changePasswordSchema),
   asyncHandler(authController.changePassword),
 );
+// Organization endpoints
 app.use("/api/v1/organization", organizationRoutes);
 
 app.use(notFoundHandler);
