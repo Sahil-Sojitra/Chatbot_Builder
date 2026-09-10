@@ -1,4 +1,4 @@
-import type { ClientSession, HydratedDocument, Types } from "mongoose";
+import type { HydratedDocument, Types } from "mongoose";
 
 import { OrganizationModel } from "./organization.model.js";
 import type { IOrganization } from "./organization.model.js";
@@ -15,12 +15,14 @@ export const organizationRepository = {
     return existing !== null;
   },
 
+  async ownerHasOrganization(ownerId: string): Promise<boolean> {
+    const existing = await OrganizationModel.exists({ ownerId });
+    return existing !== null;
+  },
+
   async create(
     input: CreateOrganizationInput,
-    session?: ClientSession,
   ): Promise<HydratedDocument<IOrganization>> {
-    const docs = await OrganizationModel.create([input], session ? { session } : {});
-    // create([...]) always returns an array
-    return docs[0] as HydratedDocument<IOrganization>;
+    return OrganizationModel.create(input);
   },
 };
