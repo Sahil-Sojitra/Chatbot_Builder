@@ -5,7 +5,10 @@ import { errorHandler, notFoundHandler } from "./middleware/error.middleware.js"
 import { validateBody } from "./middleware/validate.js";
 import { authController } from "./modules/auth/auth.controller.js";
 import authRoutes from "./modules/auth/auth.routes.js";
-import { updateMeSchema } from "./modules/auth/auth.validation.js";
+import {
+  changePasswordSchema,
+  updateMeSchema,
+} from "./modules/auth/auth.validation.js";
 import organizationRoutes from "./modules/organizations/organization.routes.js";
 import { asyncHandler } from "./shared/asyncHandler.js";
 
@@ -26,6 +29,12 @@ app.patch(
   requireAuth,
   validateBody(updateMeSchema),
   asyncHandler(authController.updateMe),
+);
+app.post(
+  "/api/v1/me/change-password",
+  requireAuth,
+  validateBody(changePasswordSchema),
+  asyncHandler(authController.changePassword),
 );
 app.use("/api/v1/organization", organizationRoutes);
 
