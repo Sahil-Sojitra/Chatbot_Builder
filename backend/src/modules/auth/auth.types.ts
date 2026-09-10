@@ -1,4 +1,3 @@
-import type { IOrganization } from "../organizations/organization.model.js";
 import type { IUser } from "./user.model.js";
 
 export interface RegisterInput {
@@ -28,19 +27,8 @@ export interface PublicUser {
   updatedAt: string;
 }
 
-export interface PublicOrganization {
-  id: string;
-  name: string;
-  slug: string;
-  ownerId: string;
-  status: IOrganization["status"];
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface RegisterResult {
   user: PublicUser;
-  organization: PublicOrganization;
 }
 
 export interface LoginResult {

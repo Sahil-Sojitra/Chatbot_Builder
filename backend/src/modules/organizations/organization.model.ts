@@ -9,7 +9,6 @@ export interface IOrganization {
   status: OrganizationStatus;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date | null;
 }
 
 const organizationSchema = new Schema<IOrganization>(
@@ -32,7 +31,7 @@ const organizationSchema = new Schema<IOrganization>(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
+      unique: true,
     },
 
     status: {
@@ -42,10 +41,6 @@ const organizationSchema = new Schema<IOrganization>(
       required: true,
     },
 
-    deletedAt: {
-      type: Date,
-      default: null,
-    },
   },
   {
     timestamps: true,

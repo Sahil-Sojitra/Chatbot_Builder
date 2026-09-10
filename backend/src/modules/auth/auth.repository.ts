@@ -1,4 +1,4 @@
-import type { ClientSession, HydratedDocument } from "mongoose";
+import type { HydratedDocument } from "mongoose";
 
 import { UserModel } from "./user.model.js";
 import type { IUser } from "./user.model.js";
@@ -23,15 +23,7 @@ export const authRepository = {
     return UserModel.findById(userId);
   },
 
-  async createUser(
-    input: CreateUserInput,
-    session?: ClientSession,
-  ): Promise<HydratedDocument<IUser>> {
-    const docs = await UserModel.create([input], session ? { session } : {});
-    return docs[0] as HydratedDocument<IUser>;
-  },
-
-  async deleteUserById(userId: string): Promise<void> {
-    await UserModel.deleteOne({ _id: userId });
+  async createUser(input: CreateUserInput): Promise<HydratedDocument<IUser>> {
+    return UserModel.create(input);
   },
 };

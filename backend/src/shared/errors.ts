@@ -8,6 +8,7 @@ export type ErrorCode =
   | "NOT_FOUND"
   | "INVALID_REFRESH_TOKEN"
   | "REFRESH_TOKEN_EXPIRED"
+  | "ORGANIZATION_ALREADY_EXISTS"
   | "INTERNAL_ERROR";
 
 export class AppError extends Error {
@@ -59,4 +60,11 @@ export const refreshTokenExpired = (): AppError =>
     401,
     "REFRESH_TOKEN_EXPIRED",
     "Refresh token has expired, please log in again",
+  );
+
+export const organizationAlreadyExists = (): AppError =>
+  new AppError(
+    409,
+    "ORGANIZATION_ALREADY_EXISTS",
+    "This user already owns an organization",
   );
