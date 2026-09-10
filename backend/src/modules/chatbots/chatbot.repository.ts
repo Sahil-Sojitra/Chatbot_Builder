@@ -114,6 +114,27 @@ export const chatbotRepository = {
     );
   },
 
+  /**
+   * Marks a chatbot PAUSED, scoped to both its id and its organization.
+   * Only status is touched — publishedBy/publishedAt are deliberately kept
+   * as the most-recent-publication metadata, and every other field is left
+   * as-is. Returns null when nothing matches (wrong id, or another
+   * organization's chatbot).
+   */
+  async unpublishByIdForOrganization(
+    id: string,
+    organizationId: Types.ObjectId,
+  ): Promise<HydratedDocument<IChatbot> | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return ChatbotModel.findOneAndUpdate(
+      { _id: id, organizationId },
+      { $set: { status: "PAUSED" } },
+      { new: true },
+    );
+  },
+
   async create(
     input: CreateChatbotInput,
   ): Promise<HydratedDocument<IChatbot>> {

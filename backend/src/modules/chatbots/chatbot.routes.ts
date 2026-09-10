@@ -35,4 +35,10 @@ router.post(
   asyncHandler(chatbotController.publish),
 );
 
+router.post(
+  "/:id/unpublish",
+  requireAuth,
+  asyncHandler(chatbotController.unpublish),
+);
+
 export default router;

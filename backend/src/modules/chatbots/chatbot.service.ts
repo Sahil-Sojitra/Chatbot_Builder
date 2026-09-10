@@ -3,7 +3,11 @@ import crypto from "node:crypto";
 import { Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
-import { chatbotNotFound, organizationNotFound } from "../../shared/errors.js";
+import {
+  chatbotNotFound,
+  chatbotNotPublished,
+  organizationNotFound,
+} from "../../shared/errors.js";
 import { generateUniqueSlug } from "../../shared/slug.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
 import { chatbotRepository } from "./chatbot.repository.js";
@@ -246,6 +250,47 @@ export const chatbotService = {
       chatbotId,
       organization._id,
       new Types.ObjectId(ownerId),
+    );
+    if (!chatbot) {
+      throw chatbotNotFound();
+    }
+
+    return toPublicChatbot(chatbot);
+  },
+
+  /**
+   * Unpublishes one chatbot (status → PAUSED), scoped to the authenticated
+   * user's organization. Lifecycle only: ACTIVE → PAUSED. An already-PAUSED
+   * chatbot is accepted idempotently. A DRAFT chatbot has never been
+   * published, so it is rejected with a 409 state-transition error rather
+   * than being silently moved to PAUSED. publishedBy/publishedAt are kept
+   * as the last-publication metadata; no other field is touched, and no
+   * deploy/widget/AI side effect occurs. Returns 404 when the user owns no
+   * organization, or when the chatbot is not in that organization.
+   */
+  async unpublishForOwner(
+    ownerId: string,
+    chatbotId: string,
+  ): Promise<PublicChatbot> {
+    const organization = await organizationRepository.findByOwnerId(ownerId);
+    if (!organization) {
+      throw organizationNotFound();
+    }
+
+    const existing = await chatbotRepository.findByIdForOrganization(
+      chatbotId,
+      organization._id,
+    );
+    if (!existing) {
+      throw chatbotNotFound();
+    }
+    if (existing.status === "DRAFT") {
+      throw chatbotNotPublished();
+    }
+
+    const chatbot = await chatbotRepository.unpublishByIdForOrganization(
+      chatbotId,
+      organization._id,
     );
     if (!chatbot) {
       throw chatbotNotFound();

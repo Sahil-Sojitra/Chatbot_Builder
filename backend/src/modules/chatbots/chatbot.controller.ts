@@ -71,4 +71,17 @@ export const chatbotController = {
 
     sendSuccess(res, { chatbot }, 200);
   },
+
+  async unpublish(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const chatbot = await chatbotService.unpublishForOwner(
+      req.auth.userId,
+      req.params.id as string,
+    );
+
+    sendSuccess(res, { chatbot }, 200);
+  },
 };

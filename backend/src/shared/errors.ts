@@ -12,6 +12,7 @@ export type ErrorCode =
   | "ORGANIZATION_NOT_FOUND"
   | "INCORRECT_PASSWORD"
   | "SAME_PASSWORD"
+  | "INVALID_STATE_TRANSITION"
   | "INTERNAL_ERROR";
 
 export class AppError extends Error {
@@ -81,6 +82,13 @@ export const organizationNotFound = (): AppError =>
 
 export const chatbotNotFound = (): AppError =>
   new AppError(404, "NOT_FOUND", "No chatbot found");
+
+export const chatbotNotPublished = (): AppError =>
+  new AppError(
+    409,
+    "INVALID_STATE_TRANSITION",
+    "Only a published chatbot can be unpublished",
+  );
 
 export const incorrectPassword = (): AppError =>
   new AppError(401, "INCORRECT_PASSWORD", "Current password is incorrect");
