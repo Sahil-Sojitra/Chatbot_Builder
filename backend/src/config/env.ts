@@ -22,4 +22,13 @@ export const env = {
 
   JWT_REFRESH_SECRET: requiredEnv('JWT_REFRESH_SECRET'),
   REFRESH_TOKEN_TTL_DAYS: Number(process.env.REFRESH_TOKEN_TTL_DAYS ?? 30),
+
+  // R2 (S3-compatible) object storage. Optional at startup — nothing else in
+  // the app depends on these yet, so a missing value only surfaces as an
+  // error when a knowledge-source file-upload request is actually made,
+  // rather than blocking the whole server from starting.
+  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
+  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
+  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+  R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
 };

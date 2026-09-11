@@ -3,7 +3,10 @@ import type { Request, Response } from "express";
 import { unauthorized } from "../../shared/errors.js";
 import { sendSuccess } from "../../shared/http.js";
 import { knowledgeSourceService } from "./knowledgeSource.service.js";
-import type { CreateKnowledgeSourceBody } from "./knowledgeSource.validation.js";
+import type {
+  CreateKnowledgeSourceBody,
+  InitiateFileUploadBody,
+} from "./knowledgeSource.validation.js";
 
 export const knowledgeSourceController = {
   async create(req: Request, res: Response): Promise<void> {
@@ -45,5 +48,19 @@ export const knowledgeSourceController = {
     );
 
     sendSuccess(res, { knowledgeSource }, 200);
+  },
+
+  async initiateUpload(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const result = await knowledgeSourceService.initiateFileUpload(
+      req.auth.userId,
+      req.params.chatbotId as string,
+      req.body as InitiateFileUploadBody,
+    );
+
+    sendSuccess(res, result, 200);
   },
 };

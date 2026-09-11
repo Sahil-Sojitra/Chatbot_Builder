@@ -4,7 +4,10 @@ import { requireAuth } from "../../middleware/auth.middleware.js";
 import { validateBody } from "../../middleware/validate.js";
 import { asyncHandler } from "../../shared/asyncHandler.js";
 import { knowledgeSourceController } from "./knowledgeSource.controller.js";
-import { createKnowledgeSourceSchema } from "./knowledgeSource.validation.js";
+import {
+  createKnowledgeSourceSchema,
+  initiateFileUploadSchema,
+} from "./knowledgeSource.validation.js";
 
 const router = Router();
 
@@ -13,6 +16,13 @@ router.post(
   requireAuth,
   validateBody(createKnowledgeSourceSchema),
   asyncHandler(knowledgeSourceController.create),
+);
+
+router.post(
+  "/:chatbotId/upload",
+  requireAuth,
+  validateBody(initiateFileUploadSchema),
+  asyncHandler(knowledgeSourceController.initiateUpload),
 );
 
 router.get(
