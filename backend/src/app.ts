@@ -10,6 +10,7 @@ import {
   updateMeSchema,
 } from "./modules/auth/auth.validation.js";
 import chatbotRoutes from "./modules/chatbots/chatbot.routes.js";
+import knowledgeSourceRoutes from "./modules/knowledge-sources/knowledgeSource.routes.js";
 import organizationRoutes from "./modules/organizations/organization.routes.js";
 import { asyncHandler } from "./shared/asyncHandler.js";
 
@@ -42,6 +43,8 @@ app.post(
 app.use("/api/v1/organization", organizationRoutes);
 // Chatbot endpoints
 app.use("/api/v1/chatbots", chatbotRoutes);
+// Knowledge source endpoints
+app.use("/api/v1/knowledge-sources", knowledgeSourceRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
