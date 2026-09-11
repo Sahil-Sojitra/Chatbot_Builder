@@ -60,9 +60,4 @@ const userSchema = new Schema<IUser>(
   },
 );
 
-userSchema.index(
-  { email: 1 },
-  { unique: true },
-);
-
 export const UserModel = model<IUser>("User", userSchema);
