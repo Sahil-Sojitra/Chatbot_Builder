@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { env } from "../config/env.js";
@@ -67,4 +67,49 @@ export const createPresignedUploadUrl = async (
   return getSignedUrl(getR2Client(), command, {
     expiresIn: expiresInSeconds,
   });
+};
+
+export interface R2ObjectMetadata {
+  sizeBytes: number;
+  contentType: string | null;
+}
+
+/**
+ * Reads an object's actual metadata straight from R2 via HEAD — the only
+ * source of truth for whether an upload really happened and what was
+ * actually stored, since none of it can be trusted from the client. Returns
+ * null when the object does not exist rather than throwing, so callers can
+ * treat "missing" as an ordinary verification failure.
+ */
+export const headObject = async (
+  key: string,
+): Promise<R2ObjectMetadata | null> => {
+  if (!env.R2_BUCKET_NAME) {
+    throw new AppError(
+      500,
+      "INTERNAL_ERROR",
+      "Object storage is not configured",
+    );
+  }
+
+  try {
+    const result = await getR2Client().send(
+      new HeadObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: key }),
+    );
+
+    return {
+      sizeBytes: result.ContentLength ?? 0,
+      contentType: result.ContentType ?? null,
+    };
+  } catch (error) {
+    const name = (error as { name?: string }).name;
+    const statusCode = (error as { $metadata?: { httpStatusCode?: number } })
+      .$metadata?.httpStatusCode;
+
+    if (name === "NotFound" || name === "NoSuchKey" || statusCode === 404) {
+      return null;
+    }
+
+    throw error;
+  }
 };

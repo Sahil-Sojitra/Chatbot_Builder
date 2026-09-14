@@ -4,22 +4,26 @@ import { Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
 import { AppError, chatbotNotFound, organizationNotFound } from "../../shared/errors.js";
-import { createPresignedUploadUrl } from "../../shared/r2.js";
+import { createPresignedUploadUrl, headObject } from "../../shared/r2.js";
 import { chatbotRepository } from "../chatbots/chatbot.repository.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
 import { knowledgeSourceRepository } from "./knowledgeSource.repository.js";
 import type { CreateKnowledgeSourceInput as RepositoryCreateKnowledgeSourceInput } from "./knowledgeSource.repository.js";
+import { pendingUploadRepository } from "./pendingUpload.repository.js";
+import { MAX_FILE_SIZE_BYTES } from "./knowledgeSource.validation.js";
 import type {
+  CompleteFileUploadBody,
   CreateKnowledgeSourceBody,
   InitiateFileUploadBody,
 } from "./knowledgeSource.validation.js";
 import type { IKnowledgeSource } from "./knowledgeSource.model.js";
 import type { PublicKnowledgeSource } from "./knowledgeSource.types.js";
 
-/** Presigned upload URLs are short-lived: 15 minutes. */
+/** Presigned upload URLs — and the pending-upload record they're bound to — are short-lived: 15 minutes. */
 const UPLOAD_URL_EXPIRES_IN_SECONDS = 900;
 
 export interface InitiateFileUploadResult {
+  uploadId: string;
   uploadUrl: string;
   expiresIn: number;
 }
@@ -77,6 +81,16 @@ type ClientFacingKnowledgeSource = Omit<
  */
 const knowledgeSourceNotFound = (): AppError =>
   new AppError(404, "NOT_FOUND", "No knowledge source found");
+
+/**
+ * An unknown, already-consumed, or expired uploadId all resolve to the same
+ * error — there is no way (or need) for the client to distinguish them.
+ */
+const uploadNotFound = (): AppError =>
+  new AppError(404, "NOT_FOUND", "No pending upload found");
+
+const uploadVerificationFailed = (message: string): AppError =>
+  new AppError(422, "VALIDATION_ERROR", message);
 
 const toPublicKnowledgeSource = (
   source: HydratedDocument<IKnowledgeSource>,
@@ -208,9 +222,11 @@ export const knowledgeSourceService = {
    * backend-controlled storage key, and returns a presigned R2 PUT URL
    * bound to the validated mimeType. Does NOT create a KnowledgeSource
    * document — that happens only once the client has actually uploaded the
-   * object, via a separate endpoint not implemented yet. sizeBytes is
-   * validated here but not persisted anywhere yet since there is no
-   * document to store it on.
+   * object and called the completion endpoint. The storage key is never
+   * handed to the client directly: it's stashed in a short-lived
+   * PendingUpload record, and the client only ever sees that record's id
+   * (uploadId). sizeBytes is validated here but not persisted — the
+   * completion step re-derives the real size from R2 itself.
    */
   async initiateFileUpload(
     ownerId: string,
@@ -227,6 +243,79 @@ export const knowledgeSourceService = {
       UPLOAD_URL_EXPIRES_IN_SECONDS,
     );
 
-    return { uploadUrl, expiresIn: UPLOAD_URL_EXPIRES_IN_SECONDS };
+    const pendingUpload = await pendingUploadRepository.create({
+      chatbotId: chatbot._id,
+      createdBy: new Types.ObjectId(ownerId),
+      originalName: input.originalName,
+      mimeType: input.mimeType,
+      storageKey: key,
+      expiresAt: new Date(Date.now() + UPLOAD_URL_EXPIRES_IN_SECONDS * 1000),
+    });
+
+    return {
+      uploadId: pendingUpload._id.toString(),
+      uploadUrl,
+      expiresIn: UPLOAD_URL_EXPIRES_IN_SECONDS,
+    };
+  },
+
+  /**
+   * Completes a previously initiated FILE upload. The client supplies only
+   * the opaque uploadId — the storage key it maps to is resolved
+   * server-side and never accepted from the caller. The pending-upload
+   * record is atomically claimed (deleted) first, so a given uploadId can
+   * only ever be completed once, then the object's actual metadata is read
+   * straight from R2 (never trusting the client's earlier declared
+   * sizeBytes) before any KnowledgeSource document is created. The created
+   * document is always PENDING — no ingestion/processing is kicked off
+   * here.
+   */
+  async completeFileUpload(
+    ownerId: string,
+    chatbotId: string,
+    input: CompleteFileUploadBody,
+  ): Promise<ClientFacingKnowledgeSource> {
+    const chatbot = await resolveOwnedChatbot(ownerId, chatbotId);
+
+    const pendingUpload = await pendingUploadRepository.claimPendingByIdForChatbot(
+      input.uploadId,
+      chatbot._id,
+    );
+    if (!pendingUpload) {
+      throw uploadNotFound();
+    }
+
+    const metadata = await headObject(pendingUpload.storageKey);
+    if (!metadata) {
+      throw uploadVerificationFailed(
+        "Uploaded file was not found in storage",
+      );
+    }
+    if (metadata.sizeBytes <= 0) {
+      throw uploadVerificationFailed("Uploaded file is empty");
+    }
+    if (metadata.sizeBytes > MAX_FILE_SIZE_BYTES) {
+      throw uploadVerificationFailed(
+        `Uploaded file exceeds the maximum allowed size of ${MAX_FILE_SIZE_BYTES} bytes`,
+      );
+    }
+    if (metadata.contentType !== pendingUpload.mimeType) {
+      throw uploadVerificationFailed(
+        "Uploaded file's content type does not match the authorized type",
+      );
+    }
+
+    const source = await knowledgeSourceRepository.create({
+      chatbotId: chatbot._id,
+      type: "FILE",
+      name: pendingUpload.originalName,
+      createdBy: new Types.ObjectId(ownerId),
+      originalName: pendingUpload.originalName,
+      mimeType: pendingUpload.mimeType,
+      sizeBytes: metadata.sizeBytes,
+      storageKey: pendingUpload.storageKey,
+    });
+
+    return toPublicKnowledgeSource(source);
   },
 };

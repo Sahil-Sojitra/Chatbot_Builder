@@ -13,6 +13,10 @@ export interface CreateKnowledgeSourceInput {
   name: string;
   sourceUrl?: string;
   sourceText?: string;
+  originalName?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  storageKey?: string;
   createdBy: Types.ObjectId;
 }
 

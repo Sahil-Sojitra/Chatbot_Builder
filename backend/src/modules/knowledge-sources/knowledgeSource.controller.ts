@@ -4,6 +4,7 @@ import { unauthorized } from "../../shared/errors.js";
 import { sendSuccess } from "../../shared/http.js";
 import { knowledgeSourceService } from "./knowledgeSource.service.js";
 import type {
+  CompleteFileUploadBody,
   CreateKnowledgeSourceBody,
   InitiateFileUploadBody,
 } from "./knowledgeSource.validation.js";
@@ -62,5 +63,19 @@ export const knowledgeSourceController = {
     );
 
     sendSuccess(res, result, 200);
+  },
+
+  async completeUpload(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const knowledgeSource = await knowledgeSourceService.completeFileUpload(
+      req.auth.userId,
+      req.params.chatbotId as string,
+      req.body as CompleteFileUploadBody,
+    );
+
+    sendSuccess(res, { knowledgeSource }, 201);
   },
 };

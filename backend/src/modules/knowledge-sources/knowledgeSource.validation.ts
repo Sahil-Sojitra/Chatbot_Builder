@@ -111,3 +111,22 @@ export const initiateFileUploadSchema = z
   .strict();
 
 export type InitiateFileUploadBody = z.infer<typeof initiateFileUploadSchema>;
+
+/**
+ * POST /api/v1/knowledge-sources/:chatbotId/upload/complete — completes a
+ * previously initiated FILE upload. `.strict()` rejects storageKey,
+ * chatbotId, status, createdBy, sizeBytes, mimeType, originalName, and every
+ * other server-managed field: the client supplies nothing but the opaque
+ * upload identifier handed back by the initiate step, and the server
+ * resolves everything else from that record plus a live R2 lookup.
+ */
+export const completeFileUploadSchema = z
+  .object({
+    uploadId: z
+      .string({ message: "uploadId is required" })
+      .trim()
+      .min(1, "uploadId is required"),
+  })
+  .strict();
+
+export type CompleteFileUploadBody = z.infer<typeof completeFileUploadSchema>;

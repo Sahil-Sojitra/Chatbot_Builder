@@ -5,6 +5,7 @@ import { validateBody } from "../../middleware/validate.js";
 import { asyncHandler } from "../../shared/asyncHandler.js";
 import { knowledgeSourceController } from "./knowledgeSource.controller.js";
 import {
+  completeFileUploadSchema,
   createKnowledgeSourceSchema,
   initiateFileUploadSchema,
 } from "./knowledgeSource.validation.js";
@@ -23,6 +24,13 @@ router.post(
   requireAuth,
   validateBody(initiateFileUploadSchema),
   asyncHandler(knowledgeSourceController.initiateUpload),
+);
+
+router.post(
+  "/:chatbotId/upload/complete",
+  requireAuth,
+  validateBody(completeFileUploadSchema),
+  asyncHandler(knowledgeSourceController.completeUpload),
 );
 
 router.get(
