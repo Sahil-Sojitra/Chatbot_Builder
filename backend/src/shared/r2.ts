@@ -1,4 +1,9 @@
-import { HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { env } from "../config/env.js";
@@ -112,4 +117,30 @@ export const headObject = async (
 
     throw error;
   }
+};
+
+/**
+ * Downloads an object's full body from R2, for the ingestion worker to read
+ * a FILE knowledge source's original upload. Used only server-side, on a
+ * storageKey already verified by headObject() — never on client input.
+ */
+export const downloadObject = async (key: string): Promise<Buffer> => {
+  if (!env.R2_BUCKET_NAME) {
+    throw new AppError(
+      500,
+      "INTERNAL_ERROR",
+      "Object storage is not configured",
+    );
+  }
+
+  const result = await getR2Client().send(
+    new GetObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: key }),
+  );
+
+  if (!result.Body) {
+    throw new AppError(500, "INTERNAL_ERROR", "Downloaded object has no body");
+  }
+
+  const bytes = await result.Body.transformToByteArray();
+  return Buffer.from(bytes);
 };

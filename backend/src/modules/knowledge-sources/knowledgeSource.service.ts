@@ -7,6 +7,7 @@ import { AppError, chatbotNotFound, organizationNotFound } from "../../shared/er
 import { createPresignedUploadUrl, headObject } from "../../shared/r2.js";
 import { chatbotRepository } from "../chatbots/chatbot.repository.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
+import { enqueueIngestionJob } from "./ingestion/ingestion.queue.js";
 import { knowledgeSourceRepository } from "./knowledgeSource.repository.js";
 import type { CreateKnowledgeSourceInput as RepositoryCreateKnowledgeSourceInput } from "./knowledgeSource.repository.js";
 import { pendingUploadRepository } from "./pendingUpload.repository.js";
@@ -149,7 +150,8 @@ export const knowledgeSourceService = {
    * authenticated user's organization. Only TEXT/URL/WEBPAGE are supported
    * here — FILE creation (and storageKey generation) is not implemented
    * yet. status is never accepted from the client; it's left to the model's
-   * PENDING default.
+   * PENDING default. Enqueues a background ingestion job (best-effort — see
+   * enqueueIngestionJob) once the source is created.
    */
   async createForOwner(
     ownerId: string,
@@ -172,6 +174,7 @@ export const knowledgeSourceService = {
     }
 
     const source = await knowledgeSourceRepository.create(creationInput);
+    await enqueueIngestionJob(source._id.toString());
 
     return toPublicKnowledgeSource(source);
   },
@@ -267,8 +270,10 @@ export const knowledgeSourceService = {
    * only ever be completed once, then the object's actual metadata is read
    * straight from R2 (never trusting the client's earlier declared
    * sizeBytes) before any KnowledgeSource document is created. The created
-   * document is always PENDING — no ingestion/processing is kicked off
-   * here.
+   * document starts PENDING, and a background ingestion job is enqueued
+   * (best-effort — see enqueueIngestionJob) immediately after; actual
+   * content processing happens out of band in the ingestion worker, never
+   * inline in this request.
    */
   async completeFileUpload(
     ownerId: string,
@@ -315,6 +320,7 @@ export const knowledgeSourceService = {
       sizeBytes: metadata.sizeBytes,
       storageKey: pendingUpload.storageKey,
     });
+    await enqueueIngestionJob(source._id.toString());
 
     return toPublicKnowledgeSource(source);
   },

@@ -31,4 +31,10 @@ export const env = {
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
   R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
+
+  // Redis connection for the BullMQ ingestion queue. Optional at startup,
+  // same as R2 above — the API server and the worker both fall back to a
+  // clear runtime error only when something actually tries to use the
+  // queue, so the app keeps booting without Redis configured.
+  REDIS_URL: process.env.REDIS_URL,
 };

@@ -47,4 +47,71 @@ export const knowledgeSourceRepository = {
   ): Promise<HydratedDocument<IKnowledgeSource>[]> {
     return KnowledgeSourceModel.find({ chatbotId }).sort({ createdAt: -1 });
   },
+
+  /**
+   * Atomically claims a knowledge source for ingestion: only succeeds if it
+   * is currently PENDING, and flips it straight to PROCESSING in the same
+   * findOneAndUpdate. This is the actual concurrency guard — MongoDB
+   * resolves the filter+update atomically, so if two workers (or two
+   * duplicate jobs) race on the same id, only one findOneAndUpdate matches
+   * the still-PENDING document; the other finds nothing to update and gets
+   * null. Never rely on BullMQ job-uniqueness alone for this.
+   */
+  async claimForProcessing(
+    id: string,
+  ): Promise<HydratedDocument<IKnowledgeSource> | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return KnowledgeSourceModel.findOneAndUpdate(
+      { _id: id, status: "PENDING" },
+      { $set: { status: "PROCESSING" } },
+      { new: true },
+    );
+  },
+
+  /**
+   * Marks a knowledge source READY after successful content acquisition.
+   * Scoped to only apply from PROCESSING, so it can't clobber a source that
+   * moved on (or was disabled) by the time acquisition finished.
+   */
+  async markReady(
+    id: string,
+  ): Promise<HydratedDocument<IKnowledgeSource> | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return KnowledgeSourceModel.findOneAndUpdate(
+      { _id: id, status: "PROCESSING" },
+      { $set: { status: "READY", lastProcessedAt: new Date(), error: null } },
+      { new: true },
+    );
+  },
+
+  /**
+   * Marks a knowledge source FAILED after a content-acquisition error.
+   * Scoped to only apply from PROCESSING, for the same reason as
+   * markReady(). The stored error is an internal diagnostic message, never
+   * surfaced verbatim to API responses.
+   */
+  async markFailed(
+    id: string,
+    errorMessage: string,
+  ): Promise<HydratedDocument<IKnowledgeSource> | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return KnowledgeSourceModel.findOneAndUpdate(
+      { _id: id, status: "PROCESSING" },
+      {
+        $set: {
+          status: "FAILED",
+          lastProcessedAt: new Date(),
+          error: errorMessage,
+        },
+      },
+      { new: true },
+    );
+  },
+
 };
