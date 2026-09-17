@@ -36,6 +36,7 @@ const getR2Client = (): S3Client => {
     region: "auto",
     endpoint:
       env.R2_ENDPOINT ?? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    forcePathStyle: Boolean(env.R2_ENDPOINT),
     credentials: {
       accessKeyId: R2_ACCESS_KEY_ID,
       secretAccessKey: R2_SECRET_ACCESS_KEY,
