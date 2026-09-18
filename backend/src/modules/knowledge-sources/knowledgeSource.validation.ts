@@ -99,14 +99,6 @@ export const initiateFileUploadSchema = z
     mimeType: z.enum(SUPPORTED_FILE_MIME_TYPES, {
       message: "mimeType must be one of the supported file types",
     }),
-    sizeBytes: z
-      .number({ message: "sizeBytes must be a number" })
-      .int("sizeBytes must be an integer")
-      .positive("sizeBytes must be positive")
-      .max(
-        MAX_FILE_SIZE_BYTES,
-        `sizeBytes must be at most ${MAX_FILE_SIZE_BYTES} bytes (25 MB)`,
-      ),
   })
   .strict();
 

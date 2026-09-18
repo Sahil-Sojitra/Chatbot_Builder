@@ -228,8 +228,8 @@ export const knowledgeSourceService = {
    * object and called the completion endpoint. The storage key is never
    * handed to the client directly: it's stashed in a short-lived
    * PendingUpload record, and the client only ever sees that record's id
-   * (uploadId). sizeBytes is validated here but not persisted — the
-   * completion step re-derives the real size from R2 itself.
+   * (uploadId). The client never supplies a size at this step — the
+   * completion step derives the real size straight from R2 itself.
    */
   async initiateFileUpload(
     ownerId: string,

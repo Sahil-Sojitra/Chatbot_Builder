@@ -48,6 +48,7 @@ const processIngestionJob = async (
       error,
     );
     await knowledgeSourceRepository.markFailed(knowledgeSourceId, message);
+    throw error;
   }
 };
 
