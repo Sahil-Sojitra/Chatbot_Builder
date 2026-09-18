@@ -58,6 +58,8 @@ export const enqueueIngestionJob = async (
         jobId: knowledgeSourceId,
         removeOnComplete: true,
         removeOnFail: 1000,
+        attempts: 3,
+        backoff: { type: "exponential", delay: 2000 },
       },
     );
   } catch (error) {
