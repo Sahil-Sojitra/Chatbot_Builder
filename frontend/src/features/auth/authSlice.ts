@@ -47,8 +47,20 @@ const authSlice = createSlice({
     setAuthLoading: (state) => {
       state.status = "loading";
     },
+    /**
+     * Call after a bare token refresh (no new user data) — e.g. the
+     * transparent refresh-and-retry that follows a 401 on an authenticated
+     * request. Only updates the token; the existing user is left as-is.
+     */
+    setAccessToken: (state, action: PayloadAction<string>) => {
+      state.accessToken = action.payload;
+      if (state.user) {
+        state.status = "authenticated";
+      }
+    },
   },
 });
 
-export const { setCredentials, clearAuth, setAuthLoading } = authSlice.actions;
+export const { setCredentials, clearAuth, setAuthLoading, setAccessToken } =
+  authSlice.actions;
 export default authSlice.reducer;

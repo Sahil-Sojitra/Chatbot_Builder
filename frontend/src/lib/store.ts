@@ -18,3 +18,24 @@ export const makeStore = () =>
 export type AppStore = ReturnType<typeof makeStore>;
 export type RootState = ReturnType<AppStore["getState"]>;
 export type AppDispatch = AppStore["dispatch"];
+
+/**
+ * The API layer (src/lib/api/**) is plain TS with no access to React
+ * context, so it needs an imperative way to read the current access token
+ * and dispatch auth actions outside of components. `StoreProvider` registers
+ * the one store instance it creates here; nothing else should call this.
+ */
+let browserStore: AppStore | undefined;
+
+export const registerStore = (store: AppStore): void => {
+  browserStore = store;
+};
+
+export const getStore = (): AppStore => {
+  if (!browserStore) {
+    throw new Error(
+      "Redux store accessed before StoreProvider mounted. This API can only be used client-side, after the app has rendered.",
+    );
+  }
+  return browserStore;
+};
