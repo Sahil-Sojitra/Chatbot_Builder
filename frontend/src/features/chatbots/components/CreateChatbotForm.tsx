@@ -13,6 +13,7 @@ import {
   CardTitle,
   Input,
   Label,
+  Select,
   Textarea,
 } from "@/components/ui";
 import { ApiRequestError } from "@/lib/api/client";
@@ -23,8 +24,6 @@ interface FormFields {
   name: string;
   description: string;
   systemPrompt: string;
-  provider: string;
-  model: string;
   temperature: string;
   maxTokens: string;
 }
@@ -33,8 +32,6 @@ interface FieldErrors {
   name?: string;
   description?: string;
   systemPrompt?: string;
-  provider?: string;
-  model?: string;
   temperature?: string;
   maxTokens?: string;
 }
@@ -42,8 +39,6 @@ interface FieldErrors {
 const NAME_MAX_LENGTH = 120;
 const DESCRIPTION_MAX_LENGTH = 500;
 const SYSTEM_PROMPT_MAX_LENGTH = 8000;
-const PROVIDER_MAX_LENGTH = 60;
-const MODEL_MAX_LENGTH = 120;
 const TEMPERATURE_MIN = 0;
 const TEMPERATURE_MAX = 2;
 const MAX_TOKENS_MAX = 32000;
@@ -65,14 +60,6 @@ function validate(fields: FormFields): FieldErrors {
 
   if (fields.systemPrompt.trim().length > SYSTEM_PROMPT_MAX_LENGTH) {
     errors.systemPrompt = `System prompt must be at most ${SYSTEM_PROMPT_MAX_LENGTH} characters.`;
-  }
-
-  if (fields.provider.trim().length > PROVIDER_MAX_LENGTH) {
-    errors.provider = `Provider must be at most ${PROVIDER_MAX_LENGTH} characters.`;
-  }
-
-  if (fields.model.trim().length > MODEL_MAX_LENGTH) {
-    errors.model = `Model must be at most ${MODEL_MAX_LENGTH} characters.`;
   }
 
   if (fields.temperature.trim() !== "") {
@@ -98,8 +85,6 @@ export function CreateChatbotForm() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
-  const [provider, setProvider] = useState("");
-  const [model, setModel] = useState("");
   const [temperature, setTemperature] = useState("");
   const [maxTokens, setMaxTokens] = useState("");
 
@@ -110,15 +95,7 @@ export function CreateChatbotForm() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const errors = validate({
-      name,
-      description,
-      systemPrompt,
-      provider,
-      model,
-      temperature,
-      maxTokens,
-    });
+    const errors = validate({ name, description, systemPrompt, temperature, maxTokens });
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       return;
@@ -134,18 +111,14 @@ export function CreateChatbotForm() {
     if (systemPrompt.trim()) {
       payload.systemPrompt = systemPrompt.trim();
     }
-    if (provider.trim()) {
-      payload.provider = provider.trim();
-    }
-    if (model.trim()) {
-      payload.model = model.trim();
-    }
     if (temperature.trim() !== "") {
       payload.temperature = Number(temperature);
     }
     if (maxTokens.trim() !== "") {
       payload.maxTokens = Number(maxTokens);
     }
+    // provider/model are intentionally never sent — see the Select fields
+    // below and their explanatory note.
 
     try {
       await chatbotsApi.create(payload);
@@ -163,8 +136,7 @@ export function CreateChatbotForm() {
       <CardHeader>
         <CardTitle>Create a chatbot</CardTitle>
         <CardDescription>
-          Set up the basics now — you can change these later. Provider and model aren&apos;t
-          connected to a live AI integration yet.
+          Set up the basics now — you can change these later.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -246,40 +218,24 @@ export function CreateChatbotForm() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="chatbot-provider">Provider</Label>
-              <Input
-                id="chatbot-provider"
-                value={provider}
-                onChange={(event) => setProvider(event.target.value)}
-                disabled={isSubmitting}
-                placeholder="e.g. openai"
-                aria-invalid={Boolean(fieldErrors.provider)}
-                aria-describedby={fieldErrors.provider ? "chatbot-provider-error" : undefined}
-              />
-              {fieldErrors.provider ? (
-                <p id="chatbot-provider-error" role="alert" className="text-sm text-destructive">
-                  {fieldErrors.provider}
-                </p>
-              ) : null}
+              <Select id="chatbot-provider" disabled defaultValue="">
+                <option value="">Not connected yet</option>
+              </Select>
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="chatbot-model">Model</Label>
-              <Input
-                id="chatbot-model"
-                value={model}
-                onChange={(event) => setModel(event.target.value)}
-                disabled={isSubmitting}
-                placeholder="e.g. gpt-4o-mini"
-                aria-invalid={Boolean(fieldErrors.model)}
-                aria-describedby={fieldErrors.model ? "chatbot-model-error" : undefined}
-              />
-              {fieldErrors.model ? (
-                <p id="chatbot-model-error" role="alert" className="text-sm text-destructive">
-                  {fieldErrors.model}
-                </p>
-              ) : null}
+              <Select id="chatbot-model" disabled defaultValue="">
+                <option value="">Select a provider first</option>
+              </Select>
             </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            No AI provider is connected yet, so provider and model aren&apos;t selectable — the
+            chatbot will still be created, ready to configure once a real integration exists.
+          </p>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="chatbot-temperature">Temperature</Label>
               <Input

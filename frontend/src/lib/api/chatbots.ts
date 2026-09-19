@@ -35,4 +35,7 @@ export const chatbotsApi = {
     }),
 
   list: (): Promise<ChatbotListResponse> => apiRequest<ChatbotListResponse>("/api/v1/chatbots"),
+
+  get: (id: string): Promise<ChatbotResponse> =>
+    apiRequest<ChatbotResponse>(`/api/v1/chatbots/${id}`),
 };

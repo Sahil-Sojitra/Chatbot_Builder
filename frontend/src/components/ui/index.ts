@@ -4,5 +4,6 @@ export * from "./card";
 export * from "./EmptyState";
 export * from "./input";
 export * from "./label";
+export * from "./select";
 export * from "./Spinner";
 export * from "./textarea";
