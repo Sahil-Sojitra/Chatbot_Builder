@@ -16,8 +16,15 @@ export interface AuthState {
   accessToken: string | null;
 }
 
+/**
+ * Starts at "loading", not "idle" — this app always attempts session
+ * hydration on startup (see components/AuthGate.tsx), so there is no real
+ * steady-state "idle" moment for the app's auth state. Starting at "loading"
+ * means a consumer never has to treat "idle" as a third kind of "not sure
+ * yet" state; only "loading" means that.
+ */
 const initialState: AuthState = {
-  status: "idle",
+  status: "loading",
   user: null,
   accessToken: null,
 };
