@@ -3,35 +3,51 @@
 import {
   Button,
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  EmptyState,
+  Spinner,
 } from "@/components/ui";
-import { useLogout } from "@/features/auth/useLogout";
+import { OrganizationEmptyState } from "@/features/organizations/components/OrganizationEmptyState";
+import { useOrganization } from "@/features/organizations/useOrganization";
 import { useAppSelector } from "@/lib/hooks";
 
 export default function DashboardPage() {
   const user = useAppSelector((state) => state.auth.user);
-  const { logout, isLoggingOut } = useLogout();
+  const { status, organization, error, refetch } = useOrganization();
+
+  if (status === "idle" || status === "loading") {
+    return (
+      <div className="flex flex-1 items-center justify-center py-16">
+        <Spinner label="Loading your organization…" />
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <EmptyState
+        title="Couldn't load your organization"
+        description={error ?? "Something went wrong. Please try again."}
+        action={<Button onClick={() => void refetch()}>Try again</Button>}
+      />
+    );
+  }
+
+  if (status === "none") {
+    return <OrganizationEmptyState />;
+  }
 
   return (
     <Card className="max-w-md">
       <CardHeader>
-        <CardTitle>{user ? `Welcome, ${user.name}` : "Dashboard"}</CardTitle>
+        <CardTitle>{organization?.name}</CardTitle>
         <CardDescription>
-          {user ? user.email : "Chatbot management will appear here once the dashboard is built."}
+          Welcome{user ? `, ${user.name}` : ""}. Chatbot management will appear here once the
+          dashboard is built.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Button
-          variant="secondary"
-          disabled={isLoggingOut}
-          onClick={() => void logout()}
-        >
-          {isLoggingOut ? "Logging out…" : "Log out"}
-        </Button>
-      </CardContent>
     </Card>
   );
 }

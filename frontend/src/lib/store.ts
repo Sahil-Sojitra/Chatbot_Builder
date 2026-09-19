@@ -1,17 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 
 import authReducer from "@/features/auth/authSlice";
+import organizationReducer from "@/features/organizations/organizationSlice";
 
-/**
- * One store instance per request/tab, created lazily by the Provider
- * (see components/StoreProvider.tsx) rather than as a module-level
- * singleton — a singleton would leak state across requests in SSR and
- * across users on the server.
- */
 export const makeStore = () =>
   configureStore({
     reducer: {
       auth: authReducer,
+      organization: organizationReducer,
     },
   });
 
@@ -20,22 +16,26 @@ export type RootState = ReturnType<AppStore["getState"]>;
 export type AppDispatch = AppStore["dispatch"];
 
 /**
- * The API layer (src/lib/api/**) is plain TS with no access to React
- * context, so it needs an imperative way to read the current access token
- * and dispatch auth actions outside of components. `StoreProvider` registers
- * the one store instance it creates here; nothing else should call this.
+ * A single store instance, created exactly once at module evaluation time —
+ * deliberately NOT inside a React component/hook.
+ *
+ * This app never dispatches real user-specific data during server
+ * rendering (Redux state is always the same neutral default on the server;
+ * all real population happens client-side, after hydration, from "use
+ * client" effects), so one shared instance carries no cross-request
+ * data-leak risk here.
+ *
+ * This also fixes a real bug: creating the store inside `StoreProvider`'s
+ * `useState(() => makeStore())` meant React Strict Mode's dev-only double
+ * invocation of that lazy initializer silently created TWO store instances.
+ * Whichever one ended up wired into React's <Provider> (what components
+ * like AuthGate actually subscribe to) was not reliably the same one a
+ * "last registered wins" imperative getter returned — so a successful
+ * `hydrateSession()` could dispatch to a store nothing was listening to,
+ * leaving the UI stuck. A single module-level instance makes that
+ * divergence impossible: there is only ever one store, period.
  */
-let browserStore: AppStore | undefined;
+export const store = makeStore();
 
-export const registerStore = (store: AppStore): void => {
-  browserStore = store;
-};
-
-export const getStore = (): AppStore => {
-  if (!browserStore) {
-    throw new Error(
-      "Redux store accessed before StoreProvider mounted. This API can only be used client-side, after the app has rendered.",
-    );
-  }
-  return browserStore;
-};
+/** Lets the API layer (src/lib/api/**) read/dispatch outside of React, where hooks aren't available. */
+export const getStore = (): AppStore => store;
