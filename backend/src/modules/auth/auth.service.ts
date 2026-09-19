@@ -26,7 +26,6 @@ import type {
   LoginResult,
   MeResult,
   PublicUser,
-  RefreshInput,
   RefreshResult,
   RegisterInput,
   RegisterResult,
@@ -91,13 +90,12 @@ export const authService = {
   },
 
   /**
-   * Exchange a still-valid refresh token for a fresh access token. The
-   * refresh token is a stateless, signed credential — no server-side
-   * session record is looked up or touched.
+   * Exchange a still-valid refresh token (read from the HttpOnly cookie by
+   * the controller) for a fresh access token. The refresh token is a
+   * stateless, signed credential — no server-side session record is looked
+   * up or touched.
    */
-  async refresh(input: RefreshInput): Promise<RefreshResult> {
-    const { refreshToken } = input;
-
+  async refresh(refreshToken: string): Promise<RefreshResult> {
     let payload: { sub: string };
     try {
       payload = verifyRefreshToken(refreshToken);

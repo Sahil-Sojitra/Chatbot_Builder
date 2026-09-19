@@ -23,6 +23,12 @@ export const env = {
   JWT_REFRESH_SECRET: requiredEnv('JWT_REFRESH_SECRET'),
   REFRESH_TOKEN_TTL_DAYS: Number(process.env.REFRESH_TOKEN_TTL_DAYS ?? 30),
 
+  // The single origin allowed to make credentialed (cookie-bearing) requests
+  // to this API — the frontend's own origin. Defaults to the Next.js dev
+  // server so local development works without extra setup; must be set to
+  // the real deployed frontend origin in production.
+  FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000',
+
   // R2 (S3-compatible) object storage. Optional at startup — nothing else in
   // the app depends on these yet, so a missing value only surfaces as an
   // error when a knowledge-source file-upload request is actually made,

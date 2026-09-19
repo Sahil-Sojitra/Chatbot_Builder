@@ -1,5 +1,8 @@
+import cookieParser from "cookie-parser";
+import cors from "cors";
 import express from "express";
 
+import { env } from "./config/env.js";
 import { requireAuth } from "./middleware/auth.middleware.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware.js";
 import { validateBody } from "./middleware/validate.js";
@@ -16,7 +19,17 @@ import { asyncHandler } from "./shared/asyncHandler.js";
 
 const app = express();
 
+// A single explicit allowed origin (never `*`) so the browser will accept
+// `Access-Control-Allow-Credentials: true` — required for the frontend to
+// send/receive the HttpOnly refresh-token cookie cross-origin.
+app.use(
+  cors({
+    origin: env.FRONTEND_ORIGIN,
+    credentials: true,
+  }),
+);
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (_req, res) => {
   res.json({

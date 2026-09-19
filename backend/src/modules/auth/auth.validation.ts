@@ -27,12 +27,6 @@ export const loginSchema = z.object({
   password: z.string({ message: "password is required" }).min(1, "password is required"),
 });
 
-export const refreshSchema = z.object({
-  refreshToken: z
-    .string({ message: "refreshToken is required" })
-    .min(1, "refreshToken is required"),
-});
-
 /**
  * PATCH /api/v1/me — only genuinely user-editable profile fields. `.strict()`
  * rejects any other key outright (protected fields like status, email,

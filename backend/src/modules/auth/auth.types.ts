@@ -11,10 +11,6 @@ export interface LoginInput {
   password: string;
 }
 
-export interface RefreshInput {
-  refreshToken: string;
-}
-
 export interface UpdateMeInput {
   name?: string;
   avatarUrl?: string;
