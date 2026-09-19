@@ -1,48 +1,40 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 
 import { Spinner } from "@/components/ui";
-import { hydrateSession } from "@/lib/api/auth";
 import { useAppSelector } from "@/lib/hooks";
 
 /**
- * Module-level (not component state) so it survives React Strict Mode's
- * intentional dev-only double-invoke of effects — the second invocation
- * sees it already `true` and skips, so hydrateSession() runs exactly once
- * per real app load, not once per effect invocation.
- */
-let hydrationStarted = false;
-
-/**
- * Triggers session hydration once on client mount and withholds rendering
- * the app until the resulting auth status is known. This is what prevents
- * any route (public or protected) from making an authentication decision —
- * or rendering auth-dependent UI — while hydration is still in flight: no
- * page's code even runs until `status` has left "loading"/"idle".
- *
- * Runs only on the client: the hydration call lives inside `useEffect`,
- * which React never executes during SSR or RSC rendering.
+ * Guards the dashboard route group: blocks rendering while auth status is
+ * still being established, renders the dashboard once `authenticated`, and
+ * redirects to `/login` once `unauthenticated`. Session hydration itself is
+ * triggered globally by `AuthHydrator` (mounted in the root layout) — this
+ * component only reacts to the resulting Redux state, it never calls
+ * `hydrateSession()` itself.
  */
 export function AuthGate({ children }: { children: ReactNode }) {
   const status = useAppSelector((state) => state.auth.status);
+  const router = useRouter();
 
   useEffect(() => {
-    if (hydrationStarted) {
-      return;
+    if (status === "unauthenticated") {
+      router.replace("/login");
     }
-    hydrationStarted = true;
-    void hydrateSession();
-  }, []);
+  }, [status, router]);
 
-  if (status === "loading" || status === "idle") {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <Spinner label="Loading…" />
-      </div>
-    );
+  if (status === "authenticated") {
+    return children;
   }
 
-  return children;
+  // "loading" / "idle" (still determining) and "unauthenticated" (redirect
+  // is in flight) all render the same neutral placeholder — dashboard
+  // content must never flash before we're certain the user belongs here.
+  return (
+    <div className="flex flex-1 items-center justify-center">
+      <Spinner label={status === "unauthenticated" ? "Redirecting…" : "Loading…"} />
+    </div>
+  );
 }
