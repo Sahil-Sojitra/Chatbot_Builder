@@ -1,6 +1,5 @@
 import { Router } from "express";
 
-import { requireAuth } from "../../middleware/auth.middleware.js";
 import { validateBody } from "../../middleware/validate.js";
 import { asyncHandler } from "../../shared/asyncHandler.js";
 import { authController } from "./auth.controller.js";
@@ -23,6 +22,9 @@ router.post(
 // Public: the refresh token cookie itself is the credential (the access token may be expired).
 router.post("/refresh", asyncHandler(authController.refresh));
 
-router.post("/logout", requireAuth, asyncHandler(authController.logout));
+// Public: logout only clears the refresh-token cookie — it never required a
+// valid access token to do that, and must succeed even if the caller's
+// access token is missing, expired, or was never issued (idempotent).
+router.post("/logout", asyncHandler(authController.logout));
 
 export default router;

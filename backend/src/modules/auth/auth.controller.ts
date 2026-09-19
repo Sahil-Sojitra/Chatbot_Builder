@@ -35,13 +35,12 @@ export const authController = {
     sendSuccess(res, result, 200);
   },
 
-  async logout(req: Request, res: Response): Promise<void> {
-    if (!req.auth) {
-      throw unauthorized();
-    }
-    // No server-side session to invalidate — the client discards its access
-    // token and we clear the refresh-token cookie. The short-lived access
-    // JWT expires naturally.
+  async logout(_req: Request, res: Response): Promise<void> {
+    // No access token is required here, and no server-side session exists
+    // to invalidate — this only ever clears the refresh-token cookie, which
+    // needs no proof of identity beyond possessing it. Always succeeds, even
+    // with no access token and even with no refresh cookie present, so the
+    // client can safely call this unconditionally on logout.
     clearRefreshTokenCookie(res);
     sendSuccess(res, { message: "Logged out successfully" }, 200);
   },
