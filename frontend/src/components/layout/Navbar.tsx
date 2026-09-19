@@ -7,7 +7,10 @@ export function Navbar() {
     <header className="sticky top-0 z-10 border-b border-border bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
+          <span
+            aria-hidden="true"
+            className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground"
+          >
             C
           </span>
           <span className="text-sm font-semibold text-foreground">
@@ -15,7 +18,7 @@ export function Navbar() {
           </span>
         </Link>
 
-        <nav className="flex items-center gap-2">
+        <nav aria-label="Primary" className="flex items-center gap-2">
           <Link
             href="/login"
             className={buttonVariants({ variant: "ghost", size: "sm" })}
