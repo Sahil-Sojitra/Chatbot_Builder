@@ -1,4 +1,4 @@
-import { downloadObject } from "../../../shared/r2.js";
+import { downloadObject } from "../../../shared/storage.js";
 import type { IKnowledgeSource } from "../knowledgeSource.model.js";
 
 /**

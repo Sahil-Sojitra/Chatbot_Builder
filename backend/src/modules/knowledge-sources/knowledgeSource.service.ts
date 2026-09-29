@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
 import { AppError, chatbotNotFound, organizationNotFound } from "../../shared/errors.js";
-import { createPresignedUploadUrl, headObject } from "../../shared/r2.js";
+import { createPresignedUploadUrl, headObject } from "../../shared/storage.js";
 import { chatbotRepository } from "../chatbots/chatbot.repository.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
 import { enqueueIngestionJob } from "./ingestion/ingestion.queue.js";
