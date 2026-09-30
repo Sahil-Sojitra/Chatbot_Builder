@@ -26,13 +26,24 @@ export interface KnowledgeSourceListResponse {
   knowledgeSources: KnowledgeSource[];
 }
 
+export interface InitiateFileUploadInput {
+  originalName: string;
+  mimeType: string;
+}
+
+export interface InitiateFileUploadResponse {
+  uploadId: string;
+  uploadUrl: string;
+  expiresIn: number;
+}
+
+export interface CompleteFileUploadInput {
+  uploadId: string;
+}
+
 /**
  * Thin wrapper over the backend's real, already-implemented knowledge-source
- * endpoints (backend/src/modules/knowledge-sources) — no new endpoints, no
- * mocking. The FILE upload endpoints (POST .../upload and
- * .../upload/complete) exist on the backend and are real, but are
- * deliberately not called from anywhere in the frontend yet — see
- * features/knowledge-sources/components/AddKnowledgeForm.tsx for why.
+ * endpoints (backend/src/modules/knowledge-sources).
  */
 export const knowledgeSourcesApi = {
   create: (
@@ -43,6 +54,48 @@ export const knowledgeSourcesApi = {
       method: "POST",
       body: input,
     }),
+
+  initiateUpload: (
+    chatbotId: string,
+    input: InitiateFileUploadInput,
+  ): Promise<InitiateFileUploadResponse> =>
+    apiRequest<InitiateFileUploadResponse>(
+      `/api/v1/knowledge-sources/${chatbotId}/upload`,
+      {
+        method: "POST",
+        body: input,
+      },
+    ),
+
+  uploadToStorage: async (
+    uploadUrl: string,
+    file: File | Blob,
+    mimeType: string,
+  ): Promise<void> => {
+    const response = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": mimeType,
+      },
+      body: file,
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to upload file to storage. Please try again.");
+    }
+  },
+
+  completeUpload: (
+    chatbotId: string,
+    input: CompleteFileUploadInput,
+  ): Promise<KnowledgeSourceResponse> =>
+    apiRequest<KnowledgeSourceResponse>(
+      `/api/v1/knowledge-sources/${chatbotId}/upload/complete`,
+      {
+        method: "POST",
+        body: input,
+      },
+    ),
 
   list: (chatbotId: string): Promise<KnowledgeSourceListResponse> =>
     apiRequest<KnowledgeSourceListResponse>(`/api/v1/knowledge-sources/${chatbotId}`),

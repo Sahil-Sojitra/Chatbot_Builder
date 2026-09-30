@@ -33,6 +33,8 @@ const getStorageClient = (): S3Client => {
       accessKeyId: S3_ACCESS_KEY_ID,
       secretAccessKey: S3_SECRET_ACCESS_KEY,
     },
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
   });
 
   return cachedClient;
