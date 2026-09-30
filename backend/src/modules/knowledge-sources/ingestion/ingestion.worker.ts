@@ -39,7 +39,7 @@ const processIngestionJob = async (
     console.log(
       `[ingestion] Acquired ${text.length} characters for knowledge source ${knowledgeSourceId}`,
     );
-    await knowledgeSourceRepository.markReady(knowledgeSourceId);
+    await knowledgeSourceRepository.markReady(knowledgeSourceId, text);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown ingestion error";

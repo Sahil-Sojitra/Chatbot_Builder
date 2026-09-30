@@ -29,18 +29,12 @@ export const env = {
   // the real deployed frontend origin in production.
   FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000',
 
-  // R2 (S3-compatible) object storage. Optional at startup — nothing else in
-  // the app depends on these yet, so a missing value only surfaces as an
-  // error when a knowledge-source file-upload request is actually made,
-  // rather than blocking the whole server from starting.
-  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
-  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
-  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
-  R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
-  // Optional override for the S3 client endpoint — lets the same client talk
-  // to a local S3-compatible server (e.g. MinIO) instead of Cloudflare R2.
-  // Falls back to the R2_ACCOUNT_ID-derived endpoint when unset.
-  R2_ENDPOINT: process.env.R2_ENDPOINT,
+  S3_ENDPOINT: process.env.S3_ENDPOINT,
+  S3_REGION: process.env.S3_REGION,
+  S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
+  S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
+  S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
+  S3_FORCE_PATH_STYLE: process.env.S3_FORCE_PATH_STYLE === 'true',
 
   // Redis connection for the BullMQ ingestion queue. Optional at startup,
   // same as R2 above — the API server and the worker both fall back to a

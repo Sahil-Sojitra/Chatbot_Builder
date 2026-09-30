@@ -77,13 +77,21 @@ export const knowledgeSourceRepository = {
    */
   async markReady(
     id: string,
+    extractedText?: string,
   ): Promise<HydratedDocument<IKnowledgeSource> | null> {
     if (!Types.ObjectId.isValid(id)) {
       return null;
     }
     return KnowledgeSourceModel.findOneAndUpdate(
       { _id: id, status: "PROCESSING" },
-      { $set: { status: "READY", lastProcessedAt: new Date(), error: null } },
+      {
+        $set: {
+          status: "READY",
+          lastProcessedAt: new Date(),
+          error: null,
+          ...(extractedText !== undefined ? { sourceText: extractedText } : {}),
+        },
+      },
       { new: true },
     );
   },

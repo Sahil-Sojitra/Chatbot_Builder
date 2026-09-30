@@ -4,7 +4,7 @@ import { env } from "../config/env.js";
 import { AppError } from "./errors.js";
 
 /**
- * Lazily constructed, mirroring the R2 client in ./r2.ts — nothing connects
+ * Lazily constructed, mirroring the storage client in ./storage.ts — nothing connects
  * to Redis at module load, so the server (and, separately, the ingestion
  * worker) can boot with REDIS_URL unset and only fail when something
  * actually tries to use the queue. `maxRetriesPerRequest: null` is required
