@@ -61,7 +61,16 @@ export const authService = {
   async login(input: LoginInput): Promise<LoginResult> {
     const { email, password } = input;
 
+    console.log("[LOGIN DEBUG]", {
+      email,
+      emailLength: email.length,
+      passwordLength: password.length,
+    });
+
     const user = await authRepository.findByEmail(email);
+
+    console.log("[LOGIN DEBUG] userFound:", !!user);
+
     if (!user) {
       throw invalidCredentials();
     }
