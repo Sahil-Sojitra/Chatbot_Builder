@@ -2,7 +2,7 @@ import { clearAuth, setAuthLoading, setCredentials } from "@/features/auth/authS
 import { getStore } from "@/lib/store";
 import type { AuthUser } from "@/types/auth";
 
-import { apiRequest, rawRequest } from "./client";
+import { apiRequest, performRefresh, rawRequest } from "./client";
 
 export interface LoginInput {
   email: string;
@@ -68,27 +68,48 @@ export const authApi = {
  * unauthenticated on failure. Does not redirect; callers decide what to do
  * with the resulting state.
  *
- * Uses `rawRequest` for both steps rather than `authApi.me()`/`apiRequest`:
- * this is a one-shot check, so it deliberately doesn't participate in the
- * general 401-refresh-retry loop (which would be redundant here — we just
- * refreshed) and manually attaches the freshly-obtained token instead.
+ * Uses `performRefresh()` to share the in-flight deduplication promise with
+ * any concurrent API requests, and guards against clobbering newer user actions
+ * (such as a fast login or logout during hydration).
  */
 export async function hydrateSession(): Promise<void> {
   const store = getStore();
+
+  if (store.getState().auth.status === "authenticated") {
+    return;
+  }
+
   store.dispatch(setAuthLoading());
 
   try {
-    const { accessToken } = await rawRequest<RefreshResponse>(
-      "/api/v1/auth/refresh",
-      { method: "POST" },
-    );
+    const accessToken = await performRefresh();
+    if (!accessToken) {
+      return;
+    }
+
+    const currentState = store.getState().auth;
+    if (
+      currentState.status === "unauthenticated" ||
+      (currentState.status === "authenticated" && currentState.user)
+    ) {
+      return;
+    }
 
     const { user } = await rawRequest<MeResponse>("/api/v1/me", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
-    store.dispatch(setCredentials({ user, accessToken }));
+    const finalState = store.getState().auth;
+    if (
+      finalState.status !== "unauthenticated" &&
+      (finalState.accessToken === accessToken || finalState.status === "loading")
+    ) {
+      store.dispatch(setCredentials({ user, accessToken }));
+    }
   } catch {
-    store.dispatch(clearAuth());
+    const stateAfterError = store.getState().auth;
+    if (stateAfterError.status === "loading") {
+      store.dispatch(clearAuth());
+    }
   }
 }

@@ -72,18 +72,37 @@ export async function rawRequest<T>(
  */
 let refreshPromise: Promise<string | null> | null = null;
 
-const performRefresh = (): Promise<string | null> => {
+export const performRefresh = (): Promise<string | null> => {
   if (!refreshPromise) {
     refreshPromise = (async () => {
+      const stateBefore = getStore().getState().auth;
+      const tokenBeforeRefresh = stateBefore.accessToken;
+      const statusBeforeRefresh = stateBefore.status;
+
       try {
         const { accessToken } = await rawRequest<{ accessToken: string }>(
           "/api/v1/auth/refresh",
           { method: "POST" },
         );
-        getStore().dispatch(setAccessToken(accessToken));
+
+        const currentState = getStore().getState().auth;
+        if (
+          currentState.status !== "unauthenticated" &&
+          currentState.accessToken === tokenBeforeRefresh
+        ) {
+          getStore().dispatch(setAccessToken(accessToken));
+        }
+
         return accessToken;
       } catch {
-        getStore().dispatch(clearAuth());
+        const currentState = getStore().getState().auth;
+        if (
+          currentState.accessToken === tokenBeforeRefresh &&
+          currentState.status === statusBeforeRefresh
+        ) {
+          getStore().dispatch(clearAuth());
+        }
+
         return null;
       } finally {
         refreshPromise = null;
