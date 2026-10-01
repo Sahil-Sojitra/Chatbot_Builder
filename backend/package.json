@@ -9,7 +9,8 @@
     "clean": "node -e \"import('node:fs').then(({ rmSync }) => rmSync('dist', { recursive: true, force: true }))\"",
     "build": "npm run clean && tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "start:worker": "node dist/worker.js"
+    "start:worker": "node dist/worker.js",
+    "set-cors": "tsx src/scripts/setBucketCors.ts"
   },
   "keywords": [],
   "author": "",

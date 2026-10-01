@@ -1,6 +1,33 @@
-import { env } from "../src/config/env.js";
+import { env } from "../config/env.js";
 
-async function updateB2Cors() {
+interface B2AuthResponse {
+  apiUrl?: string;
+  authorizationToken: string;
+  accountId: string;
+  apiInfo?: {
+    storageApi?: {
+      apiUrl?: string;
+    };
+  };
+}
+
+interface B2Bucket {
+  bucketId: string;
+  bucketName: string;
+  corsRules: unknown[];
+}
+
+interface B2ListBucketsResponse {
+  buckets: B2Bucket[];
+}
+
+interface B2UpdateBucketResponse {
+  bucketId: string;
+  bucketName: string;
+  corsRules: unknown[];
+}
+
+async function updateB2Cors(): Promise<void> {
   const { S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME } = env;
 
   if (!S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY || !S3_BUCKET_NAME) {
@@ -9,18 +36,31 @@ async function updateB2Cors() {
   }
 
   console.log("1. Authorizing with B2 Native API...");
-  const authHeader = "Basic " + Buffer.from(`${S3_ACCESS_KEY_ID}:${S3_SECRET_ACCESS_KEY}`).toString("base64");
-  const authRes = await fetch("https://api.backblazeb2.com/b2api/v3/b2_authorize_account", {
-    headers: { Authorization: authHeader },
-  });
+  const authHeader =
+    "Basic " +
+    Buffer.from(`${S3_ACCESS_KEY_ID}:${S3_SECRET_ACCESS_KEY}`).toString(
+      "base64",
+    );
+  const authRes = await fetch(
+    "https://api.backblazeb2.com/b2api/v3/b2_authorize_account",
+    {
+      headers: { Authorization: authHeader },
+    },
+  );
 
   if (!authRes.ok) {
     const errorText = await authRes.text();
-    throw new Error(`b2_authorize_account failed (${authRes.status}): ${errorText}`);
+    throw new Error(
+      `b2_authorize_account failed (${authRes.status}): ${errorText}`,
+    );
   }
 
-  const authData = (await authRes.json()) as any;
+  const authData = (await authRes.json()) as B2AuthResponse;
   const apiUrl = authData.apiInfo?.storageApi?.apiUrl ?? authData.apiUrl;
+  if (!apiUrl) {
+    throw new Error("Could not determine B2 storage API URL from authorization response");
+  }
+
   const authToken = authData.authorizationToken;
   const accountId = authData.accountId;
 
@@ -34,28 +74,31 @@ async function updateB2Cors() {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      accountId: accountId,
+      accountId,
       bucketName: S3_BUCKET_NAME,
     }),
   });
 
   if (!listBucketsRes.ok) {
     const errorText = await listBucketsRes.text();
-    throw new Error(`b2_list_buckets failed (${listBucketsRes.status}): ${errorText}`);
+    throw new Error(
+      `b2_list_buckets failed (${listBucketsRes.status}): ${errorText}`,
+    );
   }
 
-  const listBucketsData = (await listBucketsRes.json()) as {
-    buckets: Array<{ bucketId: string; bucketName: string; corsRules: unknown[] }>;
-  };
-
-  const bucket = listBucketsData.buckets.find((b) => b.bucketName === S3_BUCKET_NAME);
+  const listBucketsData = (await listBucketsRes.json()) as B2ListBucketsResponse;
+  const bucket = listBucketsData.buckets.find(
+    (b) => b.bucketName === S3_BUCKET_NAME,
+  );
   if (!bucket) {
     throw new Error(`Bucket "${S3_BUCKET_NAME}" not found in account.`);
   }
 
   console.log("✅ Found bucketId:", bucket.bucketId);
 
-  console.log("3. Updating CORS rules with s3_put, s3_get, s3_head, and wildcard headers...");
+  console.log(
+    "3. Updating CORS rules with s3_put, s3_get, s3_head, and wildcard headers...",
+  );
   const updateRes = await fetch(`${apiUrl}/b2api/v3/b2_update_bucket`, {
     method: "POST",
     headers: {
@@ -63,7 +106,7 @@ async function updateB2Cors() {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      accountId: accountId,
+      accountId,
       bucketId: bucket.bucketId,
       corsRules: [
         {
@@ -94,12 +137,17 @@ async function updateB2Cors() {
 
   if (!updateRes.ok) {
     const errorText = await updateRes.text();
-    throw new Error(`b2_update_bucket failed (${updateRes.status}): ${errorText}`);
+    throw new Error(
+      `b2_update_bucket failed (${updateRes.status}): ${errorText}`,
+    );
   }
 
-  const updatedBucket = (await updateRes.json()) as any;
+  const updatedBucket = (await updateRes.json()) as B2UpdateBucketResponse;
   console.log("🎉 B2 CORS rules successfully updated!");
-  console.log("Updated CORS Rules:", JSON.stringify(updatedBucket.corsRules, null, 2));
+  console.log(
+    "Updated CORS Rules:",
+    JSON.stringify(updatedBucket.corsRules, null, 2),
+  );
 }
 
 updateB2Cors().catch((err) => {
