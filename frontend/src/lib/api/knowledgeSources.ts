@@ -99,4 +99,7 @@ export const knowledgeSourcesApi = {
 
   list: (chatbotId: string): Promise<KnowledgeSourceListResponse> =>
     apiRequest<KnowledgeSourceListResponse>(`/api/v1/knowledge-sources/${chatbotId}`),
+
+  get: (chatbotId: string, sourceId: string): Promise<KnowledgeSourceResponse> =>
+    apiRequest<KnowledgeSourceResponse>(`/api/v1/knowledge-sources/${chatbotId}/${sourceId}`),
 };

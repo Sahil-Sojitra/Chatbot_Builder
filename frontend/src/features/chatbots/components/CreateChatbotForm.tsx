@@ -85,8 +85,11 @@ export function CreateChatbotForm() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
+  const [provider, setProvider] = useState("");
+  const [model, setModel] = useState("");
   const [temperature, setTemperature] = useState("");
   const [maxTokens, setMaxTokens] = useState("");
+  const [ragEnabled, setRagEnabled] = useState(false);
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -111,14 +114,21 @@ export function CreateChatbotForm() {
     if (systemPrompt.trim()) {
       payload.systemPrompt = systemPrompt.trim();
     }
+    if (provider.trim()) {
+      payload.provider = provider.trim();
+    }
+    if (model.trim()) {
+      payload.model = model.trim();
+    }
     if (temperature.trim() !== "") {
       payload.temperature = Number(temperature);
     }
     if (maxTokens.trim() !== "") {
       payload.maxTokens = Number(maxTokens);
     }
-    // provider/model are intentionally never sent — see the Select fields
-    // below and their explanatory note.
+    if (ragEnabled) {
+      payload.ragEnabled = true;
+    }
 
     try {
       await chatbotsApi.create(payload);
@@ -218,22 +228,45 @@ export function CreateChatbotForm() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="chatbot-provider">Provider</Label>
-              <Select id="chatbot-provider" disabled defaultValue="">
-                <option value="">Not connected yet</option>
+              <Select
+                id="chatbot-provider"
+                value={provider}
+                onChange={(e) => setProvider(e.target.value)}
+                disabled={isSubmitting}
+              >
+                <option value="">Select AI Provider (Optional)</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="google">Google Gemini</option>
+                <option value="groq">Groq</option>
+                <option value="custom">Custom Provider</option>
               </Select>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="chatbot-model">Model</Label>
-              <Select id="chatbot-model" disabled defaultValue="">
-                <option value="">Select a provider first</option>
-              </Select>
+              <Label htmlFor="chatbot-model">Model Name</Label>
+              <Input
+                id="chatbot-model"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                disabled={isSubmitting}
+                placeholder="e.g. gpt-4o, claude-3-5-sonnet"
+              />
             </div>
           </div>
-          <p className="-mt-2 text-xs text-muted-foreground">
-            No AI provider is connected yet, so provider and model aren&apos;t selectable — the
-            chatbot will still be created, ready to configure once a real integration exists.
-          </p>
+
+          <label className="flex items-center gap-2.5 cursor-pointer py-1">
+            <input
+              type="checkbox"
+              checked={ragEnabled}
+              onChange={(e) => setRagEnabled(e.target.checked)}
+              disabled={isSubmitting}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <span className="text-sm font-medium text-foreground">
+              Enable RAG knowledge retrieval
+            </span>
+          </label>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">

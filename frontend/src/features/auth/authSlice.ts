@@ -65,9 +65,13 @@ const authSlice = createSlice({
         state.status = "authenticated";
       }
     },
+    /** Call after updating user profile. */
+    updateUser: (state, action: PayloadAction<AuthUser>) => {
+      state.user = action.payload;
+    },
   },
 });
 
-export const { setCredentials, clearAuth, setAuthLoading, setAccessToken } =
+export const { setCredentials, clearAuth, setAuthLoading, setAccessToken, updateUser } =
   authSlice.actions;
 export default authSlice.reducer;

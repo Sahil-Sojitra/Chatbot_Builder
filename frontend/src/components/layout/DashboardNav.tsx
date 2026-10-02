@@ -12,7 +12,8 @@ const NAV_ITEMS = [
   { href: "/dashboard/chatbots", label: "Chatbots" },
   { href: "/dashboard/knowledge-sources", label: "Knowledge Sources" },
   { href: "/dashboard/invitations", label: "Invitations" },
-  { href: "/dashboard/organization", label: "Organization Settings" },
+  { href: "/dashboard/organization", label: "Organization" },
+  { href: "/dashboard/account", label: "Account" },
 ] as const;
 
 export function DashboardNav() {

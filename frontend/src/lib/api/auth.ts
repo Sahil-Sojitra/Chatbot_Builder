@@ -32,11 +32,21 @@ export interface MeResponse {
   user: AuthUser;
 }
 
+export interface UpdateMeInput {
+  name?: string;
+  avatarUrl?: string | null;
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
+
 /**
  * Thin wrappers over the backend's auth endpoints. Public endpoints
  * (login/register/refresh) use `rawRequest` directly — they have no access
  * token yet, and a failure there should never trigger a refresh-retry.
- * `logout`/`me` require an access token, so they go through `apiRequest`,
+ * `logout`/`me`/`updateMe`/`changePassword` require an access token, so they go through `apiRequest`,
  * which attaches it and transparently refreshes-and-retries on a 401.
  */
 export const authApi = {
@@ -59,6 +69,18 @@ export const authApi = {
     apiRequest<{ message: string }>("/api/v1/auth/logout", { method: "POST" }),
 
   me: (): Promise<MeResponse> => apiRequest<MeResponse>("/api/v1/me"),
+
+  updateMe: (input: UpdateMeInput): Promise<MeResponse> =>
+    apiRequest<MeResponse>("/api/v1/me", {
+      method: "PATCH",
+      body: input,
+    }),
+
+  changePassword: (input: ChangePasswordInput): Promise<{ message: string }> =>
+    apiRequest<{ message: string }>("/api/v1/me/change-password", {
+      method: "POST",
+      body: input,
+    }),
 };
 
 /**

@@ -6,6 +6,7 @@ import {
   Badge,
   Button,
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -13,6 +14,8 @@ import {
   Spinner,
   buttonVariants,
 } from "@/components/ui";
+import { ChatbotCard } from "@/features/chatbots/components/ChatbotCard";
+import { useChatbots } from "@/features/chatbots/useChatbots";
 import { OrganizationEmptyState } from "@/features/organizations/components/OrganizationEmptyState";
 import { useOrganization } from "@/features/organizations/useOrganization";
 import { useAppSelector } from "@/lib/hooks";
@@ -30,6 +33,7 @@ const ORG_STATUS_BADGE_VARIANT: Record<
 export default function DashboardPage() {
   const user = useAppSelector((state) => state.auth.user);
   const { status, organization, error, refetch } = useOrganization();
+  const chatbotsState = useChatbots(status === "loaded");
 
   if (status === "idle" || status === "loading") {
     return (
@@ -49,17 +53,17 @@ export default function DashboardPage() {
     );
   }
 
-  if (status === "none") {
+  if (status === "none" || !organization) {
     return <OrganizationEmptyState />;
   }
 
-  // status === "loaded" always carries an organization — this guards TypeScript, not a real runtime case.
-  if (!organization) {
-    return null;
-  }
+  const activeChatbotsCount = chatbotsState.chatbots.filter(
+    (c) => c.status === "ACTIVE",
+  ).length;
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Workspace Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm text-muted-foreground">Workspace</p>
@@ -67,32 +71,102 @@ export default function DashboardPage() {
             {organization.name}
           </h1>
         </div>
-        <Badge variant={ORG_STATUS_BADGE_VARIANT[organization.status]}>
-          {organization.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={ORG_STATUS_BADGE_VARIANT[organization.status]}>
+            {organization.status}
+          </Badge>
+          <Link
+            href="/dashboard/organization"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            Settings
+          </Link>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Welcome{user ? `, ${user.name}` : ""}</CardTitle>
-          <CardDescription>
-            This is your organization&apos;s dashboard. Chatbots and knowledge sources you
-            create will show up here.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      {/* Overview Stat Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs uppercase font-medium">Total Chatbots</CardDescription>
+            <CardTitle className="text-3xl font-bold">{chatbotsState.chatbots.length}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">Assistants in this organization</p>
+          </CardContent>
+        </Card>
 
-      <div>
-        <h2 className="mb-3 text-lg font-semibold text-foreground">Chatbots</h2>
-        <EmptyState
-          title="No chatbots yet"
-          description="Chatbot management isn't built yet — once it is, your chatbots will show up here."
-          action={
-            <Link href="/dashboard/chatbots" className={buttonVariants({ variant: "default" })}>
-              Create your first chatbot
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs uppercase font-medium">Active (Published)</CardDescription>
+            <CardTitle className="text-3xl font-bold text-emerald-600">
+              {activeChatbotsCount}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">Ready to serve queries</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs uppercase font-medium">Draft & Paused</CardDescription>
+            <CardTitle className="text-3xl font-bold text-amber-600">
+              {chatbotsState.chatbots.length - activeChatbotsCount}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">Under configuration</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Chatbots Section */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground">Your Chatbots</h2>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/dashboard/chatbots/new"
+              className={buttonVariants({ variant: "default", size: "sm" })}
+            >
+              Create Chatbot
             </Link>
-          }
-        />
+            {chatbotsState.chatbots.length > 0 ? (
+              <Link
+                href="/dashboard/chatbots"
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
+              >
+                View all
+              </Link>
+            ) : null}
+          </div>
+        </div>
+
+        {chatbotsState.status === "loading" ? (
+          <div className="py-8">
+            <Spinner label="Loading chatbots…" />
+          </div>
+        ) : chatbotsState.chatbots.length === 0 ? (
+          <EmptyState
+            title="No chatbots yet"
+            description="Create your first chatbot to start configuring prompts, models, and knowledge bases."
+            action={
+              <Link
+                href="/dashboard/chatbots/new"
+                className={buttonVariants({ variant: "default" })}
+              >
+                Create Chatbot
+              </Link>
+            }
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {chatbotsState.chatbots.slice(0, 3).map((bot) => (
+              <ChatbotCard key={bot.id} chatbot={bot} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

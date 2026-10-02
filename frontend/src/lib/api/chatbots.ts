@@ -16,7 +16,12 @@ export interface CreateChatbotInput {
   model?: string;
   temperature?: number;
   maxTokens?: number;
+  ragEnabled?: boolean;
+  ragTopK?: number;
+  ragSimilarityThreshold?: number;
 }
+
+export type UpdateChatbotInput = Partial<CreateChatbotInput>;
 
 export interface ChatbotResponse {
   chatbot: Chatbot;
@@ -26,7 +31,7 @@ export interface ChatbotListResponse {
   chatbots: Chatbot[];
 }
 
-/** Thin wrapper over the backend's real, already-implemented chatbot endpoints (backend/src/modules/chatbots) — no new endpoints, no mocking. */
+/** Thin wrapper over the backend's real, already-implemented chatbot endpoints (backend/src/modules/chatbots) */
 export const chatbotsApi = {
   create: (input: CreateChatbotInput): Promise<ChatbotResponse> =>
     apiRequest<ChatbotResponse>("/api/v1/chatbots", {
@@ -38,4 +43,20 @@ export const chatbotsApi = {
 
   get: (id: string): Promise<ChatbotResponse> =>
     apiRequest<ChatbotResponse>(`/api/v1/chatbots/${id}`),
+
+  update: (id: string, input: UpdateChatbotInput): Promise<ChatbotResponse> =>
+    apiRequest<ChatbotResponse>(`/api/v1/chatbots/${id}`, {
+      method: "PATCH",
+      body: input,
+    }),
+
+  publish: (id: string): Promise<ChatbotResponse> =>
+    apiRequest<ChatbotResponse>(`/api/v1/chatbots/${id}/publish`, {
+      method: "POST",
+    }),
+
+  unpublish: (id: string): Promise<ChatbotResponse> =>
+    apiRequest<ChatbotResponse>(`/api/v1/chatbots/${id}/unpublish`, {
+      method: "POST",
+    }),
 };

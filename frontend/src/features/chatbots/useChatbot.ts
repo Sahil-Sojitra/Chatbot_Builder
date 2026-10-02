@@ -44,5 +44,5 @@ export function useChatbot(chatbotId: string) {
     setReloadToken((token) => token + 1);
   }, []);
 
-  return { status, chatbot, error, refetch };
+  return { status, chatbot, error, refetch, setChatbot };
 }
