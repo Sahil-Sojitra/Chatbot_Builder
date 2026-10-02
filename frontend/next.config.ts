@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+const backendUrl =
+  process.env.BACKEND_PROXY_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000";
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
@@ -7,7 +12,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://13.127.129.1/api/:path*",
+        destination: `${backendUrl.replace(/\/$/, "")}/api/:path*`,
       },
     ];
   },
