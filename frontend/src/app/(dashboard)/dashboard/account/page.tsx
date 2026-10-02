@@ -154,7 +154,7 @@ export default function AccountSettingsPage() {
             {profileError ? (
               <div
                 role="alert"
-                className="rounded-md border border-destructive/20 bg-red-50 p-3 text-sm text-destructive"
+                className="rounded-md border border-red-500/30 bg-red-950/40 p-3 text-sm font-medium text-red-300"
               >
                 {profileError}
               </div>
@@ -163,7 +163,7 @@ export default function AccountSettingsPage() {
             {profileSuccess ? (
               <div
                 role="status"
-                className="rounded-md border border-emerald-500/20 bg-emerald-50 p-3 text-sm text-emerald-800"
+                className="rounded-md border border-emerald-500/30 bg-emerald-950/40 p-3 text-sm font-medium text-emerald-300"
               >
                 {profileSuccess}
               </div>
@@ -228,7 +228,7 @@ export default function AccountSettingsPage() {
             {passwordError ? (
               <div
                 role="alert"
-                className="rounded-md border border-destructive/20 bg-red-50 p-3 text-sm text-destructive"
+                className="rounded-md border border-red-500/30 bg-red-950/40 p-3 text-sm font-medium text-red-300"
               >
                 {passwordError}
               </div>
@@ -237,7 +237,7 @@ export default function AccountSettingsPage() {
             {passwordSuccess ? (
               <div
                 role="status"
-                className="rounded-md border border-emerald-500/20 bg-emerald-50 p-3 text-sm text-emerald-800"
+                className="rounded-md border border-emerald-500/30 bg-emerald-950/40 p-3 text-sm font-medium text-emerald-300"
               >
                 {passwordSuccess}
               </div>

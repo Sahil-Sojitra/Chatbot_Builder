@@ -119,26 +119,31 @@ export default function GlobalKnowledgeSourcesPage() {
   const currentChatbot = chatbots.find((c) => c.id === currentChatbotId) ?? chatbots[0];
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-5">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Knowledge Sources
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-zinc-400 uppercase tracking-wider font-mono">Workspace</span>
+            <span className="text-zinc-600">/</span>
+            <span className="text-xs text-zinc-300 font-mono">Knowledge Engine</span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-white mt-1">
+            Knowledge Base
           </h1>
-          <p className="text-sm text-muted-foreground">
-            View and manage documents, web links, and text sources connected to your chatbots.
+          <p className="text-sm text-zinc-400 mt-1">
+            Manage vector documents, websites, and text corpora connected to your assistant runtime.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor="chatbot-selector" className="text-xs text-muted-foreground whitespace-nowrap">
-            Selected Chatbot:
+        <div className="flex items-center gap-3">
+          <label htmlFor="chatbot-selector" className="text-sm font-medium text-zinc-300 whitespace-nowrap">
+            Target Assistant:
           </label>
           <Select
             id="chatbot-selector"
             value={currentChatbotId}
             onChange={(e) => setSelectedChatbotId(e.target.value)}
-            className="w-56"
+            className="w-56 text-sm"
           >
             {chatbots.map((bot) => (
               <option key={bot.id} value={bot.id}>

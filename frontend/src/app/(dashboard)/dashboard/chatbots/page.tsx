@@ -35,16 +35,21 @@ export default function ChatbotsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-5">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Chatbots</h1>
-          <p className="text-sm text-muted-foreground">
-            Create and manage the chatbots your organization publishes.
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-zinc-400 uppercase tracking-wider">Deployments</span>
+            <span className="text-zinc-600">/</span>
+            <span className="font-mono text-xs text-zinc-300">Assistants</span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-white mt-1">Chatbot Deployments</h1>
+          <p className="text-sm text-zinc-400 mt-1">
+            Build, calibrate, and embed production-ready conversational agents.
           </p>
         </div>
-        <Link href="/dashboard/chatbots/new" className={buttonVariants({ variant: "default" })}>
-          Create Chatbot
+        <Link href="/dashboard/chatbots/new" className={buttonVariants({ variant: "default", size: "default" })}>
+          Deploy New Chatbot
         </Link>
       </div>
 

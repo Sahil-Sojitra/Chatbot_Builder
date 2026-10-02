@@ -14,21 +14,23 @@ export default function Home() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="flex flex-1 flex-col items-center px-6 py-16 sm:py-20 lg:py-28"
+      className="relative flex flex-1 flex-col items-center px-4 py-16 sm:px-6 sm:py-24 lg:py-28 architect-grid overflow-hidden"
     >
-      <div className="flex w-full max-w-2xl flex-col items-center text-center">
-        <Badge variant="accent">AI-powered chatbots for your product</Badge>
+      <div className="relative z-10 flex w-full max-w-3xl flex-col items-center text-center">
+        <div className="inline-flex items-center gap-2 rounded-md border border-zinc-800 bg-[#0a0a0a] px-3 py-1 text-xs font-medium text-zinc-300">
+          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+          <span>Production AI Chatbot & Knowledge Deployment Platform</span>
+        </div>
 
         <h1
           id="hero-heading"
-          className="mt-5 text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl lg:text-5xl"
+          className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-balance text-white font-sans"
         >
-          Build and launch AI chatbots for your organization
+          Build, Train & Embed Intelligent AI Assistants
         </h1>
 
-        <p className="mt-5 max-w-lg text-base text-muted-foreground text-balance sm:text-lg">
-          Configure a chatbot, connect your knowledge sources, and publish it
-          to your product &mdash; all from one dashboard.
+        <p className="mt-4 max-w-2xl text-base text-zinc-400 text-balance sm:text-lg leading-relaxed font-normal">
+          Ground your bots with private documents via vector RAG, configure LLMs (OpenAI, Anthropic, Gemini), and embed an ultra-lightweight client widget in seconds.
         </p>
 
         <div className="mt-8 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
@@ -37,73 +39,79 @@ export default function Home() {
             className={buttonVariants({
               variant: "default",
               size: "lg",
-              className: "w-full sm:w-auto",
+              className: "w-full sm:w-auto text-sm font-medium",
             })}
           >
-            Get started
+            Start Building Free &rarr;
           </Link>
           <Link
             href="/login"
             className={buttonVariants({
               variant: "secondary",
               size: "lg",
-              className: "w-full sm:w-auto",
+              className: "w-full sm:w-auto text-sm font-medium",
             })}
           >
-            Log in
+            Sign in to Workspace
           </Link>
         </div>
       </div>
 
+      {/* Hero Architectural Workbench Mockup */}
       <h2 className="sr-only">Product preview</h2>
-      <Card className="mt-16 w-full max-w-lg gap-0 p-0 text-left shadow-md">
-        <CardHeader className="flex-row items-center justify-between gap-3 border-b border-border px-5 py-4">
-          <div className="flex items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground"
-            >
+      <Card className="relative z-10 mt-12 w-full max-w-xl overflow-hidden rounded-[4px] border border-zinc-800 bg-[#0d0d11] p-0 text-left shadow-lg">
+        <div className="flex items-center justify-between border-b border-zinc-800 bg-[#121216] px-4 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-5 w-5 items-center justify-center rounded-[2px] bg-zinc-800 border border-zinc-700 text-xs font-mono font-bold text-zinc-200">
               AI
-            </span>
+            </div>
             <div>
-              <p className="text-sm font-medium text-foreground">
-                Support Bot
+              <p className="text-xs font-semibold text-zinc-100 font-mono">
+                customer-support-agent
               </p>
-              <p className="text-xs text-muted-foreground">
-                Uses your connected knowledge sources
+              <p className="text-[10px] text-zinc-500 font-mono">
+                MODEL: gpt-4o-mini &middot; TOP_K: 5 &middot; RAG: ACTIVE
               </p>
             </div>
           </div>
-          <Badge variant="success" className="shrink-0">
-            Active
+          <Badge variant="success" className="shrink-0 text-[10px] font-mono">
+            <span className="h-1 w-1 rounded-[1px] bg-emerald-400 animate-pulse" />
+            LIVE // READY
           </Badge>
-        </CardHeader>
+        </div>
 
-        <CardContent className="flex flex-col gap-3 px-5 py-5">
-          <p className="max-w-[85%] rounded-lg rounded-tl-sm bg-slate-100 px-4 py-2.5 text-sm text-foreground">
-            Hi! I can help using the docs, help pages, and files you connect.
-            What do you need help with?
-          </p>
-          <p className="ml-auto max-w-[85%] rounded-lg rounded-tr-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">
-            How do I reset a customer&apos;s password?
-          </p>
+        <CardContent className="flex flex-col gap-2.5 px-4 py-4 text-xs font-sans">
+          <div className="max-w-[85%] rounded-[3px] border border-zinc-800 bg-[#16161b] p-3 text-zinc-200 leading-relaxed">
+            Hi there! I am grounded in your company documentation, product guides, and policies. How can I assist you?
+          </div>
+          <div className="ml-auto max-w-[85%] rounded-[3px] border border-zinc-700 bg-zinc-800 p-3 text-zinc-100 leading-relaxed font-medium">
+            How do I configure custom Backblaze B2 storage buckets for document ingestion?
+          </div>
+          <div className="max-w-[85%] rounded-[3px] border border-zinc-800 bg-[#16161b] p-3 text-zinc-200 leading-relaxed">
+            <div className="mb-1.5 flex items-center gap-1.5 font-mono text-[10px] text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 rounded-[2px] px-1.5 py-0.5 w-fit">
+              <span className="h-1 w-1 rounded-[1px] bg-emerald-400" />
+              RETRIEVED CHUNK #2 // SIMILARITY: 0.91 // source: storage-config.md
+            </div>
+            Configure B2 by supplying your S3 Endpoint, Region, Key ID, and Bucket Name in Workspace Settings. Direct browser uploads use presigned PUT URLs with SHA-256 integrity verification.
+          </div>
         </CardContent>
 
-        <CardFooter className="gap-2 border-t border-border px-5 py-4">
+        <CardFooter className="gap-2 border-t border-zinc-800 bg-[#101014] px-4 py-2.5">
           <Input
             disabled
-            placeholder="Ask anything…"
+            placeholder="Ask anything about indexed documents…"
             aria-label="Chat message (preview only)"
-            className="bg-slate-50"
+            className="text-xs font-mono"
           />
           <span
             aria-hidden="true"
             className={buttonVariants({
               variant: "default",
-              className: "pointer-events-none shrink-0 opacity-60",
+              size: "sm",
+              className: "shrink-0 cursor-default opacity-80 font-mono",
             })}
           >
-            Send
+            SEND &rarr;
           </span>
         </CardFooter>
       </Card>

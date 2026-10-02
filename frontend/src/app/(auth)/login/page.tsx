@@ -100,9 +100,9 @@ export default function LoginPage() {
           {formError ? (
             <p
               role="alert"
-              className="rounded-md border border-destructive/20 bg-red-50 px-3 py-2 text-sm text-destructive"
+              className="rounded-[4px] border border-rose-800/80 bg-rose-950/40 px-3 py-2 text-xs text-rose-300 font-mono"
             >
-              {formError}
+              [AUTH_ERROR]: {formError}
             </p>
           ) : null}
 

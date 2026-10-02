@@ -265,7 +265,7 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
         <div
           role="radiogroup"
           aria-label="Knowledge source type"
-          className="mb-4 flex flex-wrap gap-2"
+          className="mb-5 flex flex-wrap gap-2"
         >
           {TYPE_OPTIONS.map((option) => (
             <button
@@ -276,11 +276,11 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
               onClick={() => handleTypeChange(option.value)}
               disabled={isSubmitting}
               className={cn(
-                "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+                "rounded-md border px-3.5 py-1.5 text-sm font-medium transition-colors cursor-pointer",
                 type === option.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground",
-                isSubmitting ? "pointer-events-none opacity-50" : undefined,
+                  ? "border-white bg-white text-black font-semibold shadow-sm"
+                  : "border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700 hover:text-white",
+                isSubmitting ? "pointer-events-none opacity-40" : undefined,
               )}
             >
               {option.label}
@@ -297,7 +297,7 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
           {formError ? (
             <p
               role="alert"
-              className="rounded-md border border-destructive/20 bg-red-50 px-3 py-2 text-sm text-destructive"
+              className="rounded-md border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm font-medium text-red-300"
             >
               {formError}
             </p>
@@ -315,24 +315,25 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
                   disabled={isSubmitting}
                   aria-invalid={Boolean(fileError)}
                   aria-describedby={fileError ? "knowledge-file-error" : "knowledge-file-help"}
+                  className="cursor-pointer file:cursor-pointer file:rounded-md file:border file:border-zinc-700 file:bg-zinc-800 file:px-3 file:py-1 file:text-sm file:font-medium file:text-zinc-200 file:hover:bg-zinc-700"
                 />
-                <p id="knowledge-file-help" className="text-xs text-muted-foreground">
+                <p id="knowledge-file-help" className="text-xs text-zinc-400">
                   Supported formats: PDF, Word (.docx), Plain text (.txt), CSV (.csv), Markdown (.md). Maximum size: 25 MB.
                 </p>
                 {fileError ? (
-                  <p id="knowledge-file-error" role="alert" className="text-sm text-destructive">
+                  <p id="knowledge-file-error" role="alert" className="text-sm font-medium text-red-400">
                     {fileError}
                   </p>
                 ) : null}
               </div>
 
               {selectedFile ? (
-                <div className="rounded-md border border-border bg-secondary/30 p-3 text-sm">
+                <div className="rounded-md border border-zinc-800 bg-[#0a0a0a] p-3 text-sm">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate font-medium text-foreground">
+                    <span className="truncate font-medium text-zinc-200">
                       {selectedFile.name}
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <span className="shrink-0 font-mono text-xs text-zinc-500">
                       {formatFileSize(selectedFile.size)}
                     </span>
                   </div>

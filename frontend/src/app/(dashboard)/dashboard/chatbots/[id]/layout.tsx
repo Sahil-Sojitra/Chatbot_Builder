@@ -33,11 +33,44 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <p className="text-sm text-muted-foreground">Chatbot</p>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{chatbot.name}</h1>
+    <div className="flex flex-col gap-6">
+      {/* Vercel-style deployment project header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-5">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+            <span className="text-zinc-500">deployments</span>
+            <span className="text-zinc-600">/</span>
+            <span className="text-zinc-300 font-semibold">{chatbot.name.toLowerCase().replace(/\s+/g, "-")}</span>
+            <span className="text-zinc-600">•</span>
+            <span className="text-zinc-400">{chatbot.provider || "openai"}:{chatbot.model || "gpt-4o-mini"}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-white">{chatbot.name}</h1>
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border border-zinc-800 bg-zinc-900/80 text-xs font-medium">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  chatbot.status === "ACTIVE"
+                    ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]"
+                    : chatbot.status === "PAUSED"
+                      ? "bg-amber-400"
+                      : "bg-zinc-500"
+                }`}
+              />
+              <span className="text-zinc-300">
+                {chatbot.status === "ACTIVE" ? "Production Ready" : chatbot.status === "PAUSED" ? "Paused" : "Draft"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-[#0a0a0a] text-xs font-mono text-zinc-300">
+            <span className="text-zinc-500">publicId:</span>
+            <span className="font-semibold text-white">{chatbot.publicId}</span>
+          </div>
+        </div>
       </div>
+
       <ChatbotNav chatbotId={chatbot.id} />
       {children}
     </div>

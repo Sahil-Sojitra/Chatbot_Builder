@@ -37,8 +37,8 @@ export default function InvitationsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Invitations</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight text-white">Invitations</h1>
+        <p className="text-sm text-zinc-400">
           Organizations that have invited you to join.
         </p>
       </div>
