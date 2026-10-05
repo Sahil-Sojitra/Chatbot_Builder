@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import type { Job } from "bullmq";
 
 import { getRedisConnection } from "../../../shared/redis.js";
+import { chunkingService } from "../chunking/chunking.service.js";
 import { knowledgeSourceRepository } from "../knowledgeSource.repository.js";
 import { acquireContent } from "./contentAcquisition.js";
 import { INGESTION_QUEUE_NAME } from "./ingestion.queue.js";
@@ -13,11 +14,12 @@ import type { IngestionJobData } from "./ingestion.queue.js";
  *      claimed — already PROCESSING/READY/FAILED/DISABLED, or a duplicate
  *      job racing another worker — there is nothing to do.
  *   2. Acquire normalized text for the source's type.
- *   3. On success, mark READY. On failure, mark FAILED with the internal
+ *   3. Chunk text into application TextChunk objects.
+ *   4. On success, mark READY. On failure, mark FAILED with the internal
  *      error message stored on the model's `error` field.
  *
- * Chunking/embedding/vector storage are intentionally not implemented here
- * yet — this worker stops once it has normalized text.
+ * Embedding generation and vector storage are intentionally not implemented here
+ * yet — this worker completes content acquisition and chunking.
  */
 const processIngestionJob = async (
   job: Job<IngestionJobData>,
@@ -39,6 +41,16 @@ const processIngestionJob = async (
     console.log(
       `[ingestion] Acquired ${text.length} characters for knowledge source ${knowledgeSourceId}`,
     );
+
+    const chunks = await chunkingService.splitText(text);
+    console.log(
+      `[ingestion] Generated ${chunks.length} chunks for knowledge source ${knowledgeSourceId}`,
+    );
+
+    // Future stages:
+    // const embeddings = await embeddingService.embedDocuments(chunks);
+    // await knowledgeChunkRepository.insertMany(...);
+
     await knowledgeSourceRepository.markReady(knowledgeSourceId, text);
   } catch (error) {
     const message =
