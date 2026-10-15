@@ -8,6 +8,10 @@ from app.services.crawler import (
     LinkDiscoveryResult,
     MultiPageCrawlResult,
 )
+from app.services.content_normalizer import (
+    content_normalizer,
+    NormalizationResult,
+)
 
 router = APIRouter(prefix="/demo", tags=["Demo / Temporary Testing"])
 
@@ -81,3 +85,23 @@ async def demo_crawl_multipage(payload: MultiPageCrawlRequest):
         raise HTTPException(status_code=400, detail=result.error_message)
 
     return result
+
+
+@router.post("/crawl-and-normalize", response_model=NormalizationResult)
+async def demo_crawl_and_normalize(payload: MultiPageCrawlRequest):
+    """Convenience testing endpoint: crawls multiple pages and normalizes the output."""
+    crawl_result = await crawler_service.crawl_multipage(
+        starting_url=str(payload.url),
+        max_pages=payload.max_pages,
+    )
+    if not crawl_result.success and "SSRF Security Violation" in (crawl_result.error_message or ""):
+        raise HTTPException(status_code=400, detail=crawl_result.error_message)
+
+    return content_normalizer.normalize_pages(crawl_result)
+
+
+@router.post("/normalize-content", response_model=NormalizationResult)
+def demo_normalize_content(pages: list[dict]):
+    """Testing endpoint to normalize a list of raw page objects without triggering network requests."""
+    return content_normalizer.normalize_pages(pages)
+
