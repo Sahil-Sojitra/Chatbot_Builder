@@ -9,6 +9,12 @@ from app.services.content_normalizer import (
     NormalizationResult,
     ContentNormalizationStats,
 )
+from app.services.chunker import (
+    chunker_service,
+    ContentChunk,
+    ChunkingStats,
+    ChunkingResult,
+)
 
 __all__ = [
     "crawler_service",
@@ -23,4 +29,8 @@ __all__ = [
     "NormalizedPageRecord",
     "NormalizationResult",
     "ContentNormalizationStats",
+    "chunker_service",
+    "ContentChunk",
+    "ChunkingStats",
+    "ChunkingResult",
 ]
