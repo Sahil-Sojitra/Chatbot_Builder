@@ -62,6 +62,11 @@ export const createChatbotSchema = z
       .min(0, "ragSimilarityThreshold must be at least 0")
       .max(1, "ragSimilarityThreshold must be at most 1")
       .optional(),
+    creationMode: z
+      .enum(["INSTANT", "CUSTOM"], {
+        message: "creationMode must be either INSTANT or CUSTOM",
+      })
+      .default("CUSTOM"),
   })
   .strict();
 
@@ -70,13 +75,15 @@ export const createChatbotSchema = z
  * field rules; every field is optional but at least one must be present.
  * `.strict()` rejects any unrecognized/protected key outright (id,
  * chatbotId, organizationId, slug, publicId, status, createdBy, createdAt,
- * updatedAt, publishedBy, publishedAt, deletedAt, uiConfig — none are
- * accepted here). slug is never client-editable and is not regenerated on
- * a name change. Status/publishing transitions are handled by the
- * dedicated publish/unpublish endpoints, not here.
+ * updatedAt, publishedBy, publishedAt, deletedAt, uiConfig, creationMode —
+ * none are accepted here). slug is never client-editable and is not
+ * regenerated on a name change. Status/publishing transitions are handled
+ * by the dedicated publish/unpublish endpoints, not here.
  */
 export const updateChatbotSchema = createChatbotSchema
+  .omit({ creationMode: true })
   .partial()
+  .strict()
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided",
   });

@@ -1,4 +1,4 @@
-import type { IChatbot } from "./chatbot.model.js";
+import type { ChatbotCreationMode, IChatbot } from "./chatbot.model.js";
 
 /**
  * Client-configurable fields at creation time. provider/model have no
@@ -18,6 +18,7 @@ export interface CreateChatbotInput {
   ragEnabled?: boolean;
   ragTopK?: number;
   ragSimilarityThreshold?: number;
+  creationMode?: ChatbotCreationMode;
 }
 
 /**
@@ -25,8 +26,9 @@ export interface CreateChatbotInput {
  * of the creation fields, with the same value rules. slug, status,
  * publicId, organizationId, createdBy and the publishing fields are never
  * editable here; uiConfig remains protected (no validated shape exists).
+ * creationMode is set at creation and is not client-editable.
  */
-export type UpdateChatbotInput = Partial<CreateChatbotInput>;
+export type UpdateChatbotInput = Partial<Omit<CreateChatbotInput, "creationMode">>;
 
 export interface PublicChatbot {
   id: string;
@@ -35,6 +37,7 @@ export interface PublicChatbot {
   slug: string;
   description: string | null;
   status: IChatbot["status"];
+  creationMode: ChatbotCreationMode;
   publicId: string;
   systemPrompt: string | null;
   provider: string | null;

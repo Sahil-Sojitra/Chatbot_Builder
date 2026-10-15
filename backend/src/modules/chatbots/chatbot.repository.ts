@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
 import { ChatbotModel } from "./chatbot.model.js";
-import type { IChatbot } from "./chatbot.model.js";
+import type { ChatbotCreationMode, IChatbot } from "./chatbot.model.js";
 
 export interface CreateChatbotInput {
   organizationId: Types.ObjectId;
@@ -18,6 +18,7 @@ export interface CreateChatbotInput {
   ragEnabled: boolean;
   ragTopK?: number;
   ragSimilarityThreshold?: number;
+  creationMode?: ChatbotCreationMode;
   createdBy: Types.ObjectId;
 }
 

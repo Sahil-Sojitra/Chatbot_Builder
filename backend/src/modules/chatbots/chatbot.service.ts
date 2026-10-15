@@ -46,6 +46,7 @@ const toPublicChatbot = (
   slug: chatbot.slug,
   description: chatbot.description,
   status: chatbot.status,
+  creationMode: chatbot.creationMode ?? "CUSTOM",
   publicId: chatbot.publicId,
   systemPrompt: chatbot.systemPrompt,
   provider: chatbot.provider,
@@ -90,6 +91,7 @@ export const chatbotService = {
       slug,
       publicId,
       ragEnabled: input.ragEnabled ?? false,
+      creationMode: input.creationMode ?? "CUSTOM",
       createdBy: new Types.ObjectId(ownerId),
     };
     if (input.description !== undefined) {
