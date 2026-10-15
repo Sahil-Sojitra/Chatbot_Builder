@@ -1,5 +1,5 @@
 import re
-from urllib.parse import urljoin, urlparse, urldefrag
+from urllib.parse import urljoin, urlparse, urldefrag, parse_qsl, urlencode
 from typing import List, Set, Optional, Dict, Any
 
 from app.services.security import validate_safe_url, SSRFValidationError
@@ -26,14 +26,21 @@ DISALLOWED_PATH_PATTERNS = [
     re.compile(r"/(reset[ -_]?password|forgot[ -_]?password)", re.IGNORECASE),
 ]
 
+# Query parameters commonly used for tracking, sessions, or infinite pagination loops
+DISALLOWED_QUERY_PARAMS = {
+    "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+    "fbclid", "gclid", "ref", "source", "session_id", "phpsessid", "jsessionid"
+}
 
-def normalize_url(raw_url: str, base_url: str) -> Optional[str]:
+
+def normalize_url(raw_url: str, base_url: str, strip_tracking_params: bool = True) -> Optional[str]:
     """Resolve, clean, and normalize a URL string against a base URL.
 
     - Resolves relative URLs (e.g., '/docs' -> 'https://example.com/docs').
     - Strips fragment identifiers (e.g., '#section' -> removed).
     - Normalizes scheme and domain to lowercase.
     - Strips trailing slashes from path (except root '/') for clean deduplication.
+    - Strips tracking & session query parameters to prevent infinite crawler variations.
     - Ignores unsupported schemes (mailto:, tel:, javascript:).
     """
     if not raw_url or not raw_url.strip():
@@ -79,8 +86,20 @@ def normalize_url(raw_url: str, base_url: str) -> Optional[str]:
     if len(path) > 1 and path.endswith("/"):
         path = path[:-1]
 
-    # Reconstruct query string if present
-    query = f"?{parsed.query}" if parsed.query else ""
+    # Reconstruct query string with sorting and tracking param removal
+    query = ""
+    if parsed.query:
+        query_params = parse_qsl(parsed.query, keep_blank_values=False)
+        if strip_tracking_params:
+            filtered_params = [
+                (k, v) for k, v in query_params if k.lower() not in DISALLOWED_QUERY_PARAMS
+            ]
+        else:
+            filtered_params = query_params
+
+        if filtered_params:
+            filtered_params.sort(key=lambda x: x[0])
+            query = f"?{urlencode(filtered_params)}"
 
     return f"{scheme}://{netloc}{path}{query}"
 
@@ -90,13 +109,7 @@ def is_eligible_internal_link(
     base_url: str,
     allowed_domains: Optional[Set[str]] = None,
 ) -> bool:
-    """Check if a candidate URL is an eligible, safe internal HTML page.
-
-    Criteria:
-    1. Must match the allowed base domain (same origin / domain).
-    2. Must not be a binary or non-HTML asset extension (e.g., .pdf, .png, .zip).
-    3. Must not match destructive / auth endpoints (logout, delete, reset-password).
-    """
+    """Check if a candidate URL is an eligible, safe internal HTML page."""
     try:
         parsed_target = urlparse(target_url)
         parsed_base = urlparse(base_url)
@@ -137,15 +150,10 @@ def filter_crawl4ai_internal_links(
     base_url: str,
     max_links: int = 50,
 ) -> List[str]:
-    """Process Crawl4AI's native parsed links dictionary into deduplicated, safe internal URLs.
-
-    Crawl4AI provides result.links as:
-    {'internal': [{'href': '...'}, ...], 'external': [...]}
-    """
+    """Process Crawl4AI's native parsed links dictionary into deduplicated, safe internal URLs."""
     discovered: Set[str] = set()
     ordered_results: List[str] = []
 
-    # Extract internal link items from Crawl4AI's dictionary
     raw_items: List[Any] = []
     if isinstance(crawl4ai_links, dict):
         raw_items = crawl4ai_links.get("internal", [])
@@ -156,7 +164,6 @@ def filter_crawl4ai_internal_links(
         if len(ordered_results) >= max_links:
             break
 
-        # Handle string or dict item ({'href': '...'})
         href = item.get("href") if isinstance(item, dict) else str(item)
         normalized = normalize_url(href, base_url)
         if not normalized:

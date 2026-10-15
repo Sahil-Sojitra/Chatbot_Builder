@@ -1,6 +1,8 @@
 import pytest
+from unittest.mock import AsyncMock, patch
+
 from app.services.security import validate_safe_url, SSRFValidationError, is_ip_allowed
-from app.services.crawler import Crawl4AICrawler
+from app.services.crawler import Crawl4AICrawler, CrawlResult, LinkDiscoveryResult
 from app.services.link_discovery import (
     normalize_url,
     is_eligible_internal_link,
@@ -58,7 +60,7 @@ async def test_crawler_rejects_ssrf_destination():
 
 
 # ---------------------------------------------------------------------------
-# Step 6: Link Discovery & Normalization Tests (Pure Crawl4AI Pipeline)
+# Link Discovery & Normalization Tests
 # ---------------------------------------------------------------------------
 
 
@@ -79,6 +81,15 @@ def test_normalize_url_strips_fragments_and_normalizes():
     assert normalize_url("https://example.com/docs//guide/", base) == "https://example.com/docs/guide"
     # Keeps root slash
     assert normalize_url("https://example.com/", base) == "https://example.com/"
+
+
+def test_normalize_url_strips_tracking_params_to_prevent_loops():
+    """Verify UTM parameters and session IDs are stripped to prevent crawler loops."""
+    base = "https://example.com"
+    url1 = "https://example.com/pricing?utm_source=twitter&utm_medium=social"
+    url2 = "https://example.com/pricing?ref=homepage&utm_campaign=winter"
+    assert normalize_url(url1, base) == "https://example.com/pricing"
+    assert normalize_url(url2, base) == "https://example.com/pricing"
 
 
 def test_normalize_url_rejects_unsupported_schemes():
@@ -118,7 +129,6 @@ def test_filter_crawl4ai_internal_links_deduplication_and_limit():
     """Verify Crawl4AI's native link dictionary is filtered, deduplicated, and limited."""
     base = "https://example.com/home"
 
-    # Simulated Crawl4AI result.links output structure
     mock_crawl4ai_links = {
         "internal": [
             {"href": "/pricing"},
@@ -131,11 +141,10 @@ def test_filter_crawl4ai_internal_links_deduplication_and_limit():
             {"href": "javascript:void(0)"},  # Unsupported scheme (excluded)
         ],
         "external": [
-            {"href": "https://google.com"},  # Crawl4AI already separated external
+            {"href": "https://google.com"},
         ]
     }
 
-    # Test with max_links = 10
     links = filter_crawl4ai_internal_links(mock_crawl4ai_links, base, max_links=10)
     assert links == [
         "https://example.com/pricing",
@@ -143,10 +152,122 @@ def test_filter_crawl4ai_internal_links_deduplication_and_limit():
         "https://example.com/contact",
     ]
 
-    # Test limit enforcement
     limited = filter_crawl4ai_internal_links(mock_crawl4ai_links, base, max_links=2)
     assert len(limited) == 2
     assert limited == [
         "https://example.com/pricing",
         "https://example.com/about",
     ]
+
+
+# ---------------------------------------------------------------------------
+# Step 7: Multi-Page Bounded Crawl Tests (Mocked & Deterministic)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_multipage_crawl_never_exceeds_max_pages():
+    """Deterministic test proving the page limit is strictly enforced."""
+    crawler = Crawl4AICrawler()
+
+    # Create 30 candidate internal pages
+    discovered_urls = [f"https://example.com/page-{i}" for i in range(1, 31)]
+
+    async def mock_crawl_page(url, crawler_instance=None):
+        return CrawlResult(
+            url=url,
+            title=f"Title for {url}",
+            markdown=f"# Content of {url}",
+            clean_text=f"Content of {url}",
+            success=True,
+            status_code=200,
+        )
+
+    async def mock_discover_internal_links(url, max_links=20, crawler_instance=None):
+        return LinkDiscoveryResult(
+            starting_url=url,
+            discovered_links=discovered_urls,
+            total_found=len(discovered_urls),
+            success=True,
+        )
+
+    with patch.object(crawler, "crawl_page", side_effect=mock_crawl_page), \
+         patch.object(crawler, "discover_internal_links", side_effect=mock_discover_internal_links), \
+         patch("app.services.crawler.AsyncWebCrawler"):
+
+        # Request exactly 5 pages maximum
+        result = await crawler.crawl_multipage("https://example.com", max_pages=5)
+
+        assert result.success is True
+        assert result.max_pages_requested == 5
+        assert result.total_processed == 5
+        assert result.successful_count == 5
+        assert len(result.successful_pages) == 5
+        assert result.failed_count == 0
+
+
+@pytest.mark.asyncio
+async def test_multipage_crawl_tolerates_individual_page_failures():
+    """Verify that a single page failure does not abort the entire multi-page crawl."""
+    crawler = Crawl4AICrawler()
+
+    pages = {
+        "https://example.com/": CrawlResult(
+            url="https://example.com/",
+            title="Home",
+            markdown="# Home",
+            clean_text="Home",
+            success=True,
+            status_code=200,
+        ),
+        "https://example.com/broken": CrawlResult(
+            url="https://example.com/broken",
+            markdown="",
+            clean_text="",
+            success=False,
+            status_code=500,
+            error_message="HTTP server error: status code 500",
+        ),
+        "https://example.com/docs": CrawlResult(
+            url="https://example.com/docs",
+            title="Docs",
+            markdown="# Documentation",
+            clean_text="Documentation",
+            success=True,
+            status_code=200,
+        ),
+    }
+
+    async def mock_crawl_page(url, crawler_instance=None):
+        return pages.get(
+            url,
+            CrawlResult(
+                url=url, markdown="", clean_text="", success=False, error_message="Not found"
+            ),
+        )
+
+    async def mock_discover_internal_links(url, max_links=20, crawler_instance=None):
+        if url in ("https://example.com", "https://example.com/"):
+            return LinkDiscoveryResult(
+                starting_url=url,
+                discovered_links=["https://example.com/broken", "https://example.com/docs"],
+                total_found=2,
+                success=True,
+            )
+        return LinkDiscoveryResult(
+            starting_url=url, discovered_links=[], total_found=0, success=True
+        )
+
+    with patch.object(crawler, "crawl_page", side_effect=mock_crawl_page), \
+         patch.object(crawler, "discover_internal_links", side_effect=mock_discover_internal_links), \
+         patch("app.services.crawler.AsyncWebCrawler"):
+
+        result = await crawler.crawl_multipage("https://example.com", max_pages=10)
+
+        # Overall crawl should succeed because good pages were extracted
+        assert result.success is True
+        assert result.successful_count == 2
+        assert result.failed_count == 1
+        assert len(result.failed_pages) == 1
+        assert result.failed_pages[0].url == "https://example.com/broken"
+        assert result.failed_pages[0].status_code == 500

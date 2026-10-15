@@ -1,8 +1,13 @@
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, Field
 
 from app.schemas.ingestion import WebsiteIngestionRequest
-from app.services.crawler import crawler_service, CrawlResult, LinkDiscoveryResult
+from app.services.crawler import (
+    crawler_service,
+    CrawlResult,
+    LinkDiscoveryResult,
+    MultiPageCrawlResult,
+)
 
 router = APIRouter(prefix="/demo", tags=["Demo / Temporary Testing"])
 
@@ -14,6 +19,16 @@ class SinglePageCrawlRequest(BaseModel):
 class LinkDiscoveryRequest(BaseModel):
     url: HttpUrl
     max_links: int = 20
+
+
+class MultiPageCrawlRequest(BaseModel):
+    url: HttpUrl
+    max_pages: int = Field(
+        default=10,
+        ge=1,
+        le=20,
+        description="Maximum internal pages to crawl (1 to 20)",
+    )
 
 
 @router.post("/validate-ingestion")
@@ -34,10 +49,7 @@ def demo_validate_ingestion(payload: WebsiteIngestionRequest):
 
 @router.post("/crawl-single-page", response_model=CrawlResult)
 async def demo_crawl_single_page(payload: SinglePageCrawlRequest):
-    """Temporary testing endpoint that runs the single-page crawler on a validated URL.
-
-    Enforces SSRF prevention and returns title, clean markdown, plain text, and status.
-    """
+    """Temporary testing endpoint that runs the single-page crawler on a validated URL."""
     result = await crawler_service.crawl_page(str(payload.url))
     if not result.success and "SSRF Security Violation" in (result.error_message or ""):
         raise HTTPException(status_code=400, detail=result.error_message)
@@ -51,6 +63,19 @@ async def demo_discover_links(payload: LinkDiscoveryRequest):
     result = await crawler_service.discover_internal_links(
         starting_url=str(payload.url),
         max_links=payload.max_links,
+    )
+    if not result.success and "SSRF Security Violation" in (result.error_message or ""):
+        raise HTTPException(status_code=400, detail=result.error_message)
+
+    return result
+
+
+@router.post("/crawl-multipage", response_model=MultiPageCrawlResult)
+async def demo_crawl_multipage(payload: MultiPageCrawlRequest):
+    """Temporary testing endpoint executing bounded multi-page crawling."""
+    result = await crawler_service.crawl_multipage(
+        starting_url=str(payload.url),
+        max_pages=payload.max_pages,
     )
     if not result.success and "SSRF Security Violation" in (result.error_message or ""):
         raise HTTPException(status_code=400, detail=result.error_message)
