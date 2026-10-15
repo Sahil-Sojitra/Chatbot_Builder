@@ -102,6 +102,8 @@ class Crawl4AICrawler:
         run_config = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             page_timeout=self.DEFAULT_TIMEOUT_MS,
+            delay_before_return_html=1.0,
+            remove_overlay_elements=True,
             word_count_threshold=5,
         )
 
@@ -124,6 +126,10 @@ class Crawl4AICrawler:
             ).strip()
 
             clean_text = re.sub(r"\s+", " ", result.cleaned_html or markdown_text).strip()
+
+            # Resilient fallback: if markdown converter returned empty but HTML content exists
+            if not markdown_text and clean_text:
+                markdown_text = clean_text
 
             title = None
             if hasattr(result, "metadata") and isinstance(result.metadata, dict):
@@ -203,6 +209,8 @@ class Crawl4AICrawler:
         run_config = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             page_timeout=self.DEFAULT_TIMEOUT_MS,
+            delay_before_return_html=1.0,
+            remove_overlay_elements=True,
         )
 
         async def _run_discovery(crawler: AsyncWebCrawler) -> LinkDiscoveryResult:
