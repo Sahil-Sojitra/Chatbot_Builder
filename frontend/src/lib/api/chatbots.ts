@@ -1,4 +1,4 @@
-import type { Chatbot } from "@/types/chatbot";
+import type { Chatbot, ChatbotCreationMode } from "@/types/chatbot";
 
 import { apiRequest } from "./client";
 
@@ -19,9 +19,10 @@ export interface CreateChatbotInput {
   ragEnabled?: boolean;
   ragTopK?: number;
   ragSimilarityThreshold?: number;
+  creationMode?: ChatbotCreationMode;
 }
 
-export type UpdateChatbotInput = Partial<CreateChatbotInput>;
+export type UpdateChatbotInput = Partial<Omit<CreateChatbotInput, "creationMode">>;
 
 export interface ChatbotResponse {
   chatbot: Chatbot;

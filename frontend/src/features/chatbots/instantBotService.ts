@@ -102,6 +102,7 @@ export class InstantBotService {
       const response = await chatbotsApi.create({
         name: botName,
         description: `Instant AI Assistant created from ${websiteUrl}`,
+        creationMode: "INSTANT",
       });
       createdChatbot = response.chatbot;
     } catch (err: unknown) {

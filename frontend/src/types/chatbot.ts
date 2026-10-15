@@ -1,5 +1,6 @@
 /** Mirrors backend/src/modules/chatbots/chatbot.types.ts PublicChatbot. */
 export type ChatbotStatus = "DRAFT" | "ACTIVE" | "PAUSED";
+export type ChatbotCreationMode = "INSTANT" | "CUSTOM";
 
 export interface Chatbot {
   id: string;
@@ -8,6 +9,7 @@ export interface Chatbot {
   slug: string;
   description: string | null;
   status: ChatbotStatus;
+  creationMode: ChatbotCreationMode;
   publicId: string;
   systemPrompt: string | null;
   provider: string | null;
