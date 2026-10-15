@@ -25,6 +25,16 @@ from app.services.embedding import (
     EmbeddingConfigurationError,
     EmbeddingGenerationError,
 )
+from app.services.vector_store import (
+    vector_store,
+    VectorStoreAdapter,
+    PineconeVectorStore,
+    VectorSearchResult,
+    VectorUpsertResult,
+    VectorDeleteResult,
+    VectorStoreError,
+    VectorStoreConfigurationError,
+)
 
 __all__ = [
     "crawler_service",
@@ -51,4 +61,12 @@ __all__ = [
     "EmbeddingError",
     "EmbeddingConfigurationError",
     "EmbeddingGenerationError",
+    "vector_store",
+    "VectorStoreAdapter",
+    "PineconeVectorStore",
+    "VectorSearchResult",
+    "VectorUpsertResult",
+    "VectorDeleteResult",
+    "VectorStoreError",
+    "VectorStoreConfigurationError",
 ]

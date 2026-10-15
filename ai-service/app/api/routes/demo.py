@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, HttpUrl, Field
 
@@ -21,6 +22,13 @@ from app.services.embedding import (
     BatchEmbeddingResult,
     QueryEmbeddingResult,
     EmbeddingError,
+)
+from app.services.vector_store import (
+    vector_store,
+    VectorSearchResult,
+    VectorUpsertResult,
+    VectorDeleteResult,
+    VectorStoreError,
 )
 
 router = APIRouter(prefix="/demo", tags=["Demo / Temporary Testing"])
@@ -167,6 +175,85 @@ async def demo_crawl_chunk_embed(payload: MultiPageCrawlRequest):
         return await embedding_service.aembed_chunks(chunking_result.chunks)
     except EmbeddingError as err:
         raise HTTPException(status_code=400, detail=str(err))
+
+
+class VectorSearchRequest(BaseModel):
+    chatbot_id: str = Field(..., min_length=1, description="Chatbot identifier owning the knowledge base.")
+    query: str = Field(..., min_length=1, description="Natural language user query.")
+    top_k: int = Field(default=5, ge=1, le=20, description="Number of similar chunks to retrieve.")
+    score_threshold: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Minimum similarity score.")
+
+
+@router.get("/vector-store/health")
+def demo_vector_store_health():
+    """Testing endpoint to check vector database (Pinecone) connection and index status."""
+    is_healthy = vector_store.health_check()
+    return {
+        "connected": is_healthy,
+        "database": "Pinecone",
+        "index_name": vector_store.index_name,
+    }
+
+
+@router.post("/vector-store/query", response_model=list[VectorSearchResult])
+def demo_vector_store_query(payload: VectorSearchRequest):
+    """Testing endpoint to perform semantic similarity search against Pinecone for a chatbot."""
+    try:
+        # 1. Embed query using Voyage AI (input_type='query')
+        q_result = embedding_service.embed_query(payload.query)
+
+        # 2. Query Pinecone using namespace=chatbot_id
+        return vector_store.query_similar(
+            chatbot_id=payload.chatbot_id,
+            query_vector=q_result.embedding,
+            top_k=payload.top_k,
+            score_threshold=payload.score_threshold,
+        )
+    except (EmbeddingError, VectorStoreError) as err:
+        raise HTTPException(status_code=400, detail=str(err))
+
+
+@router.delete("/vector-store/{chatbot_id}", response_model=VectorDeleteResult)
+def demo_vector_store_delete(chatbot_id: str):
+    """Testing endpoint to delete all vectors belonging to a specific chatbot."""
+    try:
+        return vector_store.delete_chatbot_content(chatbot_id=chatbot_id)
+    except VectorStoreError as err:
+        raise HTTPException(status_code=400, detail=str(err))
+
+
+@router.post("/crawl-embed-index", response_model=VectorUpsertResult)
+async def demo_crawl_embed_index(payload: WebsiteIngestionRequest):
+    """End-to-End Pipeline test: Crawl -> Normalize -> Chunk -> Voyage Embed -> Pinecone Index."""
+    # 1. Multi-page crawl
+    crawl_result = await crawler_service.crawl_multipage(
+        starting_url=str(payload.website_url),
+        max_pages=payload.max_pages,
+    )
+    if not crawl_result.success and "SSRF Security Violation" in (crawl_result.error_message or ""):
+        raise HTTPException(status_code=400, detail=crawl_result.error_message)
+
+    # 2. Normalize
+    normalized = content_normalizer.normalize_pages(crawl_result)
+
+    # 3. Chunk
+    chunking_result = chunker_service.chunk_pages(normalized)
+
+    # 4. Generate Voyage AI embeddings
+    try:
+        embedding_result = await embedding_service.aembed_chunks(chunking_result.chunks)
+    except EmbeddingError as err:
+        raise HTTPException(status_code=400, detail=f"Embedding error: {err}")
+
+    # 5. Index into Pinecone under chatbot_id namespace
+    try:
+        return vector_store.upsert_chunks(
+            chatbot_id=payload.chatbot_id,
+            chunks=embedding_result.embedded_chunks,
+        )
+    except VectorStoreError as err:
+        raise HTTPException(status_code=400, detail=f"Vector store error: {err}")
+
 
 
 
