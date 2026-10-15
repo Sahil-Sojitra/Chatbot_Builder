@@ -64,7 +64,7 @@ export function ChatbotCreationFlow() {
     setCurrentView("custom-form");
   };
 
-  const handleUrlSubmit = async (url: string, simulateFailure = false) => {
+  const handleUrlSubmit = async (url: string) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -84,7 +84,6 @@ export function ChatbotCreationFlow() {
         websiteUrl: url,
         onStatusChange: (status: InstantBotStatus) => setProcessingStatus(status),
         onStageUpdate: (updatedStages: InstantBotStage[]) => setStages(updatedStages),
-        shouldFail: simulateFailure,
       });
       setInstantResult(result);
       setCurrentView("instant-success");
@@ -110,7 +109,7 @@ export function ChatbotCreationFlow() {
       return;
     }
     // Retry with the preserved URL
-    void handleUrlSubmit(websiteUrl, false);
+    void handleUrlSubmit(websiteUrl);
   };
 
   const handleCancelProgress = () => {
@@ -145,7 +144,7 @@ export function ChatbotCreationFlow() {
         <InstantBotUrlForm
           initialUrl={websiteUrl}
           isSubmitting={isSubmitting}
-          onSubmit={(url, simulateFailure) => void handleUrlSubmit(url, simulateFailure)}
+          onSubmit={(url) => void handleUrlSubmit(url)}
           onBack={() => setCurrentView("chooser")}
         />
       )}

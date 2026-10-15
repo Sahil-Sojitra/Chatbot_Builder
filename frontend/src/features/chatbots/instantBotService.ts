@@ -83,28 +83,14 @@ export class InstantBotService {
     websiteUrl,
     onStatusChange,
     onStageUpdate,
-    shouldFail = false,
   }: {
     websiteUrl: string;
     onStatusChange: (status: InstantBotStatus) => void;
     onStageUpdate: (stages: InstantBotStage[], currentStageId?: InstantBotStageId) => void;
-    shouldFail?: boolean;
   }): Promise<InstantBotResult> {
     this.isCancelled = false;
     const stages: InstantBotStage[] = createInitialStages();
     const botName = deriveBotNameFromUrl(websiteUrl);
-
-    // Development / test failure toggle from the UI form
-    if (shouldFail) {
-      onStatusChange("creating");
-      stages[0].status = "current";
-      onStageUpdate([...stages], "creating");
-      await this.delay(1000);
-      stages[0].status = "failed";
-      onStageUpdate([...stages], "creating");
-      onStatusChange("failed");
-      throw new Error(`Simulated failure triggered for test purposes on ${websiteUrl}.`);
-    }
 
     // Stage 1: Creating chatbot via Node.js POST /api/v1/chatbots
     onStatusChange("creating");

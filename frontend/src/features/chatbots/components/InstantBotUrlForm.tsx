@@ -15,7 +15,7 @@ import {
 interface InstantBotUrlFormProps {
   initialUrl?: string;
   isSubmitting?: boolean;
-  onSubmit: (url: string, simulateFailure?: boolean) => void;
+  onSubmit: (url: string) => void;
   onBack: () => void;
 }
 
@@ -49,7 +49,6 @@ export function InstantBotUrlForm({
   onBack,
 }: InstantBotUrlFormProps) {
   const [url, setUrl] = useState(initialUrl);
-  const [simulateFailure, setSimulateFailure] = useState(false);
   const [touched, setTouched] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -79,7 +78,7 @@ export function InstantBotUrlForm({
     }
 
     setValidationError(null);
-    onSubmit(url.trim(), simulateFailure);
+    onSubmit(url.trim());
   };
 
   const isFormValid = url.trim().length > 0 && !validationError;
@@ -139,26 +138,6 @@ export function InstantBotUrlForm({
                 Must be an accessible HTTP or HTTPS website (e.g., https://yourbrand.com or https://docs.yourbrand.com).
               </p>
             )}
-          </div>
-
-          {/* Development / Demo failure switch (helps verify failure state as required by acceptance criteria) */}
-          <div className="p-3 rounded-lg border border-zinc-800/80 bg-zinc-900/40 flex items-center justify-between text-xs">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-zinc-300 font-medium">Test Failure Flow (Mock Mode)</span>
-              <span className="text-zinc-500 text-[11px]">
-                Simulate a crawling error to test the recovery and retry screen.
-              </span>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={simulateFailure}
-                onChange={(e) => setSimulateFailure(e.target.checked)}
-                className="sr-only peer"
-                disabled={isSubmitting}
-              />
-              <div className="w-8 h-4 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-violet-600"></div>
-            </label>
           </div>
 
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800/80">

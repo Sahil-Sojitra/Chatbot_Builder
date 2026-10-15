@@ -97,7 +97,7 @@ export function InstantBotSuccess({ result, onReset }: InstantBotSuccessProps) {
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-medium text-zinc-300 uppercase tracking-wider">
-              Public Chatbot URL (Placeholder)
+              Public Chatbot URL
             </label>
             <span className="text-[11px] text-zinc-500">Share with team members or testers</span>
           </div>
@@ -201,7 +201,7 @@ export function InstantBotSuccess({ result, onReset }: InstantBotSuccessProps) {
               Create another bot
             </button>
             <Link
-              href="/dashboard/chatbots"
+              href={`/dashboard/chatbots/${result.botId}`}
               className={buttonVariants({ variant: "default", size: "default" })}
             >
               Open Chatbot Studio
