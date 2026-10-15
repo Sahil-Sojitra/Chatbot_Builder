@@ -131,8 +131,9 @@ export function CreateChatbotForm() {
     }
 
     try {
-      await chatbotsApi.create(payload);
-      router.push("/dashboard/chatbots");
+      const response = await chatbotsApi.create(payload);
+      // Navigate straight into the configuration area of the new bot
+      router.push(`/dashboard/chatbots/${response.chatbot.id}`);
     } catch (err) {
       setIsSubmitting(false);
       setFormError(
