@@ -75,6 +75,21 @@ export function InstantBotSuccess({ result, onReset }: InstantBotSuccessProps) {
             <span className="text-emerald-400 font-semibold text-sm">Active</span>
           </div>
         </div>
+
+        {/* Partial Crawl Notice if some pages failed */}
+        {Boolean(result.pagesFailed && result.pagesFailed > 0) && (
+          <div className="mt-3 py-2 px-3 rounded-lg bg-amber-500/10 border border-amber-500/25 text-left text-xs text-amber-300 flex items-start gap-2">
+            <svg className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-semibold text-amber-200">Partial Crawl Completed</span>
+              <span className="text-amber-300/90 text-[11px]">
+                {result.pagesDiscovered - (result.pagesFailed ?? 0)} of {result.pagesDiscovered} pages were successfully indexed. {result.pagesFailed} page(s) were inaccessible or returned an error and were safely skipped.
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6 pt-6">

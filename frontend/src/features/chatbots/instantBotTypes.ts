@@ -21,6 +21,7 @@ export interface InstantBotResult {
   websiteUrl: string;
   pagesDiscovered: number;
   documentsIndexed: number;
+  pagesFailed?: number;
   publicUrl: string;
   embedSnippet: string;
 }

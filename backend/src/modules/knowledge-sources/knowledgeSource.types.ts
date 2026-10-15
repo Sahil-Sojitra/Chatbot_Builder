@@ -22,6 +22,11 @@ export interface PublicKnowledgeSource {
   lastProcessedAt: string | null;
   error: string | null;
 
+  pagesCrawled?: number;
+  chunksIndexed?: number;
+  pagesDiscovered?: number;
+  pagesFailed?: number;
+
   createdBy: string;
   createdAt: string;
   updatedAt: string;

@@ -1,3 +1,5 @@
+import { chatbotsApi } from "@/lib/api/chatbots";
+import { knowledgeSourcesApi } from "@/lib/api/knowledgeSources";
 import type {
   InstantBotResult,
   InstantBotStage,
@@ -66,11 +68,11 @@ export function deriveBotNameFromUrl(rawUrl: string): string {
 }
 
 /**
- * Mock simulator for instant bot creation flow.
- * Isolated development service with callbacks for real-time stage updates.
- * Can be effortlessly replaced with an SSE/WebSocket/polling API client once the backend is ready.
+ * Instant Bot Service that connects the browser directly to the public Node.js API.
+ * The Node.js API validates auth/ownership and delegates crawling, chunking,
+ * embedding, and vector indexing to FastAPI.
  */
-export class InstantBotMockService {
+export class InstantBotService {
   private isCancelled = false;
 
   public cancel(): void {
@@ -91,54 +93,117 @@ export class InstantBotMockService {
     this.isCancelled = false;
     const stages: InstantBotStage[] = createInitialStages();
     const botName = deriveBotNameFromUrl(websiteUrl);
-    const mockPublicId = `bot_${Math.random().toString(36).substring(2, 10)}`;
-    const mockBotId = `mock-${Date.now()}`;
 
+    // Development / test failure toggle from the UI form
+    if (shouldFail) {
+      onStatusChange("creating");
+      stages[0].status = "current";
+      onStageUpdate([...stages], "creating");
+      await this.delay(1000);
+      stages[0].status = "failed";
+      onStageUpdate([...stages], "creating");
+      onStatusChange("failed");
+      throw new Error(`Simulated failure triggered for test purposes on ${websiteUrl}.`);
+    }
+
+    // Stage 1: Creating chatbot via Node.js POST /api/v1/chatbots
     onStatusChange("creating");
-
-    // Stage 1: Creating chatbot
     stages[0].status = "current";
     onStageUpdate([...stages], "creating");
-    await this.delay(1200);
+
+    let createdChatbot;
+    try {
+      const response = await chatbotsApi.create({
+        name: botName,
+        description: `Instant AI Assistant created from ${websiteUrl}`,
+      });
+      createdChatbot = response.chatbot;
+    } catch (err: unknown) {
+      stages[0].status = "failed";
+      onStageUpdate([...stages], "creating");
+      onStatusChange("failed");
+      const msg = err instanceof Error ? err.message : "Failed to initialize chatbot in workspace.";
+      throw new Error(msg);
+    }
+
     if (this.isCancelled) throw new Error("Cancelled");
     stages[0].status = "completed";
 
+    // Stage 2: Discovering website pages (Initiate Ingestion through Node.js)
     onStatusChange("processing");
-
-    // Stage 2: Discovering website pages
     stages[1].status = "current";
     onStageUpdate([...stages], "discovering");
-    await this.delay(1400);
-    if (this.isCancelled) throw new Error("Cancelled");
 
-    // If intentional test failure requested
-    if (shouldFail) {
-      stages[1].status = "failed";
-      onStageUpdate([...stages], "discovering");
+    // Timers to provide smooth visual progression across sub-stages while crawl & index runs
+    let timer1: NodeJS.Timeout | null = null;
+    let timer2: NodeJS.Timeout | null = null;
+
+    timer1 = setTimeout(() => {
+      if (!this.isCancelled && stages[1].status === "current") {
+        stages[1].status = "completed";
+        stages[2].status = "current";
+        onStageUpdate([...stages], "extracting");
+      }
+    }, 2200);
+
+    timer2 = setTimeout(() => {
+      if (!this.isCancelled && stages[2].status === "current") {
+        stages[2].status = "completed";
+        stages[3].status = "current";
+        onStageUpdate([...stages], "preparing");
+      }
+    }, 4800);
+
+    let ksResult;
+    try {
+      ksResult = await knowledgeSourcesApi.create(createdChatbot.id, {
+        type: "URL",
+        name: `${botName} Knowledge Base`,
+        sourceUrl: websiteUrl,
+      });
+    } catch (err: unknown) {
+      if (timer1) clearTimeout(timer1);
+      if (timer2) clearTimeout(timer2);
+
+      const activeIdx = stages.findIndex((s) => s.status === "current");
+      if (activeIdx >= 0) {
+        stages[activeIdx].status = "failed";
+      } else {
+        stages[1].status = "failed";
+      }
+      onStageUpdate([...stages]);
       onStatusChange("failed");
-      throw new Error(`Failed to crawl domain: could not discover pages on ${websiteUrl}.`);
+
+      const msg = err instanceof Error ? err.message : "Failed to crawl and index website pages.";
+      throw new Error(msg);
+    } finally {
+      if (timer1) clearTimeout(timer1);
+      if (timer2) clearTimeout(timer2);
     }
 
+    if (this.isCancelled) throw new Error("Cancelled");
+
+    // Verification: Show success ONLY when the backend confirms successful indexing
+    const source = ksResult.knowledgeSource;
+    if (source.status !== "READY") {
+      stages[3].status = "failed";
+      onStageUpdate([...stages]);
+      onStatusChange("failed");
+      throw new Error(
+        source.error || `Indexing completed with unready status '${source.status}'.`
+      );
+    }
+
+    // Complete crawling, extraction, and vectorization stages
     stages[1].status = "completed";
-
-    // Stage 3: Extracting website content
-    stages[2].status = "current";
-    onStageUpdate([...stages], "extracting");
-    await this.delay(1500);
-    if (this.isCancelled) throw new Error("Cancelled");
     stages[2].status = "completed";
-
-    // Stage 4: Preparing the knowledge base
-    stages[3].status = "current";
-    onStageUpdate([...stages], "preparing");
-    await this.delay(1600);
-    if (this.isCancelled) throw new Error("Cancelled");
     stages[3].status = "completed";
 
     // Stage 5: Completing setup
     stages[4].status = "current";
     onStageUpdate([...stages], "completing");
-    await this.delay(1000);
+    await this.delay(500);
+
     if (this.isCancelled) throw new Error("Cancelled");
     stages[4].status = "completed";
 
@@ -148,18 +213,26 @@ export class InstantBotMockService {
     const appOrigin =
       typeof window !== "undefined" && window.location.origin
         ? window.location.origin
-        : "https://chatbotstudio.io";
+        : "http://localhost:3000";
 
-    const publicUrl = `${appOrigin}/chat/${mockPublicId}`;
-    const embedSnippet = `<script\n  src="${appOrigin}/widget.js"\n  data-chatbot-id="${mockPublicId}"\n  defer\n></script>`;
+    const publicUrl = `${appOrigin}/chat/${createdChatbot.publicId}`;
+    const embedSnippet = `<script\n  src="${appOrigin}/widget.js"\n  data-chatbot-id="${createdChatbot.publicId}"\n  defer\n></script>`;
+
+    const pagesDiscovered =
+      source.pagesDiscovered ?? source.pagesCrawled ?? 1;
+    const documentsIndexed =
+      source.chunksIndexed ?? 1;
+    const pagesFailed =
+      source.pagesFailed ?? 0;
 
     return {
-      botId: mockBotId,
-      publicId: mockPublicId,
-      name: botName,
+      botId: createdChatbot.id,
+      publicId: createdChatbot.publicId,
+      name: createdChatbot.name,
       websiteUrl,
-      pagesDiscovered: 14,
-      documentsIndexed: 42,
+      pagesDiscovered,
+      documentsIndexed,
+      pagesFailed,
       publicUrl,
       embedSnippet,
     };
@@ -169,3 +242,7 @@ export class InstantBotMockService {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
+
+// Export InstantBotMockService as an alias for backwards compatibility
+export const InstantBotMockService = InstantBotService;
+

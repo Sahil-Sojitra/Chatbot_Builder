@@ -11,7 +11,7 @@ import { InstantBotSuccess } from "./InstantBotSuccess";
 import { InstantBotFailure } from "./InstantBotFailure";
 
 import {
-  InstantBotMockService,
+  InstantBotService,
   createInitialStages,
   deriveBotNameFromUrl,
 } from "../instantBotService";
@@ -42,15 +42,16 @@ export function ChatbotCreationFlow() {
   const [processingStatus, setProcessingStatus] = useState<InstantBotStatus>("creating");
   const [instantResult, setInstantResult] = useState<InstantBotResult | null>(null);
   const [failureError, setFailureError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Keep a reference to the active mock service instance so it can be cancelled if the user leaves
-  const mockServiceRef = useRef<InstantBotMockService | null>(null);
+  // Keep a reference to the active service instance so it can be cancelled if the user leaves
+  const serviceRef = useRef<InstantBotService | null>(null);
 
   useEffect(() => {
     return () => {
-      // Cleanup running simulation on unmount
-      if (mockServiceRef.current) {
-        mockServiceRef.current.cancel();
+      // Cleanup running request on unmount
+      if (serviceRef.current) {
+        serviceRef.current.cancel();
       }
     };
   }, []);
@@ -64,6 +65,9 @@ export function ChatbotCreationFlow() {
   };
 
   const handleUrlSubmit = async (url: string, simulateFailure = false) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     setWebsiteUrl(url);
     const derived = deriveBotNameFromUrl(url);
     setBotName(derived);
@@ -72,14 +76,14 @@ export function ChatbotCreationFlow() {
     setFailureError(null);
     setCurrentView("instant-processing");
 
-    const service = new InstantBotMockService();
-    mockServiceRef.current = service;
+    const service = new InstantBotService();
+    serviceRef.current = service;
 
     try {
       const result = await service.runSetup({
         websiteUrl: url,
-        onStatusChange: (status) => setProcessingStatus(status),
-        onStageUpdate: (updatedStages) => setStages(updatedStages),
+        onStatusChange: (status: InstantBotStatus) => setProcessingStatus(status),
+        onStageUpdate: (updatedStages: InstantBotStage[]) => setStages(updatedStages),
         shouldFail: simulateFailure,
       });
       setInstantResult(result);
@@ -95,6 +99,8 @@ export function ChatbotCreationFlow() {
       setFailureError(message);
       setProcessingStatus("failed");
       setCurrentView("instant-failure");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -103,13 +109,13 @@ export function ChatbotCreationFlow() {
       setCurrentView("instant-url");
       return;
     }
-    // Retry with the preserved URL (simulate normal success on retry)
+    // Retry with the preserved URL
     void handleUrlSubmit(websiteUrl, false);
   };
 
   const handleCancelProgress = () => {
-    if (mockServiceRef.current) {
-      mockServiceRef.current.cancel();
+    if (serviceRef.current) {
+      serviceRef.current.cancel();
     }
     router.push("/dashboard/chatbots");
   };
@@ -120,6 +126,7 @@ export function ChatbotCreationFlow() {
     setStages(createInitialStages());
     setInstantResult(null);
     setFailureError(null);
+    setIsSubmitting(false);
     setCurrentView("chooser");
   };
 
@@ -137,6 +144,7 @@ export function ChatbotCreationFlow() {
       {currentView === "instant-url" && (
         <InstantBotUrlForm
           initialUrl={websiteUrl}
+          isSubmitting={isSubmitting}
           onSubmit={(url, simulateFailure) => void handleUrlSubmit(url, simulateFailure)}
           onBack={() => setCurrentView("chooser")}
         />

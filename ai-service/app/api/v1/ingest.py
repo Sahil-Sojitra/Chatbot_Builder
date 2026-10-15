@@ -23,6 +23,8 @@ class IngestionResponse(BaseModel):
     website_url: str = Field(..., description="Root website URL crawled.")
     pages_crawled: int = Field(0, description="Number of unique pages successfully crawled.")
     chunks_indexed: int = Field(0, description="Total content chunks indexed into the vector database.")
+    pages_discovered: int = Field(0, description="Total unique pages discovered on domain.")
+    pages_failed: int = Field(0, description="Number of discovered pages that failed to crawl.")
     success: bool = Field(True, description="Whether the ingestion pipeline completed successfully.")
     error_message: Optional[str] = Field(None, description="Safe error details if ingestion failed.")
 
@@ -77,12 +79,17 @@ async def ingest_website(
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Crawling failed: {err_msg}")
 
     pages_crawled = len(crawl_result.successful_pages)
+    pages_discovered = crawl_result.total_discovered
+    pages_failed = crawl_result.failed_count
+
     if pages_crawled == 0:
         return IngestionResponse(
             chatbot_id=clean_bot_id,
             website_url=url_str,
             pages_crawled=0,
             chunks_indexed=0,
+            pages_discovered=pages_discovered,
+            pages_failed=pages_failed,
             success=False,
             error_message="No pages could be extracted from the target website.",
         )
@@ -98,6 +105,8 @@ async def ingest_website(
             website_url=url_str,
             pages_crawled=pages_crawled,
             chunks_indexed=0,
+            pages_discovered=pages_discovered,
+            pages_failed=pages_failed,
             success=False,
             error_message="Extracted pages contained no usable text chunks to index.",
         )
@@ -127,7 +136,7 @@ async def ingest_website(
 
     logger.info(
         f"Completed ingestion for chatbot '{clean_bot_id}': "
-        f"{pages_crawled} pages crawled, {upsert_result.upserted_count} chunks indexed."
+        f"{pages_crawled} pages crawled ({pages_failed} failed), {upsert_result.upserted_count} chunks indexed."
     )
 
     return IngestionResponse(
@@ -135,5 +144,7 @@ async def ingest_website(
         website_url=url_str,
         pages_crawled=pages_crawled,
         chunks_indexed=upsert_result.upserted_count,
+        pages_discovered=pages_discovered,
+        pages_failed=pages_failed,
         success=True,
     )

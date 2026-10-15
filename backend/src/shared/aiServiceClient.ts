@@ -23,6 +23,8 @@ export interface IngestWebsiteResponse {
   website_url: string;
   pages_crawled: number;
   chunks_indexed: number;
+  pages_discovered?: number;
+  pages_failed?: number;
   success: boolean;
   error_message: string | null;
 }

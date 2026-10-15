@@ -162,7 +162,13 @@ export const knowledgeSourceService = {
         }
 
         const readySource = await knowledgeSourceRepository.markReady(source._id.toString());
-        return toPublicKnowledgeSource(readySource ?? source);
+        return {
+          ...toPublicKnowledgeSource(readySource ?? source),
+          pagesCrawled: ingestionResult.pages_crawled,
+          chunksIndexed: ingestionResult.chunks_indexed,
+          pagesDiscovered: ingestionResult.pages_discovered ?? ingestionResult.pages_crawled,
+          pagesFailed: ingestionResult.pages_failed ?? 0,
+        };
       } catch (err: unknown) {
         if (err instanceof AppError) {
           throw err;
