@@ -146,7 +146,7 @@ class KnowledgeRetrievalService:
             top_k=effective_top_k,
         )
 
-        model_name = getattr(self._embedding_service, "model", "voyage-3")
+        model_name = getattr(self._embedding_service, "model", "voyage-4")
 
         # 1. Generate query embedding using the same model as indexing (input_type='query')
         try:
@@ -248,7 +248,7 @@ class KnowledgeRetrievalService:
             top_k=effective_top_k,
         )
 
-        model_name = getattr(self._embedding_service, "model", "voyage-3")
+        model_name = getattr(self._embedding_service, "model", "voyage-4")
 
         # 1. Generate query embedding asynchronously
         try:

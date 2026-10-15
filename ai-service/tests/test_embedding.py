@@ -121,12 +121,15 @@ class TestVoyageEmbeddingService:
 
     def test_model_dimensions_mapping(self):
         """Verifies that documented model dimensions match Voyage AI specifications."""
+        assert VOYAGE_MODEL_DIMENSIONS["voyage-4"] == 1024
+        assert VOYAGE_MODEL_DIMENSIONS["voyage-4-large"] == 1024
+        assert VOYAGE_MODEL_DIMENSIONS["voyage-4-lite"] == 1024
         assert VOYAGE_MODEL_DIMENSIONS["voyage-3"] == 1024
         assert VOYAGE_MODEL_DIMENSIONS["voyage-3-lite"] == 512
         assert VOYAGE_MODEL_DIMENSIONS["voyage-code-2"] == 1536
 
-        service_lite = VoyageEmbeddingService(api_key="mock", model="voyage-3-lite")
-        assert service_lite.get_expected_dimensions() == 512
+        service_v4 = VoyageEmbeddingService(api_key="mock", model="voyage-4")
+        assert service_v4.get_expected_dimensions() == 1024
 
     def test_batch_slicing_splits_large_batches(self):
         """Batches larger than batch_size must be sliced across multiple API calls."""

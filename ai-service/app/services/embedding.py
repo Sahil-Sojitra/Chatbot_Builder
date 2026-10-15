@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 # Standard Voyage AI embedding dimensionalities
 VOYAGE_MODEL_DIMENSIONS: Dict[str, int] = {
+    "voyage-4": 1024,
+    "voyage-4-large": 1024,
+    "voyage-4-lite": 1024,
     "voyage-3": 1024,
     "voyage-3-lite": 512,
     "voyage-large-2-instruct": 1024,
@@ -91,7 +94,7 @@ class VoyageEmbeddingService:
     (1024 dimensions) and 'voyage-3-lite' (512 dimensions).
     """
 
-    DEFAULT_MODEL: str = "voyage-3"
+    DEFAULT_MODEL: str = "voyage-4"
     MAX_BATCH_SIZE: int = 128  # Voyage AI maximum recommended batch slice
 
     def __init__(
