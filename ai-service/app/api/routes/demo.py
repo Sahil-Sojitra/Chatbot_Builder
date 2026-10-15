@@ -30,6 +30,12 @@ from app.services.vector_store import (
     VectorDeleteResult,
     VectorStoreError,
 )
+from app.services.retrieval import (
+    retrieval_service,
+    RetrievalResult,
+    RetrievalError,
+    InvalidQueryError,
+)
 
 router = APIRouter(prefix="/demo", tags=["Demo / Temporary Testing"])
 
@@ -255,5 +261,24 @@ async def demo_crawl_embed_index(payload: WebsiteIngestionRequest):
         raise HTTPException(status_code=400, detail=f"Vector store error: {err}")
 
 
+class KnowledgeRetrievalRequest(BaseModel):
+    chatbot_id: str = Field(..., min_length=1, description="Chatbot identifier owning the knowledge base.")
+    query: str = Field(..., min_length=1, description="Question or search query.")
+    top_k: int = Field(default=4, ge=1, le=20, description="Conservative default number of chunks to retrieve.")
+    score_threshold: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Optional minimum score cutoff.")
 
 
+@router.post("/retrieval", response_model=RetrievalResult)
+async def demo_knowledge_retrieval(payload: KnowledgeRetrievalRequest):
+    """Testing endpoint to run semantic knowledge retrieval for a chatbot question."""
+    try:
+        return await retrieval_service.aretrieve(
+            chatbot_id=payload.chatbot_id,
+            query=payload.query,
+            top_k=payload.top_k,
+            score_threshold=payload.score_threshold,
+        )
+    except InvalidQueryError as err:
+        raise HTTPException(status_code=400, detail=str(err))
+    except RetrievalError as err:
+        raise HTTPException(status_code=500, detail=str(err))

@@ -35,6 +35,16 @@ from app.services.vector_store import (
     VectorStoreError,
     VectorStoreConfigurationError,
 )
+from app.services.retrieval import (
+    retrieval_service,
+    KnowledgeRetrievalService,
+    RetrievedChunk,
+    RetrievalStats,
+    RetrievalResult,
+    RetrievalError,
+    InvalidQueryError,
+    DEFAULT_TOP_K,
+)
 
 __all__ = [
     "crawler_service",
@@ -69,4 +79,12 @@ __all__ = [
     "VectorDeleteResult",
     "VectorStoreError",
     "VectorStoreConfigurationError",
+    "retrieval_service",
+    "KnowledgeRetrievalService",
+    "RetrievedChunk",
+    "RetrievalStats",
+    "RetrievalResult",
+    "RetrievalError",
+    "InvalidQueryError",
+    "DEFAULT_TOP_K",
 ]

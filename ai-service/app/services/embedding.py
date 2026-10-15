@@ -392,6 +392,31 @@ class VoyageEmbeddingService:
             logger.error(f"Voyage AI query embedding error: {exc}")
             raise EmbeddingGenerationError(f"Voyage AI query embedding error: {exc}") from exc
 
+    async def aembed_query(self, query: str) -> QueryEmbeddingResult:
+        """Generates an embedding vector for a single query asynchronously (input_type='query')."""
+        if not query or not query.strip():
+            raise ValueError("Query string cannot be empty.")
+
+        client = self._get_async_client()
+        try:
+            response = await client.embed(
+                texts=[query.strip()],
+                model=self.model,
+                input_type="query",
+            )
+            vector = response.embeddings[0]
+            tokens = getattr(response, "total_tokens", 0)
+            return QueryEmbeddingResult(
+                query=query.strip(),
+                embedding=vector,
+                dimensions=len(vector),
+                model_name=self.model,
+                token_count=tokens,
+            )
+        except Exception as exc:
+            logger.error(f"Voyage AI async query embedding error: {exc}")
+            raise EmbeddingGenerationError(f"Voyage AI async query embedding error: {exc}") from exc
+
 
 # Global singleton instance
 embedding_service = VoyageEmbeddingService()
