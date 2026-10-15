@@ -130,6 +130,104 @@ export const knowledgeSourceService = {
   ): Promise<ClientFacingKnowledgeSource> {
     const chatbot = await resolveOwnedChatbot(ownerId, chatbotId);
 
+    // Instant Bot specific concurrency, URL validation, and retry deduplication checks
+    if (chatbot.creationMode === "INSTANT" && (input.type === "URL" || input.type === "WEBPAGE")) {
+      const existingSources = await knowledgeSourceRepository.findAllForChatbot(chatbot._id);
+
+      // 1. Prevent concurrent ingestion or double-click duplicates
+      const inProgressSource = existingSources.find(
+        (s) => s.status === "PENDING" || s.status === "PROCESSING",
+      );
+      if (inProgressSource) {
+        throw new AppError(
+          409,
+          "INVALID_STATE_TRANSITION",
+          "Website ingestion is already in progress for this chatbot.",
+        );
+      }
+
+      // 2. Prevent silently attaching a different website URL to an existing Instant Bot chatbot
+      const existingWithUrl = existingSources.find((s) => s.sourceUrl);
+      if (existingWithUrl && existingWithUrl.sourceUrl !== input.sourceUrl) {
+        throw new AppError(
+          400,
+          "VALIDATION_ERROR",
+          "Cannot attach a different website URL to an existing Instant Bot chatbot. Please create a new chatbot.",
+        );
+      }
+
+      // 3. If an existing source is already READY for this URL, return it
+      const readySource = existingSources.find(
+        (s) => s.status === "READY" && s.sourceUrl === input.sourceUrl,
+      );
+      if (readySource) {
+        return toPublicKnowledgeSource(readySource);
+      }
+
+      // 4. Handle retry vs initial creation
+      // existingSources are sorted newest first ({ createdAt: -1 }).
+      const failedSources = existingSources.filter((s) => s.status === "FAILED");
+
+      let sourceToProcess: HydratedDocument<IKnowledgeSource>;
+
+      const firstFailedSource = failedSources[0];
+      if (failedSources.length >= 2 && firstFailedSource) {
+        // A second retry: We already have the initial failed record (preserved for diagnosis)
+        // and a subsequent failed retry record. Reuse the latest retry record rather than
+        // creating duplicate knowledge sources.
+        const resetSource = await knowledgeSourceRepository.resetForRetry(
+          firstFailedSource._id.toString(),
+          input.name,
+          input.sourceUrl,
+        );
+        sourceToProcess = resetSource ?? firstFailedSource;
+      } else {
+        // Initial setup (0 failed sources) OR First retry (1 failed source):
+        // Create a new knowledge source record. If 1 failed source exists, it is preserved.
+        const creationInput: RepositoryCreateKnowledgeSourceInput = {
+          chatbotId: chatbot._id,
+          type: input.type,
+          name: input.name,
+          sourceUrl: input.sourceUrl,
+          createdBy: new Types.ObjectId(ownerId),
+        };
+        const created = await knowledgeSourceRepository.create(creationInput);
+        const claimed = await knowledgeSourceRepository.claimForProcessing(created._id.toString());
+        sourceToProcess = claimed ?? created;
+      }
+
+      try {
+        const ingestionResult = await aiServiceClient.ingestWebsite({
+          chatbotId: chatbot._id.toString(),
+          websiteUrl: input.sourceUrl,
+        });
+
+        if (!ingestionResult.success) {
+          const failureMsg = ingestionResult.error_message || "Website ingestion failed in AI service";
+          await knowledgeSourceRepository.markFailed(sourceToProcess._id.toString(), failureMsg);
+          throw new AppError(422, "INGESTION_FAILED", failureMsg);
+        }
+
+        const readySource = await knowledgeSourceRepository.markReady(sourceToProcess._id.toString());
+        return {
+          ...toPublicKnowledgeSource(readySource ?? sourceToProcess),
+          pagesCrawled: ingestionResult.pages_crawled,
+          chunksIndexed: ingestionResult.chunks_indexed,
+          pagesDiscovered: ingestionResult.pages_discovered ?? ingestionResult.pages_crawled,
+          pagesFailed: ingestionResult.pages_failed ?? 0,
+        };
+      } catch (err: unknown) {
+        if (err instanceof AppError) {
+          throw err;
+        }
+        const safeError = err instanceof AIServiceError ? err.message : "Website crawling and indexing failed";
+        await knowledgeSourceRepository.markFailed(sourceToProcess._id.toString(), safeError);
+        const statusCode = err instanceof AIServiceError ? err.status : 500;
+        throw new AppError(statusCode, "INGESTION_FAILED", safeError);
+      }
+    }
+
+    // Default flow for Custom Bots (or TEXT sources)
     const creationInput: RepositoryCreateKnowledgeSourceInput = {
       chatbotId: chatbot._id,
       type: input.type,
@@ -145,7 +243,7 @@ export const knowledgeSourceService = {
 
     const source = await knowledgeSourceRepository.create(creationInput);
 
-    // Synchronous Instant Bot ingestion via FastAPI
+    // Synchronous Custom Bot ingestion via FastAPI
     if (input.type === "URL" || input.type === "WEBPAGE") {
       await knowledgeSourceRepository.claimForProcessing(source._id.toString());
 

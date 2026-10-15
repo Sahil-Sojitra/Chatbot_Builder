@@ -6,6 +6,7 @@ import { Button, buttonVariants } from "@/components/ui";
 interface InstantBotFailureProps {
   websiteUrl: string;
   errorMessage?: string;
+  isRetrying?: boolean;
   onRetry: () => void;
   onEditUrl: () => void;
 }
@@ -13,6 +14,7 @@ interface InstantBotFailureProps {
 export function InstantBotFailure({
   websiteUrl,
   errorMessage,
+  isRetrying = false,
   onRetry,
   onEditUrl,
 }: InstantBotFailureProps) {
@@ -79,16 +81,18 @@ export function InstantBotFailure({
             type="button"
             variant="secondary"
             onClick={onEditUrl}
-            className="w-full sm:w-auto"
+            disabled={isRetrying}
+            className="w-full sm:w-auto disabled:opacity-50"
           >
             Correct URL
           </Button>
           <Button
             type="button"
             onClick={onRetry}
-            className="w-full sm:w-auto bg-[#0052CC] hover:bg-[#0747A6] text-white"
+            disabled={isRetrying}
+            className="w-full sm:w-auto bg-[#0052CC] hover:bg-[#0747A6] text-white disabled:opacity-50"
           >
-            Retry Pipeline
+            {isRetrying ? "Retrying..." : "Retry Pipeline"}
           </Button>
         </div>
       </div>

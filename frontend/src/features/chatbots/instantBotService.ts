@@ -81,40 +81,53 @@ export class InstantBotService {
 
   public async runSetup({
     websiteUrl,
+    existingChatbot,
+    onChatbotCreated,
     onStatusChange,
     onStageUpdate,
   }: {
     websiteUrl: string;
+    existingChatbot?: { id: string; publicId: string; name: string };
+    onChatbotCreated?: (chatbot: { id: string; publicId: string; name: string }) => void;
     onStatusChange: (status: InstantBotStatus) => void;
     onStageUpdate: (stages: InstantBotStage[], currentStageId?: InstantBotStageId) => void;
   }): Promise<InstantBotResult> {
     this.isCancelled = false;
     const stages: InstantBotStage[] = createInitialStages();
-    const botName = deriveBotNameFromUrl(websiteUrl);
+    const botName = existingChatbot?.name ?? deriveBotNameFromUrl(websiteUrl);
 
-    // Stage 1: Creating chatbot via Node.js POST /api/v1/chatbots
-    onStatusChange("creating");
-    stages[0].status = "current";
-    onStageUpdate([...stages], "creating");
+    let createdChatbot: { id: string; publicId: string; name: string };
 
-    let createdChatbot;
-    try {
-      const response = await chatbotsApi.create({
-        name: botName,
-        description: `Instant AI Assistant created from ${websiteUrl}`,
-        creationMode: "INSTANT",
-      });
-      createdChatbot = response.chatbot;
-    } catch (err: unknown) {
-      stages[0].status = "failed";
+    if (existingChatbot) {
+      // Reusing existing failed setup's chatbot: Skip Stage 0 creation and preserve original chatbot ID
+      createdChatbot = existingChatbot;
+      stages[0].status = "completed";
+      onChatbotCreated?.(createdChatbot);
+    } else {
+      // Stage 1: Creating chatbot via Node.js POST /api/v1/chatbots
+      onStatusChange("creating");
+      stages[0].status = "current";
       onStageUpdate([...stages], "creating");
-      onStatusChange("failed");
-      const msg = err instanceof Error ? err.message : "Failed to initialize chatbot in workspace.";
-      throw new Error(msg);
-    }
 
-    if (this.isCancelled) throw new Error("Cancelled");
-    stages[0].status = "completed";
+      try {
+        const response = await chatbotsApi.create({
+          name: botName,
+          description: `Instant AI Assistant created from ${websiteUrl}`,
+          creationMode: "INSTANT",
+        });
+        createdChatbot = response.chatbot;
+        onChatbotCreated?.(createdChatbot);
+      } catch (err: unknown) {
+        stages[0].status = "failed";
+        onStageUpdate([...stages], "creating");
+        onStatusChange("failed");
+        const msg = err instanceof Error ? err.message : "Failed to initialize chatbot in workspace.";
+        throw new Error(msg);
+      }
+
+      if (this.isCancelled) throw new Error("Cancelled");
+      stages[0].status = "completed";
+    }
 
     // Stage 2: Discovering website pages (Initiate Ingestion through Node.js)
     onStatusChange("processing");

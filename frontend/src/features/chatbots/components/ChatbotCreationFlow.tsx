@@ -43,6 +43,11 @@ export function ChatbotCreationFlow() {
   const [instantResult, setInstantResult] = useState<InstantBotResult | null>(null);
   const [failureError, setFailureError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdChatbot, setCreatedChatbot] = useState<{
+    id: string;
+    publicId: string;
+    name: string;
+  } | null>(null);
 
   // Keep a reference to the active service instance so it can be cancelled if the user leaves
   const serviceRef = useRef<InstantBotService | null>(null);
@@ -64,15 +69,25 @@ export function ChatbotCreationFlow() {
     setCurrentView("custom-form");
   };
 
-  const handleUrlSubmit = async (url: string) => {
+  const handleUrlSubmit = async (url: string, forceNew = false) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
+    const isDifferentUrl =
+      Boolean(websiteUrl) &&
+      url.trim().toLowerCase() !== websiteUrl.trim().toLowerCase();
+    const shouldResetBot = forceNew || isDifferentUrl;
+
+    const botToReuse = shouldResetBot ? null : createdChatbot;
+    if (shouldResetBot) {
+      setCreatedChatbot(null);
+    }
+
     setWebsiteUrl(url);
-    const derived = deriveBotNameFromUrl(url);
+    const derived = botToReuse ? botToReuse.name : deriveBotNameFromUrl(url);
     setBotName(derived);
     setStages(createInitialStages());
-    setProcessingStatus("creating");
+    setProcessingStatus(botToReuse ? "processing" : "creating");
     setFailureError(null);
     setCurrentView("instant-processing");
 
@@ -82,6 +97,10 @@ export function ChatbotCreationFlow() {
     try {
       const result = await service.runSetup({
         websiteUrl: url,
+        existingChatbot: botToReuse ?? undefined,
+        onChatbotCreated: (bot) => {
+          setCreatedChatbot(bot);
+        },
         onStatusChange: (status: InstantBotStatus) => setProcessingStatus(status),
         onStageUpdate: (updatedStages: InstantBotStage[]) => setStages(updatedStages),
       });
@@ -104,12 +123,13 @@ export function ChatbotCreationFlow() {
   };
 
   const handleRetry = () => {
+    if (isSubmitting) return;
     if (!websiteUrl) {
       setCurrentView("instant-url");
       return;
     }
-    // Retry with the preserved URL
-    void handleUrlSubmit(websiteUrl);
+    // Retry with the preserved URL and preserved chatbot
+    void handleUrlSubmit(websiteUrl, false);
   };
 
   const handleCancelProgress = () => {
@@ -122,6 +142,7 @@ export function ChatbotCreationFlow() {
   const handleReset = () => {
     setWebsiteUrl("");
     setBotName("");
+    setCreatedChatbot(null);
     setStages(createInitialStages());
     setInstantResult(null);
     setFailureError(null);
@@ -173,6 +194,7 @@ export function ChatbotCreationFlow() {
         <InstantBotFailure
           websiteUrl={websiteUrl}
           errorMessage={failureError ?? undefined}
+          isRetrying={isSubmitting}
           onRetry={handleRetry}
           onEditUrl={() => setCurrentView("instant-url")}
         />

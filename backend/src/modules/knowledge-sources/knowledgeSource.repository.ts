@@ -122,4 +122,30 @@ export const knowledgeSourceRepository = {
     );
   },
 
+  /**
+   * Resets a previously failed knowledge source back to PROCESSING for retry.
+   * Atomically flips status from FAILED to PROCESSING.
+   */
+  async resetForRetry(
+    id: string,
+    name?: string,
+    sourceUrl?: string,
+  ): Promise<HydratedDocument<IKnowledgeSource> | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return KnowledgeSourceModel.findOneAndUpdate(
+      { _id: id, status: "FAILED" },
+      {
+        $set: {
+          status: "PROCESSING",
+          error: null,
+          lastProcessedAt: new Date(),
+          ...(name ? { name } : {}),
+          ...(sourceUrl ? { sourceUrl } : {}),
+        },
+      },
+      { new: true },
+    );
+  },
 };
