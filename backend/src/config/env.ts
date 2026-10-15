@@ -36,9 +36,6 @@ export const env = {
   S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
   S3_FORCE_PATH_STYLE: process.env.S3_FORCE_PATH_STYLE === 'true',
 
-  // Redis connection for the BullMQ ingestion queue (deprecated).
-  REDIS_URL: process.env.REDIS_URL,
-
   // Internal FastAPI AI Service configuration
   AI_SERVICE_URL: process.env.AI_SERVICE_URL ?? 'http://127.0.0.1:8000',
   AI_SERVICE_API_KEY: process.env.AI_SERVICE_API_KEY ?? process.env.INTERNAL_API_KEY ?? '',
