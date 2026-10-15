@@ -45,6 +45,24 @@ from app.services.retrieval import (
     InvalidQueryError,
     DEFAULT_TOP_K,
 )
+from app.services.generator import (
+    generator_service,
+    LLMGenerationAdapter,
+    GeminiGenerationAdapter,
+    SourceReference,
+    GeneratedAnswer,
+    GenerationStats,
+    GenerationError,
+    GenerationTimeoutError,
+    GenerationProviderError,
+)
+from app.services.qa import (
+    qa_service,
+    RAGQuestionAnsweringService,
+    QARequest,
+    QAResponse,
+    QAStats,
+)
 
 __all__ = [
     "crawler_service",
@@ -87,4 +105,18 @@ __all__ = [
     "RetrievalError",
     "InvalidQueryError",
     "DEFAULT_TOP_K",
+    "generator_service",
+    "LLMGenerationAdapter",
+    "GeminiGenerationAdapter",
+    "SourceReference",
+    "GeneratedAnswer",
+    "GenerationStats",
+    "GenerationError",
+    "GenerationTimeoutError",
+    "GenerationProviderError",
+    "qa_service",
+    "RAGQuestionAnsweringService",
+    "QARequest",
+    "QAResponse",
+    "QAStats",
 ]
