@@ -15,6 +15,16 @@ from app.services.chunker import (
     ChunkingStats,
     ChunkingResult,
 )
+from app.services.embedding import (
+    embedding_service,
+    EmbeddedChunk,
+    BatchEmbeddingResult,
+    EmbeddingBatchStats,
+    QueryEmbeddingResult,
+    EmbeddingError,
+    EmbeddingConfigurationError,
+    EmbeddingGenerationError,
+)
 
 __all__ = [
     "crawler_service",
@@ -33,4 +43,12 @@ __all__ = [
     "ContentChunk",
     "ChunkingStats",
     "ChunkingResult",
+    "embedding_service",
+    "EmbeddedChunk",
+    "BatchEmbeddingResult",
+    "EmbeddingBatchStats",
+    "QueryEmbeddingResult",
+    "EmbeddingError",
+    "EmbeddingConfigurationError",
+    "EmbeddingGenerationError",
 ]

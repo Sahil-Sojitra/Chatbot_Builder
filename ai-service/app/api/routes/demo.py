@@ -16,6 +16,12 @@ from app.services.chunker import (
     chunker_service,
     ChunkingResult,
 )
+from app.services.embedding import (
+    embedding_service,
+    BatchEmbeddingResult,
+    QueryEmbeddingResult,
+    EmbeddingError,
+)
 
 router = APIRouter(prefix="/demo", tags=["Demo / Temporary Testing"])
 
@@ -129,5 +135,38 @@ async def demo_crawl_and_chunk(payload: MultiPageCrawlRequest, chunk_size: int =
 
     normalized = content_normalizer.normalize_pages(crawl_result)
     return chunker_service.chunk_pages(normalized, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+
+
+class QueryEmbeddingRequest(BaseModel):
+    query: str = Field(..., min_length=1, description="Search query to embed with Voyage AI.")
+
+
+@router.post("/embed-query", response_model=QueryEmbeddingResult)
+def demo_embed_query(payload: QueryEmbeddingRequest):
+    """Testing endpoint to generate vector embedding for a search query using Voyage AI."""
+    try:
+        return embedding_service.embed_query(payload.query)
+    except EmbeddingError as err:
+        raise HTTPException(status_code=400, detail=str(err))
+
+
+@router.post("/crawl-chunk-embed", response_model=BatchEmbeddingResult)
+async def demo_crawl_chunk_embed(payload: MultiPageCrawlRequest):
+    """Convenience testing endpoint: crawls, normalizes, chunks, and generates embeddings."""
+    crawl_result = await crawler_service.crawl_multipage(
+        starting_url=str(payload.url),
+        max_pages=payload.max_pages,
+    )
+    if not crawl_result.success and "SSRF Security Violation" in (crawl_result.error_message or ""):
+        raise HTTPException(status_code=400, detail=crawl_result.error_message)
+
+    normalized = content_normalizer.normalize_pages(crawl_result)
+    chunking_result = chunker_service.chunk_pages(normalized)
+
+    try:
+        return await embedding_service.aembed_chunks(chunking_result.chunks)
+    except EmbeddingError as err:
+        raise HTTPException(status_code=400, detail=str(err))
+
 
 
