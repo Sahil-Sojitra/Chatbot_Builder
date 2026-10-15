@@ -13,6 +13,8 @@ export type ErrorCode =
   | "INCORRECT_PASSWORD"
   | "SAME_PASSWORD"
   | "INVALID_STATE_TRANSITION"
+  | "INGESTION_FAILED"
+  | "AI_SERVICE_ERROR"
   | "INTERNAL_ERROR";
 
 export class AppError extends Error {

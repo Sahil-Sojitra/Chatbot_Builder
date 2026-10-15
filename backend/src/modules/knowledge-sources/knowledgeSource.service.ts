@@ -7,7 +7,7 @@ import { AppError, chatbotNotFound, organizationNotFound } from "../../shared/er
 import { createPresignedUploadUrl, headObject } from "../../shared/storage.js";
 import { chatbotRepository } from "../chatbots/chatbot.repository.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
-import { enqueueIngestionJob } from "./ingestion/ingestion.queue.js";
+import { aiServiceClient, AIServiceError } from "../../shared/aiServiceClient.js";
 import { knowledgeSourceRepository } from "./knowledgeSource.repository.js";
 import type { CreateKnowledgeSourceInput as RepositoryCreateKnowledgeSourceInput } from "./knowledgeSource.repository.js";
 import { pendingUploadRepository } from "./pendingUpload.repository.js";
@@ -30,10 +30,7 @@ export interface InitiateFileUploadResult {
 }
 
 /**
- * Reduces a client-supplied filename to a safe path segment — lowercase,
- * ASCII alnum/dot/dash/underscore only, collapsed separators. Never trusted
- * as-is in the storage key: this only prevents path traversal and odd
- * characters, the uniqueness guarantee comes from the random id prefix.
+ * Reduces a client-supplied filename to a safe path segment.
  */
 const sanitizeFileName = (name: string): string => {
   const safe = name
@@ -48,10 +45,7 @@ const sanitizeFileName = (name: string): string => {
 };
 
 /**
- * Backend-generated storage key — never accepted from the client. Scoped
- * under the chatbot and prefixed with a random id so two uploads of the
- * same filename (or a maliciously chosen one) can never collide or land at
- * the bucket root.
+ * Backend-generated storage key — never accepted from the client.
  */
 const generateObjectKey = (
   chatbotId: Types.ObjectId,
@@ -62,31 +56,14 @@ const generateObjectKey = (
   return `knowledge-sources/${chatbotId.toString()}/${uniqueId}-${safeName}`;
 };
 
-/**
- * Dashboard-facing shape: storageKey and error are internal implementation
- * details (an object-storage key and a raw processing error message) that
- * are never returned to the client, even though they're stored on the
- * model. Narrowed locally rather than in knowledgeSource.types.ts so
- * PublicKnowledgeSource itself is untouched.
- */
 type ClientFacingKnowledgeSource = Omit<
   PublicKnowledgeSource,
   "storageKey" | "error"
 >;
 
-/**
- * A knowledge source that doesn't exist, or exists under a different
- * chatbot, resolves to the same generic 404 — matching chatbotNotFound()'s
- * "NOT_FOUND" code and the project's convention of never surfacing a 403 for
- * cross-tenant access.
- */
 const knowledgeSourceNotFound = (): AppError =>
   new AppError(404, "NOT_FOUND", "No knowledge source found");
 
-/**
- * An unknown, already-consumed, or expired uploadId all resolve to the same
- * error — there is no way (or need) for the client to distinguish them.
- */
 const uploadNotFound = (): AppError =>
   new AppError(404, "NOT_FOUND", "No pending upload found");
 
@@ -121,11 +98,7 @@ const toPublicKnowledgeSource = (
 });
 
 /**
- * Resolves the authenticated user's organization, then the chatbot within
- * it. Every service method starts here — a client can never supply
- * organizationId, and a chatbotId alone is never sufficient to prove
- * ownership. Throws organizationNotFound()/chatbotNotFound() exactly like
- * chatbotService does.
+ * Resolves the authenticated user's organization, then the chatbot within it.
  */
 const resolveOwnedChatbot = async (ownerId: string, chatbotId: string) => {
   const organization = await organizationRepository.findByOwnerId(ownerId);
@@ -146,12 +119,9 @@ const resolveOwnedChatbot = async (ownerId: string, chatbotId: string) => {
 
 export const knowledgeSourceService = {
   /**
-   * Creates a knowledge source under the given chatbot, scoped to the
-   * authenticated user's organization. Only TEXT/URL/WEBPAGE are supported
-   * here — FILE creation (and storageKey generation) is not implemented
-   * yet. status is never accepted from the client; it's left to the model's
-   * PENDING default. Enqueues a background ingestion job (best-effort — see
-   * enqueueIngestionJob) once the source is created.
+   * Synchronously creates and ingests a knowledge source under the given chatbot.
+   * For URL / WEBPAGE (Instant Bot ingestion), calls the FastAPI AI service synchronously
+   * and updates MongoDB status (PROCESSING -> READY or FAILED).
    */
   async createForOwner(
     ownerId: string,
@@ -174,15 +144,46 @@ export const knowledgeSourceService = {
     }
 
     const source = await knowledgeSourceRepository.create(creationInput);
-    await enqueueIngestionJob(source._id.toString());
+
+    // Synchronous Instant Bot ingestion via FastAPI
+    if (input.type === "URL" || input.type === "WEBPAGE") {
+      await knowledgeSourceRepository.claimForProcessing(source._id.toString());
+
+      try {
+        const ingestionResult = await aiServiceClient.ingestWebsite({
+          chatbotId: chatbot._id.toString(),
+          websiteUrl: input.sourceUrl,
+        });
+
+        if (!ingestionResult.success) {
+          const failureMsg = ingestionResult.error_message || "Website ingestion failed in AI service";
+          await knowledgeSourceRepository.markFailed(source._id.toString(), failureMsg);
+          throw new AppError(422, "INGESTION_FAILED", failureMsg);
+        }
+
+        const readySource = await knowledgeSourceRepository.markReady(source._id.toString());
+        return toPublicKnowledgeSource(readySource ?? source);
+      } catch (err: unknown) {
+        if (err instanceof AppError) {
+          throw err;
+        }
+        const safeError = err instanceof AIServiceError ? err.message : "Website crawling and indexing failed";
+        await knowledgeSourceRepository.markFailed(source._id.toString(), safeError);
+        const statusCode = err instanceof AIServiceError ? err.status : 500;
+        throw new AppError(statusCode, "INGESTION_FAILED", safeError);
+      }
+    } else if (input.type === "TEXT") {
+      // Mark text knowledge sources READY immediately
+      await knowledgeSourceRepository.claimForProcessing(source._id.toString());
+      const readySource = await knowledgeSourceRepository.markReady(source._id.toString(), input.sourceText);
+      return toPublicKnowledgeSource(readySource ?? source);
+    }
 
     return toPublicKnowledgeSource(source);
   },
 
   /**
-   * Fetches one knowledge source by id, scoped to the given chatbot and the
-   * authenticated user's organization. A knowledge source belonging to a
-   * different chatbot resolves to the same 404 as one that doesn't exist.
+   * Fetches one knowledge source by id, scoped to the given chatbot.
    */
   async getForOwner(
     ownerId: string,
@@ -203,9 +204,7 @@ export const knowledgeSourceService = {
   },
 
   /**
-   * Lists every knowledge source under the given chatbot, scoped to the
-   * authenticated user's organization. Ordered newest first, as returned by
-   * the repository.
+   * Lists every knowledge source under the given chatbot.
    */
   async listForOwner(
     ownerId: string,
@@ -221,15 +220,7 @@ export const knowledgeSourceService = {
   },
 
   /**
-   * Initializes a FILE upload: verifies chatbot ownership, generates a
-   * backend-controlled storage key, and returns a presigned R2 PUT URL
-   * bound to the validated mimeType. Does NOT create a KnowledgeSource
-   * document — that happens only once the client has actually uploaded the
-   * object and called the completion endpoint. The storage key is never
-   * handed to the client directly: it's stashed in a short-lived
-   * PendingUpload record, and the client only ever sees that record's id
-   * (uploadId). The client never supplies a size at this step — the
-   * completion step derives the real size straight from R2 itself.
+   * Initializes a FILE upload.
    */
   async initiateFileUpload(
     ownerId: string,
@@ -263,17 +254,7 @@ export const knowledgeSourceService = {
   },
 
   /**
-   * Completes a previously initiated FILE upload. The client supplies only
-   * the opaque uploadId — the storage key it maps to is resolved
-   * server-side and never accepted from the caller. The pending-upload
-   * record is atomically claimed (deleted) first, so a given uploadId can
-   * only ever be completed once, then the object's actual metadata is read
-   * straight from R2 (never trusting the client's earlier declared
-   * sizeBytes) before any KnowledgeSource document is created. The created
-   * document starts PENDING, and a background ingestion job is enqueued
-   * (best-effort — see enqueueIngestionJob) immediately after; actual
-   * content processing happens out of band in the ingestion worker, never
-   * inline in this request.
+   * Completes a previously initiated FILE upload.
    */
   async completeFileUpload(
     ownerId: string,
@@ -320,7 +301,6 @@ export const knowledgeSourceService = {
       sizeBytes: metadata.sizeBytes,
       storageKey: pendingUpload.storageKey,
     });
-    await enqueueIngestionJob(source._id.toString());
 
     return toPublicKnowledgeSource(source);
   },

@@ -10,6 +10,7 @@
     "build": "npm run clean && tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "start:worker": "node dist/worker.js",
+    "test": "tsx --test src/**/__tests__/**/*.test.ts",
     "set-cors": "tsx src/scripts/setBucketCors.ts"
   },
   "keywords": [],
