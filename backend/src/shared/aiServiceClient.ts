@@ -59,8 +59,8 @@ export interface AskQuestionResponse {
   };
 }
 
-const DEFAULT_INGEST_TIMEOUT_MS = 60_000; // 60 seconds for web crawl + chunk + embed + pinecone
-const DEFAULT_QA_TIMEOUT_MS = 20_000;     // 20 seconds for retrieval + Gemini answer
+const DEFAULT_INGEST_TIMEOUT_MS = 900_000; // 15 minutes for thorough crawling and embedding without premature timeout
+const DEFAULT_QA_TIMEOUT_MS = 45_000;     // 45 seconds for retrieval + Gemini answer
 
 export class AIServiceClient {
   private readonly baseUrl: string;
@@ -101,7 +101,7 @@ export class AIServiceClient {
         body: JSON.stringify({
           chatbot_id: payload.chatbotId,
           website_url: payload.websiteUrl,
-          max_pages: payload.maxPages ?? 10,
+          ...(payload.maxPages !== undefined ? { max_pages: payload.maxPages } : {}),
         }),
         signal: controller.signal,
       });
@@ -152,7 +152,7 @@ export class AIServiceClient {
         body: JSON.stringify({
           chatbot_id: payload.chatbotId,
           question: payload.question,
-          top_k: payload.topK ?? 6,
+          top_k: payload.topK ?? 8,
         }),
         signal: controller.signal,
       });

@@ -177,10 +177,16 @@ class ContentChunker:
             if not cleaned or tokens < self.MIN_CHUNK_TOKENS:
                 continue
 
+            # Context-enrichment: prepend page title and URL so embedding captures page identity
+            page_title = title.strip() if title else "Webpage"
+            context_header = f"Page: {page_title} ({canonical_url})\n\n"
+            enriched_content = f"{context_header}{cleaned}" if not cleaned.startswith("Page:") else cleaned
+            tokens = self.count_tokens(enriched_content)
+
             chunk_id = self.generate_chunk_id(
                 canonical_url=canonical_url,
                 chunk_index=valid_idx,
-                content=cleaned,
+                content=enriched_content,
             )
 
             chunk = ContentChunk(
@@ -188,10 +194,10 @@ class ContentChunker:
                 source_url=source_url,
                 canonical_url=canonical_url,
                 title=title,
-                content=cleaned,
+                content=enriched_content,
                 chunk_index=valid_idx,
                 token_count=tokens,
-                char_count=len(cleaned),
+                char_count=len(enriched_content),
                 metadata={
                     **page_meta,
                     "chunk_index": valid_idx,

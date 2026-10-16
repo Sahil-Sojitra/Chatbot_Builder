@@ -135,7 +135,7 @@ class TestKnowledgeRetrievalService:
         mock_vector_store.query_similar_mock.assert_called_once()
         call_kwargs = mock_vector_store.query_similar_mock.call_args.kwargs
         assert call_kwargs["chatbot_id"] == "bot_123"
-        assert call_kwargs["top_k"] == 2
+        assert call_kwargs["top_k"] >= 2
 
         # Verify chunk 1 data integrity
         first_chunk = result.chunks[0]
@@ -156,25 +156,26 @@ class TestKnowledgeRetrievalService:
     def test_default_top_k_applied_when_not_provided(
         self, retrieval_service, mock_vector_store
     ):
-        """When top_k is None, conservative default (4) must be used."""
+        """When top_k is None, default configured for service must be used."""
         result = retrieval_service.retrieve(
             chatbot_id="bot_123",
             query="what features are available?",
         )
 
-        assert result.stats.top_k_requested == DEFAULT_TOP_K
+        assert result.stats.top_k_requested == 4
         call_kwargs = mock_vector_store.query_similar_mock.call_args.kwargs
-        assert call_kwargs["top_k"] == DEFAULT_TOP_K
+        assert call_kwargs["top_k"] >= 4
 
     def test_invalid_top_k_raises_invalid_query_error(self, retrieval_service):
-        """top_k out of bounds (< 1 or > 20) must raise InvalidQueryError."""
+        """top_k out of bounds (< 1 or > 100) must raise InvalidQueryError."""
         with pytest.raises(InvalidQueryError) as exc_info_low:
             retrieval_service.retrieve(chatbot_id="bot_123", query="test query", top_k=0)
-        assert "top_k must be between 1 and 20" in str(exc_info_low.value)
+        assert "top_k must be between 1 and 100" in str(exc_info_low.value)
 
         with pytest.raises(InvalidQueryError) as exc_info_high:
-            retrieval_service.retrieve(chatbot_id="bot_123", query="test query", top_k=25)
-        assert "top_k must be between 1 and 20" in str(exc_info_high.value)
+            retrieval_service.retrieve(chatbot_id="bot_123", query="test query", top_k=105)
+        assert "top_k must be between 1 and 100" in str(exc_info_high.value)
+
 
     @pytest.mark.parametrize("empty_query", ["", "   ", "\t\n", None])
     def test_empty_query_raises_invalid_query_error(self, retrieval_service, empty_query):

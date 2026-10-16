@@ -1,5 +1,6 @@
 import time
 import logging
+import re
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
@@ -19,9 +20,55 @@ logger = logging.getLogger(__name__)
 
 
 # Standard bounds for retrieval configuration
-DEFAULT_TOP_K: int = 6
+DEFAULT_TOP_K: int = 8
 MIN_TOP_K: int = 1
-MAX_TOP_K: int = 20
+MAX_TOP_K: int = 100
+
+
+def boost_chunks_by_keywords(query: str, chunks: List["RetrievedChunk"], top_k: int) -> List["RetrievedChunk"]:
+    """Applies hybrid keyword re-ranking to boost chunks containing exact query terms.
+
+    Surfaces chunks where terms from the user's inquiry match exact words in content,
+    page title, or URL across any website domain or tech stack.
+    """
+
+    if not chunks:
+        return []
+
+    query_lower = query.lower()
+    stopwords = {
+        "the", "and", "for", "with", "about", "are", "you", "guys", "who", "what",
+        "where", "how", "can", "your", "give", "tell", "please", "some", "this", "that"
+    }
+    keywords = [
+        re.escape(w) for w in re.findall(r"\b[a-zA-Z0-9_\-\.]{2,}\b", query_lower)
+        if w not in stopwords
+    ]
+
+    if not keywords:
+        return chunks[:top_k]
+
+    scored = []
+    for chunk in chunks:
+        content_lower = chunk.content.lower()
+        title_lower = (chunk.title or "").lower()
+        url_lower = chunk.canonical_url.lower()
+
+        boost = 0.0
+        for kw in keywords:
+            pattern = rf"\b{kw}\b"
+            if re.search(pattern, content_lower):
+                boost += 0.12
+            if re.search(pattern, title_lower):
+                boost += 0.15
+            if re.search(pattern, url_lower):
+                boost += 0.10
+
+        effective_score = chunk.score + boost
+        scored.append((effective_score, chunk))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [chunk for _, chunk in scored[:top_k]]
 
 
 class RetrievalError(Exception):
@@ -159,12 +206,13 @@ class KnowledgeRetrievalService:
             logger.error(f"Unexpected error during query embedding for chatbot '{clean_bot_id}': {exc}")
             raise RetrievalError(f"Query embedding failed: {exc}") from exc
 
-        # 2. Search only the specified chatbot's indexed content in the vector store
+        # 2. Search broader candidate pool to allow hybrid keyword re-ranking
+        candidate_k = max(effective_top_k * 2, 12)
         try:
             raw_matches: List[VectorSearchResult] = self._vector_store.query_similar(
                 chatbot_id=clean_bot_id,
                 query_vector=query_vector,
-                top_k=effective_top_k,
+                top_k=candidate_k,
                 score_threshold=score_threshold,
             )
         except VectorStoreError as exc:
@@ -175,8 +223,7 @@ class KnowledgeRetrievalService:
             raise RetrievalError(f"Vector store query encountered an error: {exc}") from exc
 
         # 3. Post-search multi-tenant verification and formatting
-        # Defense-in-depth: Ensure NO cross-chatbot leakage occurred
-        retrieved_chunks: List[RetrievedChunk] = []
+        candidate_chunks: List[RetrievedChunk] = []
         for match in raw_matches:
             if match.chatbot_id != clean_bot_id:
                 logger.warning(
@@ -185,7 +232,7 @@ class KnowledgeRetrievalService:
                 )
                 continue
 
-            retrieved_chunks.append(
+            candidate_chunks.append(
                 RetrievedChunk(
                     chunk_id=match.chunk_id,
                     chatbot_id=clean_bot_id,
@@ -199,10 +246,13 @@ class KnowledgeRetrievalService:
                 )
             )
 
+        # 4. Apply hybrid keyword boosting for exact query term matches across indexed pages
+        final_chunks = boost_chunks_by_keywords(clean_query, candidate_chunks, top_k=effective_top_k)
+
         duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
         stats = RetrievalStats(
-            total_retrieved=len(retrieved_chunks),
+            total_retrieved=len(final_chunks),
             top_k_requested=effective_top_k,
             score_threshold=score_threshold,
             duration_ms=duration_ms,
@@ -210,14 +260,14 @@ class KnowledgeRetrievalService:
         )
 
         logger.info(
-            f"Retrieval complete for chatbot '{clean_bot_id}': {len(retrieved_chunks)} chunks "
-            f"found in {duration_ms}ms (model='{model_name}', top_k={effective_top_k})"
+            f"Retrieval complete for chatbot '{clean_bot_id}': {len(final_chunks)} chunks "
+            f"selected from {len(candidate_chunks)} candidates in {duration_ms}ms"
         )
 
         return RetrievalResult(
             chatbot_id=clean_bot_id,
             query=clean_query,
-            chunks=retrieved_chunks,
+            chunks=final_chunks,
             stats=stats,
             success=True,
         )
@@ -264,12 +314,13 @@ class KnowledgeRetrievalService:
             logger.error(f"Unexpected async embedding error for chatbot '{clean_bot_id}': {exc}")
             raise RetrievalError(f"Query embedding failed: {exc}") from exc
 
-        # 2. Search only the specified chatbot's indexed partition
+        # 2. Search broader candidate pool to allow hybrid keyword re-ranking
+        candidate_k = max(effective_top_k * 2, 12)
         try:
             raw_matches: List[VectorSearchResult] = self._vector_store.query_similar(
                 chatbot_id=clean_bot_id,
                 query_vector=query_vector,
-                top_k=effective_top_k,
+                top_k=candidate_k,
                 score_threshold=score_threshold,
             )
         except VectorStoreError as exc:
@@ -280,7 +331,7 @@ class KnowledgeRetrievalService:
             raise RetrievalError(f"Vector store query encountered an error: {exc}") from exc
 
         # 3. Post-search multi-tenant verification and formatting
-        retrieved_chunks: List[RetrievedChunk] = []
+        candidate_chunks: List[RetrievedChunk] = []
         for match in raw_matches:
             if match.chatbot_id != clean_bot_id:
                 logger.warning(
@@ -289,7 +340,7 @@ class KnowledgeRetrievalService:
                 )
                 continue
 
-            retrieved_chunks.append(
+            candidate_chunks.append(
                 RetrievedChunk(
                     chunk_id=match.chunk_id,
                     chatbot_id=clean_bot_id,
@@ -303,20 +354,28 @@ class KnowledgeRetrievalService:
                 )
             )
 
+        # 4. Apply hybrid keyword boosting for exact term matches (CEO, USA, HR, sales, etc.)
+        final_chunks = boost_chunks_by_keywords(clean_query, candidate_chunks, top_k=effective_top_k)
+
         duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
         stats = RetrievalStats(
-            total_retrieved=len(retrieved_chunks),
+            total_retrieved=len(final_chunks),
             top_k_requested=effective_top_k,
             score_threshold=score_threshold,
             duration_ms=duration_ms,
             embedding_model=model_name,
         )
 
+        logger.info(
+            f"Async retrieval complete for chatbot '{clean_bot_id}': {len(final_chunks)} chunks "
+            f"selected from {len(candidate_chunks)} candidates in {duration_ms}ms"
+        )
+
         return RetrievalResult(
             chatbot_id=clean_bot_id,
             query=clean_query,
-            chunks=retrieved_chunks,
+            chunks=final_chunks,
             stats=stats,
             success=True,
         )

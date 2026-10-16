@@ -16,7 +16,7 @@ def test_health_endpoint():
 
 
 def test_valid_ingestion_payload_default_max_pages():
-    """Valid payload with default max_pages (10)."""
+    """Valid payload with default unbounded max_pages (None)."""
     payload = {
         "chatbot_id": "bot_9876",
         "website_url": "https://docs.example.com/guide",
@@ -27,7 +27,8 @@ def test_valid_ingestion_payload_default_max_pages():
     assert data["message"] == "Payload is valid"
     assert data["validated_data"]["chatbot_id"] == "bot_9876"
     assert data["validated_data"]["website_url"] == "https://docs.example.com/guide"
-    assert data["validated_data"]["max_pages"] == 10
+    assert data["validated_data"]["max_pages"] is None
+
 
 
 def test_valid_ingestion_payload_custom_max_pages():
@@ -101,14 +102,14 @@ def test_invalid_max_pages_below_minimum():
     assert any(err["loc"] == ["body", "max_pages"] for err in errors)
 
 
-def test_invalid_max_pages_above_maximum():
-    """Reject max_pages > 20."""
+def test_valid_large_max_pages():
+    """Accept large max_pages (e.g. 50, 100) without artificial capping."""
     payload = {
         "chatbot_id": "bot_1",
         "website_url": "https://example.com",
-        "max_pages": 25,
+        "max_pages": 50,
     }
     response = client.post("/demo/validate-ingestion", json=payload)
-    assert response.status_code == 422
-    errors = response.json()["detail"]
-    assert any(err["loc"] == ["body", "max_pages"] for err in errors)
+    assert response.status_code == 200
+    assert response.json()["validated_data"]["max_pages"] == 50
+

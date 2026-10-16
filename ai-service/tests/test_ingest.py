@@ -1,3 +1,4 @@
+import os
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from fastapi.testclient import TestClient
@@ -9,11 +10,18 @@ from app.services.vector_store import VectorUpsertResult
 
 
 @pytest.fixture
+def auth_headers():
+    key = os.getenv("INTERNAL_API_KEY", "")
+    return {"x-api-key": key} if key else {}
+
+
+@pytest.fixture
 def test_client():
     return TestClient(app)
 
 
-def test_ingest_website_success(test_client):
+
+def test_ingest_website_success(test_client, auth_headers):
     """POST /api/v1/ingest/website successfully crawls, normalizes, chunks, embeds, and indexes."""
     mock_crawl = MultiPageCrawlResult(
         starting_url="https://example.com",
@@ -77,6 +85,7 @@ def test_ingest_website_success(test_client):
                 "website_url": "https://example.com",
                 "max_pages": 5,
             },
+            headers=auth_headers,
         )
 
         assert resp.status_code == 200
@@ -88,7 +97,7 @@ def test_ingest_website_success(test_client):
         assert data["success"] is True
 
 
-def test_ingest_website_ssrf_violation_returns_400(test_client):
+def test_ingest_website_ssrf_violation_returns_400(test_client, auth_headers):
     """SSRF violations during crawling return HTTP 400."""
     mock_crawl = MultiPageCrawlResult(
         starting_url="http://127.0.0.1",
@@ -110,9 +119,11 @@ def test_ingest_website_ssrf_violation_returns_400(test_client):
                 "chatbot_id": "bot_store_123",
                 "website_url": "http://127.0.0.1",
             },
+            headers=auth_headers,
         )
         assert resp.status_code == 400
         assert "SSRF Security Violation" in resp.json()["detail"]
+
 
 
 def test_ingest_internal_api_key_enforcement(test_client, monkeypatch):

@@ -36,7 +36,7 @@ class TestContentChunker:
         assert chunk.title == "About Us"
         assert chunk.token_count > 0
         assert chunk.token_count <= 500
-        assert chunk.content == page.content
+        assert page.content in chunk.content
         assert chunk.chunk_id.startswith("chk_")
 
     def test_long_content_splits_into_multiple_bounded_chunks(self):

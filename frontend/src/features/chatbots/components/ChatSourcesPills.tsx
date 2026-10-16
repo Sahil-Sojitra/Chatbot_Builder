@@ -30,8 +30,11 @@ function formatSourceLabel(title: string | null, url: string): { mainTitle: stri
 
   if (title && title.trim()) {
     let clean = title.trim();
-    // Strip repetitive site brand suffixes
-    clean = clean.replace(/\s*[|\-–—]\s*(?:WebOsmotic|Building On Trust|Join Our AI-Driven Tech Team).*$/i, "").trim();
+    // Universal title cleaner: extract the specific page name if title is "Page Name | Site Brand"
+    const parts = clean.split(/\s+[|\-–—·]\s+/);
+    if (parts.length > 1 && parts[0].length >= 2) {
+      clean = parts[0].trim();
+    }
     if (clean.length > 0) {
       return { mainTitle: clean, pathBadge };
     }

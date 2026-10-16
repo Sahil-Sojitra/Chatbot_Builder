@@ -51,12 +51,12 @@ class LinkDiscoveryRequest(BaseModel):
 
 class MultiPageCrawlRequest(BaseModel):
     url: HttpUrl
-    max_pages: int = Field(
-        default=10,
+    max_pages: Optional[int] = Field(
+        default=None,
         ge=1,
-        le=20,
-        description="Maximum internal pages to crawl (1 to 20)",
+        description="Maximum internal pages to crawl (unbounded when omitted)",
     )
+
 
 
 @router.post("/validate-ingestion")

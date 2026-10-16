@@ -329,14 +329,19 @@ class VoyageEmbeddingService:
                     input_type=input_type,
                 )
                 all_vectors.extend(response.embeddings)
-                total_tokens += getattr(response, "total_tokens", 0)
+                tokens_used = getattr(response, "total_tokens", 0)
+                total_tokens += tokens_used
             except Exception as exc:
                 logger.error(f"Voyage AI async embedding error on batch slice {i}: {exc}")
                 raise EmbeddingGenerationError(f"Voyage AI API error: {exc}") from exc
 
-            # Small cooldown between multi-batch requests to respect TPM / RPM limits
-            if i + self.batch_size < len(texts):
-                await asyncio.sleep(0.5)
+            # If accumulated tokens in this rolling cycle near 8,000, pause to allow TPM window to reset
+            if total_tokens >= 8000 and i + self.batch_size < len(texts):
+                logger.info(f"Pacing Voyage AI embeddings: reached {total_tokens} tokens. Pausing 15s to reset TPM window.")
+                await asyncio.sleep(15.0)
+                total_tokens = 0
+            elif i + self.batch_size < len(texts):
+                await asyncio.sleep(1.0)
 
         expected_dims = self.get_expected_dimensions()
         embedded_records: List[EmbeddedChunk] = []

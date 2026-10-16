@@ -151,26 +151,57 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
         for idx, (url, chunks) in enumerate(grouped_by_url.items(), start=1):
             title = chunks[0].title or "Webpage"
             passages = "\n\n".join(c.content.strip() for c in chunks)
-            context_blocks.append(f"--- Document {idx}: {title} ({url}) ---\n{passages}")
+            context_blocks.append(f"=== Document {idx}: {title} ===\nURL: {url}\nContent:\n{passages}")
 
         context_text = "\n\n".join(context_blocks)
 
         prompt = (
-            "You are a helpful, professional, and friendly AI assistant for this organization.\n"
-            "Your objective is to answer the user's question accurately using ONLY the provided evidence passages below.\n\n"
-            "STRICT GUIDELINES:\n"
-            "1. Answer ONLY using the facts stated directly in the provided evidence passages.\n"
-            "2. If the evidence passages DO NOT contain the information needed to answer the question, state: "
-            "'I do not have enough information in the indexed website knowledge base to answer this question.'\n"
-            "3. Format your response cleanly using natural, polished markdown (e.g., bullet points for lists, bolding for key terms).\n"
-            "4. NEVER mention source tags like 'Source 1', 'Source 2', or '[Source X]' in your answer text. The UI already displays sources separately below your response. Write fluent, natural paragraphs and clean bullet points without citation clutter.\n"
-            "5. When the user asks for a specific page link or URL (such as Careers, Contact, or Services), provide the exact page link (e.g. [Careers Page](https://webosmotic.com/careers)) using standard markdown [Link Text](https://...). Do NOT insert a space between the closing bracket and opening parenthesis.\n"
-            "6. Keep your tone engaging, professional, and concise.\n\n"
-            f"=== EVIDENCE PASSAGES ===\n{context_text}\n=== END OF EVIDENCE ===\n\n"
+            "You are the official, intelligent AI assistant representing this website.\n"
+            "Your objective is to provide an accurate, helpful, comprehensive, and professionally structured answer "
+            "based strictly on the website content provided below.\n\n"
+            "=== OPERATIONAL DIRECTIVES ===\n"
+            "1. CONVERSATIONAL INTENT & GREETINGS:\n"
+            "   - If the user sends a greeting (e.g., 'Hello', 'Hi', 'Good morning') or asks about your capabilities (e.g., 'Who are you?', 'What can you do?'), "
+            "respond warmly, introduce yourself as the assistant for this website, and invite them to ask about the website's content, services, products, or documentation. "
+            "Do NOT return an unhelpful 'I do not have enough information' error for simple pleasantries.\n\n"
+            "2. STRICT FACTUAL GROUNDING & FAITHFULNESS:\n"
+            "   - Answer using ONLY the information and facts stated directly in the provided evidence documents.\n"
+            "   - Do NOT assume, speculate, extrapolate, or introduce outside knowledge not present in the text.\n"
+            "   - If the provided evidence DO NOT contain the facts needed to answer the question, state politely and clearly:\n"
+            "     'I do not have enough information from the indexed website knowledge base to answer this question.'\n\n"
+            "3. SEMANTIC UNDERSTANDING & SYNONYM MATCHING:\n"
+            "   - Interpret user queries conceptually and semantically. Users may use synonyms or informal phrasing that differ from the website's exact terms "
+            "(e.g., 'fees/cost' vs 'pricing', 'register/signup' vs 'get started', 'cancel' vs 'manage subscription', 'shipping/delivery' vs 'dispatch', 'creators/team' vs 'leadership/authors'). "
+            "Intelligently map user intent to the matching concepts in the evidence.\n\n"
+            "4. DIRECT & COMPREHENSIVE SYNTHESIS:\n"
+            "   - Start with a direct, definitive answer to the user's core inquiry in your very first sentence.\n"
+            "   - Carefully cross-reference and synthesize information across ALL provided document passages. Look for names, features, specifications, pricing, steps, policies, and contact channels that may be distributed across different pages.\n"
+            "   - For multi-part or compound questions, systematically address every part.\n"
+            "   - If the evidence only partially answers the question, provide all verified facts clearly and state specifically which detail was not mentioned on the website.\n\n"
+            "5. HIGH-FIDELITY DATA & ENTITY PRESERVATION:\n"
+            "   - Preserve exact figures, numbers, currencies (e.g., USD, EUR, INR, GBP, $, etc.), contact emails, phone numbers, physical/digital addresses, opening hours, technical terms, code snippets, and version numbers verbatim from the text. Never truncate, round, or distort specific values.\n\n"
+
+            "6. ACCURATE NAVIGATION & PAGE LINKS:\n"
+            "   - When referring to specific pages, resources, or when the user asks for links, embed the exact URL from the document header as a standard markdown link: [Descriptive Page Title](url).\n"
+            "   - Use ONLY the exact URLs present in the document headers. Never invent, modify, or hallucinate URLs.\n"
+            "   - Ensure proper markdown link syntax with NO space between bracket and parenthesis: [Text](URL).\n\n"
+            "7. ADAPTIVE, DOMAIN-AGNOSTIC PRESENTATION:\n"
+            "   - Present answers cleanly using structured Markdown:\n"
+            "     * Technical / Docs: Use code blocks (```) with language identifiers for commands, API endpoints, code snippets, or configuration.\n"
+            "     * E-Commerce / SaaS: Use Markdown tables or bullet lists for comparisons, feature breakdowns, pricing tiers, and specifications.\n"
+            "     * How-To / Procedures: Use numbered sequential steps (1., 2., 3.) for workflows and instructions.\n"
+            "     * Highlighting: Use bold text (**terms**) for key terms, entities, and important values.\n"
+            "   - NEVER include raw citation tags or internal markers like 'Source 1', 'Document 1', or '[Source X]' in your answer text. The user interface automatically displays verified source badges separately. Write natural, flowing paragraphs and bullet points.\n\n"
+            "8. TONE & EFFICIENCY:\n"
+            "   - Maintain a confident, helpful, polite, and professional tone as an authentic representative of this website. Avoid unnecessary throat-clearing or repetitive disclaimers.\n\n"
+            f"=== INDEXED WEBSITE EVIDENCE ===\n{context_text}\n=== END OF EVIDENCE ===\n\n"
             f"USER QUESTION: {question.strip()}\n\n"
             "ANSWER:"
         )
+
+
         return prompt
+
 
     def generate_answer(
         self,
@@ -201,7 +232,88 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "temperature": 0.2,  # Low temperature for factual grounding
-                "maxOutputTokens": 800,
+                "maxOutputTokens": 2048,
+            },
+        }
+
+    def _create_soft_fallback(
+        self,
+        evidence_chunks: List[RetrievedChunk],
+        sources: List[SourceReference],
+        start_time: float,
+        note: str = "experiencing high demand",
+    ) -> GeneratedAnswer:
+        """Gracefully constructs a helpful, grounded response from retrieved passages when the LLM call fails."""
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        if not evidence_chunks:
+            return GeneratedAnswer(
+                answer="I do not have enough information from the indexed website knowledge base to answer this question.",
+                sources=[],
+                has_grounded_evidence=False,
+                stats=GenerationStats(
+                    model_name=f"{self.model}-fallback",
+                    duration_ms=duration_ms,
+                    total_evidence_chunks=0,
+                ),
+            )
+
+        top_chunks = evidence_chunks[:3]
+        fallback_lines = [
+            f"I am currently {note} while generating a full response. However, based on our website, here is the relevant information:\n"
+        ]
+        for c in top_chunks:
+            title = c.title or "Webpage"
+            url = c.canonical_url or c.source_url
+            clean = " ".join(c.content.split())
+            if len(clean) > 250:
+                clean = clean[:250].rstrip() + "..."
+            fallback_lines.append(f"* **[{title}]({url})**:\n  {clean}\n")
+
+        fallback_lines.append(
+            "\nYou can visit the links above for full details or try asking your question again in a moment."
+        )
+
+        return GeneratedAnswer(
+            answer="\n".join(fallback_lines),
+            sources=sources,
+            has_grounded_evidence=True,
+            stats=GenerationStats(
+                model_name=f"{self.model}-fallback",
+                duration_ms=duration_ms,
+                total_evidence_chunks=len(evidence_chunks),
+            ),
+        )
+
+    def generate_answer(
+        self,
+        question: str,
+        evidence_chunks: List[RetrievedChunk],
+    ) -> GeneratedAnswer:
+        """Synchronously generates a grounded answer using Google Gemini with soft fallback."""
+        start_time = time.perf_counter()
+        sources = self._build_sources(evidence_chunks)
+
+        if not evidence_chunks:
+            duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+            return GeneratedAnswer(
+                answer="I do not have enough information in the indexed website knowledge base to answer this question.",
+                sources=[],
+                has_grounded_evidence=False,
+                stats=GenerationStats(
+                    model_name=self.model,
+                    duration_ms=duration_ms,
+                    total_evidence_chunks=0,
+                ),
+            )
+
+        api_key = self._get_api_key()
+        prompt = self._build_prompt(question, evidence_chunks)
+        url = f"{self.BASE_URL}/{self.model}:generateContent?key={api_key}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": 0.2,  # Low temperature for factual grounding
+                "maxOutputTokens": 2048,
             },
         }
 
@@ -209,28 +321,34 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
             with httpx.Client(timeout=self.timeout_seconds) as client:
                 response = client.post(url, json=payload)
         except httpx.TimeoutException as exc:
-            logger.error(f"Gemini API request timed out after {self.timeout_seconds}s: {exc}")
-            raise GenerationTimeoutError(f"Gemini API request timed out: {exc}") from exc
+            logger.warning(f"Gemini API request timed out after {self.timeout_seconds}s: {exc}. Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="experiencing momentary delays")
         except Exception as exc:
-            logger.error(f"Gemini API connection error: {exc}")
-            raise GenerationProviderError(f"Gemini API connection failed: {exc}") from exc
+            logger.warning(f"Gemini API connection error: {exc}. Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="experiencing temporary connection delays")
 
         if response.status_code == 429:
-            raise GenerationProviderError("Gemini API rate limit exceeded (HTTP 429). Please try again shortly.")
+            logger.warning("Gemini API rate limit exceeded (HTTP 429). Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="experiencing high traffic demand")
         if response.status_code >= 500:
-            raise GenerationProviderError(f"Gemini API server error (HTTP {response.status_code}): {response.text}")
+            logger.warning(f"Gemini API server error (HTTP {response.status_code}). Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="experiencing a temporary service interruption")
         if response.status_code != 200:
-            raise GenerationProviderError(f"Gemini API error (HTTP {response.status_code}): {response.text}")
+            logger.warning(f"Gemini API error (HTTP {response.status_code}). Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="temporarily unavailable")
 
         data = response.json()
         candidates = data.get("candidates", [])
         if not candidates:
-            raise GenerationProviderError("Gemini API returned no response candidates.")
+            logger.warning("Gemini API returned no candidates. Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="unable to formulate an answer")
 
         parts = candidates[0].get("content", {}).get("parts", [])
         answer_text = "".join(part.get("text", "") for part in parts).strip()
-        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        if not answer_text:
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="unable to formulate an answer")
 
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
         return GeneratedAnswer(
             answer=answer_text,
             sources=sources,
@@ -247,7 +365,7 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
         question: str,
         evidence_chunks: List[RetrievedChunk],
     ) -> GeneratedAnswer:
-        """Asynchronously generates a grounded answer using Google Gemini."""
+        """Asynchronously generates a grounded answer using Google Gemini with soft fallback."""
         start_time = time.perf_counter()
         sources = self._build_sources(evidence_chunks)
 
@@ -271,7 +389,7 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "temperature": 0.2,
-                "maxOutputTokens": 800,
+                "maxOutputTokens": 2048,
             },
         }
 
@@ -279,28 +397,34 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
             async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
                 response = await client.post(url, json=payload)
         except httpx.TimeoutException as exc:
-            logger.error(f"Gemini async API request timed out after {self.timeout_seconds}s: {exc}")
-            raise GenerationTimeoutError(f"Gemini API request timed out: {exc}") from exc
+            logger.warning(f"Gemini async API request timed out after {self.timeout_seconds}s: {exc}. Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="experiencing momentary delays")
         except Exception as exc:
-            logger.error(f"Gemini async API connection error: {exc}")
-            raise GenerationProviderError(f"Gemini API connection failed: {exc}") from exc
+            logger.warning(f"Gemini async API connection error: {exc}. Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="experiencing temporary connection delays")
 
         if response.status_code == 429:
-            raise GenerationProviderError("Gemini API rate limit exceeded (HTTP 429). Please try again shortly.")
+            logger.warning("Gemini async API rate limit exceeded (HTTP 429). Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="experiencing high traffic demand")
         if response.status_code >= 500:
-            raise GenerationProviderError(f"Gemini API server error (HTTP {response.status_code}): {response.text}")
+            logger.warning(f"Gemini async API server error (HTTP {response.status_code}). Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="experiencing a temporary service interruption")
         if response.status_code != 200:
-            raise GenerationProviderError(f"Gemini API error (HTTP {response.status_code}): {response.text}")
+            logger.warning(f"Gemini async API error (HTTP {response.status_code}). Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="temporarily unavailable")
 
         data = response.json()
         candidates = data.get("candidates", [])
         if not candidates:
-            raise GenerationProviderError("Gemini API returned no response candidates.")
+            logger.warning("Gemini async API returned no response candidates. Activating soft fallback.")
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="unable to formulate an answer")
 
         parts = candidates[0].get("content", {}).get("parts", [])
         answer_text = "".join(part.get("text", "") for part in parts).strip()
-        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        if not answer_text:
+            return self._create_soft_fallback(evidence_chunks, sources, start_time, note="unable to formulate an answer")
 
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
         return GeneratedAnswer(
             answer=answer_text,
             sources=sources,
@@ -311,6 +435,7 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
                 total_evidence_chunks=len(evidence_chunks),
             ),
         )
+
 
 
 # Global singleton instance

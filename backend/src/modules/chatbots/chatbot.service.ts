@@ -367,7 +367,7 @@ export const chatbotService = {
       const qaResponse = await aiServiceClient.askQuestion({
         chatbotId: chatbot._id.toString(),
         question,
-        topK: input.topK ?? chatbot.ragTopK ?? 6,
+        topK: input.topK ?? chatbot.ragTopK ?? 8,
       });
 
       return {
@@ -377,18 +377,28 @@ export const chatbotService = {
         stats: qaResponse.stats,
       };
     } catch (err: unknown) {
-      if (err instanceof AIServiceError) {
-        const statusCode = err.status >= 400 && err.status < 600 ? err.status : 502;
-        throw new AppError(statusCode, "AI_SERVICE_ERROR", err.message);
-      }
-      if (err instanceof AppError) {
-        throw err;
-      }
-      const message =
-        err instanceof Error ? err.message : "Failed to communicate with AI chat service";
-      throw new AppError(502, "AI_SERVICE_ERROR", message);
+      // Soft fallback for chat conversation so users never experience a broken UI error
+      logger.warn("AI service chat communication encountered an error, returning soft fallback response", {
+        chatbotId: chatbot._id.toString(),
+        error: err instanceof Error ? err.message : String(err),
+      });
+
+      return {
+        answer:
+          "I am currently experiencing a momentary delay connecting to the knowledge service. Please try asking your question again in a moment, or explore our website directly.",
+        sources: [],
+        hasGroundedEvidence: false,
+        stats: {
+          retrieval_duration_ms: 0,
+          generation_duration_ms: 0,
+          total_duration_ms: 0,
+          model_used: "fallback-graceful",
+          chunks_retrieved: 0,
+        },
+      };
     }
   },
+
 
   /**
    * Permanently deletes one chatbot and cleans up its knowledge sources,
