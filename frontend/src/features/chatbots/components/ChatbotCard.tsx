@@ -48,19 +48,28 @@ export function ChatbotCard({ chatbot }: ChatbotCardProps) {
 
               {/* Deployment Engine Tags */}
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-zinc-300 bg-[#121212] border border-zinc-800 rounded px-2 py-0.5 font-mono">
-                  {chatbot.provider || "openai"}:{chatbot.model || "gpt-4o-mini"}
-                </span>
-
-                {chatbot.ragEnabled ? (
-                  <span className="inline-flex items-center gap-1.5 text-emerald-400 bg-emerald-950/30 border border-emerald-800/40 rounded px-2 py-0.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    RAG Active ({chatbot.ragTopK || 5} chunks)
+                {chatbot.creationMode === "INSTANT" ? (
+                  <span className="inline-flex items-center gap-1.5 text-violet-400 bg-violet-950/30 border border-violet-800/40 rounded px-2 py-0.5 text-xs font-medium">
+                    <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+                    Instant Bot · Managed Ingestion & Testing
                   </span>
                 ) : (
-                  <span className="text-zinc-500 bg-[#121212] border border-zinc-800 rounded px-2 py-0.5">
-                    Base Model (No RAG)
-                  </span>
+                  <>
+                    <span className="text-zinc-300 bg-[#121212] border border-zinc-800 rounded px-2 py-0.5 font-mono">
+                      {chatbot.provider || "openai"}:{chatbot.model || "gpt-4o-mini"}
+                    </span>
+
+                    {chatbot.ragEnabled ? (
+                      <span className="inline-flex items-center gap-1.5 text-emerald-400 bg-emerald-950/30 border border-emerald-800/40 rounded px-2 py-0.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        RAG Active ({chatbot.ragTopK || 5} chunks)
+                      </span>
+                    ) : (
+                      <span className="text-zinc-500 bg-[#121212] border border-zinc-800 rounded px-2 py-0.5">
+                        Base Model (No RAG)
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -77,8 +86,8 @@ export function ChatbotCard({ chatbot }: ChatbotCardProps) {
               {chatbot.status === "ACTIVE" ? "Ready" : chatbot.status}
             </Badge>
 
-            <span className="text-zinc-500 group-hover:text-zinc-200 text-sm transition-transform group-hover:translate-x-0.5">
-              &rarr;
+            <span className="text-zinc-500 group-hover:text-zinc-200 text-xs transition-transform group-hover:translate-x-0.5">
+              {chatbot.creationMode === "INSTANT" ? "Test &rarr;" : "Studio &rarr;"}
             </span>
           </div>
         </div>
@@ -89,7 +98,9 @@ export function ChatbotCard({ chatbot }: ChatbotCardProps) {
             <span className="text-zinc-500">ID:</span>
             <span className="text-zinc-300">{chatbot.publicId.slice(0, 12)}…</span>
             <span>&middot;</span>
-            <span className="text-zinc-400">Production</span>
+            <span className="text-zinc-400">
+              {chatbot.creationMode === "INSTANT" ? "Platform Managed" : "Custom Deployment"}
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5 text-zinc-500">

@@ -147,7 +147,7 @@ export default function GlobalKnowledgeSourcesPage() {
           >
             {chatbots.map((bot) => (
               <option key={bot.id} value={bot.id}>
-                {bot.name} ({bot.status})
+                {bot.name} {bot.creationMode === "INSTANT" ? "(Instant Bot · Managed)" : `(${bot.status})`}
               </option>
             ))}
           </Select>
@@ -159,17 +159,21 @@ export default function GlobalKnowledgeSourcesPage() {
           <div>
             <div className="flex items-center gap-2">
               <CardTitle className="text-lg">{currentChatbot.name}</CardTitle>
-              <Badge
-                variant={
-                  currentChatbot.status === "ACTIVE"
-                    ? "success"
-                    : currentChatbot.status === "PAUSED"
-                      ? "warning"
-                      : "default"
-                }
-              >
-                {currentChatbot.status}
-              </Badge>
+              {currentChatbot.creationMode === "INSTANT" ? (
+                <Badge variant="accent">Instant Bot (Auto Indexed)</Badge>
+              ) : (
+                <Badge
+                  variant={
+                    currentChatbot.status === "ACTIVE"
+                      ? "success"
+                      : currentChatbot.status === "PAUSED"
+                        ? "warning"
+                        : "default"
+                  }
+                >
+                  {currentChatbot.status}
+                </Badge>
+              )}
               {currentChatbot.ragEnabled ? <Badge variant="accent">RAG Active</Badge> : null}
             </div>
             <CardDescription className="mt-1">
@@ -180,11 +184,34 @@ export default function GlobalKnowledgeSourcesPage() {
             href={`/dashboard/chatbots/${currentChatbot.id}`}
             className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
-            Chatbot Details &rarr;
+            {currentChatbot.creationMode === "INSTANT" ? "Open Playground →" : "Chatbot Details →"}
           </Link>
         </CardHeader>
         <CardContent className="pt-2">
-          <ChatbotKnowledgeViewer chatbotId={currentChatbot.id} />
+          {currentChatbot.creationMode === "INSTANT" ? (
+            <div className="rounded-lg border border-violet-500/20 bg-violet-950/15 p-6 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-violet-400" />
+                <span className="text-sm font-semibold text-white">Automated Website Knowledge Engine</span>
+              </div>
+              <p className="text-sm text-zinc-300 leading-relaxed">
+                This assistant was created as an <strong>Instant Bot</strong>. Its knowledge index is crawled, extracted, and indexed directly from its target website through our automated FastAPI RAG service.
+              </p>
+              <p className="text-xs text-zinc-400">
+                Manual document uploads, file attachments, and text sources are reserved for <strong>Custom Bots</strong>. You can test and inspect this chatbot right now in its dedicated playground.
+              </p>
+              <div className="pt-2">
+                <Link
+                  href={`/dashboard/chatbots/${currentChatbot.id}`}
+                  className={buttonVariants({ variant: "default", size: "sm" }) + " bg-violet-600 hover:bg-violet-700 text-white"}
+                >
+                  Test Chatbot in Playground &rarr;
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <ChatbotKnowledgeViewer chatbotId={currentChatbot.id} />
+          )}
         </CardContent>
       </Card>
     </div>

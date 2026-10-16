@@ -32,51 +32,71 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
     return null;
   }
 
+  const isInstant = chatbot.creationMode === "INSTANT";
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Vercel-style deployment project header */}
+      {/* Dynamic Header: Instant Bot (Managed Playground) vs Custom Bot (Studio) */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-5">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
-            <span className="text-zinc-500">deployments</span>
-            <span className="text-zinc-600">/</span>
-            <span className="text-zinc-300 font-semibold">{chatbot.name.toLowerCase().replace(/\s+/g, "-")}</span>
-            <span className="text-zinc-600">•</span>
-            <span className="text-zinc-400">{chatbot.provider || "openai"}:{chatbot.model || "gpt-4o-mini"}</span>
+            {isInstant ? (
+              <>
+                <span className="text-zinc-500">instant-bots</span>
+                <span className="text-zinc-600">/</span>
+                <span className="text-zinc-300 font-semibold">{chatbot.name.toLowerCase().replace(/\s+/g, "-")}</span>
+                <span className="text-zinc-600">•</span>
+                <span className="text-violet-400">managed-rag-pipeline</span>
+              </>
+            ) : (
+              <>
+                <span className="text-zinc-500">deployments</span>
+                <span className="text-zinc-600">/</span>
+                <span className="text-zinc-300 font-semibold">{chatbot.name.toLowerCase().replace(/\s+/g, "-")}</span>
+                <span className="text-zinc-600">•</span>
+                <span className="text-zinc-400">{chatbot.provider || "openai"}:{chatbot.model || "gpt-4o-mini"}</span>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight text-white">{chatbot.name}</h1>
-            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border border-zinc-800 bg-zinc-900/80 text-xs font-medium">
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  chatbot.status === "ACTIVE"
-                    ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]"
-                    : chatbot.status === "PAUSED"
-                      ? "bg-amber-400"
-                      : "bg-zinc-500"
-                }`}
-              />
-              <span className="text-zinc-300">
-                {chatbot.status === "ACTIVE" ? "Production Ready" : chatbot.status === "PAUSED" ? "Paused" : "Draft"}
-              </span>
-            </div>
-            {chatbot.creationMode === "INSTANT" ? (
-              <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            {isInstant ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
                 Instant Bot
               </span>
-            ) : null}
+            ) : (
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border border-zinc-800 bg-zinc-900/80 text-xs font-medium">
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    chatbot.status === "ACTIVE"
+                      ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]"
+                      : chatbot.status === "PAUSED"
+                        ? "bg-amber-400"
+                        : "bg-zinc-500"
+                  }`}
+                />
+                <span className="text-zinc-300">
+                  {chatbot.status === "ACTIVE" ? "Production Ready" : chatbot.status === "PAUSED" ? "Paused" : "Draft"}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-[#0a0a0a] text-xs font-mono text-zinc-300">
-            <span className="text-zinc-500">publicId:</span>
+            <span className="text-zinc-500">ID:</span>
             <span className="font-semibold text-white">{chatbot.publicId}</span>
           </div>
         </div>
       </div>
 
-      <ChatbotNav chatbotId={chatbot.id} creationMode={chatbot.creationMode} />
+      {/* Subnavigation is ONLY shown for Custom Bots where multi-tab studio configuration exists */}
+      {!isInstant ? (
+        <ChatbotNav chatbotId={chatbot.id} creationMode={chatbot.creationMode} />
+      ) : null}
+
       {children}
     </div>
   );
