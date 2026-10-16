@@ -5,6 +5,7 @@ import { validateBody } from "../../middleware/validate.js";
 import { asyncHandler } from "../../shared/asyncHandler.js";
 import { chatbotController } from "./chatbot.controller.js";
 import {
+  chatMessageSchema,
   createChatbotSchema,
   updateChatbotSchema,
 } from "./chatbot.validation.js";
@@ -39,6 +40,13 @@ router.post(
   "/:id/unpublish",
   requireAuth,
   asyncHandler(chatbotController.unpublish),
+);
+
+router.post(
+  "/:id/chat",
+  requireAuth,
+  validateBody(chatMessageSchema),
+  asyncHandler(chatbotController.chat),
 );
 
 export default router;

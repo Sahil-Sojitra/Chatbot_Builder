@@ -87,3 +87,42 @@ export const updateChatbotSchema = createChatbotSchema
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided",
   });
+
+/**
+ * POST /api/v1/chatbots/:id/chat — playground chat query.
+ * Accepts either `message` or `question` (1 to 2000 characters).
+ * Optional `topK` to tune knowledge chunk retrieval.
+ */
+export const chatMessageSchema = z
+  .object({
+    message: z
+      .string()
+      .trim()
+      .min(1, "Message cannot be empty")
+      .max(2000, "Message cannot exceed 2000 characters")
+      .optional(),
+    question: z
+      .string()
+      .trim()
+      .min(1, "Question cannot be empty")
+      .max(2000, "Question cannot exceed 2000 characters")
+      .optional(),
+    topK: z
+      .number()
+      .int()
+      .min(1, "topK must be at least 1")
+      .max(20, "topK cannot exceed 20")
+      .optional(),
+  })
+  .strict()
+  .refine(
+    (data) =>
+      Boolean(
+        (data.message && data.message.length > 0) ||
+          (data.question && data.question.length > 0),
+      ),
+    {
+      message: "A non-empty message or question is required",
+      path: ["message"],
+    },
+  );

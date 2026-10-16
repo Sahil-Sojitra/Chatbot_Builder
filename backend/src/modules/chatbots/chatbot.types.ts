@@ -54,3 +54,29 @@ export interface PublicChatbot {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ChatMessageInput {
+  message?: string;
+  question?: string;
+  topK?: number;
+}
+
+export interface ChatResponseData {
+  answer: string;
+  sources: Array<{
+    chunk_id: string;
+    source_url: string;
+    canonical_url: string;
+    title: string | null;
+    score: number;
+    snippet: string;
+  }>;
+  hasGroundedEvidence: boolean;
+  stats?: {
+    retrieval_duration_ms: number;
+    generation_duration_ms: number;
+    total_duration_ms: number;
+    model_used: string;
+    chunks_retrieved: number;
+  };
+}

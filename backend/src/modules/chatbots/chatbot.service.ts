@@ -4,12 +4,15 @@ import { Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
 import {
+  AppError,
   chatbotNotFound,
   chatbotNotPublished,
   organizationNotFound,
 } from "../../shared/errors.js";
+import { aiServiceClient, AIServiceError } from "../../shared/aiServiceClient.js";
 import { generateUniqueSlug } from "../../shared/slug.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
+import { knowledgeSourceRepository } from "../knowledge-sources/knowledgeSource.repository.js";
 import { chatbotRepository } from "./chatbot.repository.js";
 import type {
   CreateChatbotInput as RepositoryCreateChatbotInput,
@@ -17,6 +20,8 @@ import type {
 } from "./chatbot.repository.js";
 import type { IChatbot } from "./chatbot.model.js";
 import type {
+  ChatMessageInput,
+  ChatResponseData,
   CreateChatbotInput,
   PublicChatbot,
   UpdateChatbotInput,
@@ -299,5 +304,88 @@ export const chatbotService = {
     }
 
     return toPublicChatbot(chatbot);
+  },
+
+  /**
+   * Submits a question to the chatbot's knowledge base via the FastAPI AI service.
+   * Scoped to the authenticated user's organization.
+   * If the chatbot is an Instant Bot, verifies that website ingestion has succeeded (READY).
+   */
+  async chatForOwner(
+    ownerId: string,
+    chatbotId: string,
+    input: ChatMessageInput,
+  ): Promise<ChatResponseData> {
+    const organization = await organizationRepository.findByOwnerId(ownerId);
+    if (!organization) {
+      throw organizationNotFound();
+    }
+
+    const chatbot = await chatbotRepository.findByIdForOrganization(
+      chatbotId,
+      organization._id,
+    );
+    if (!chatbot) {
+      throw chatbotNotFound();
+    }
+
+    // Ingestion readiness gate for Instant Bots
+    if (chatbot.creationMode === "INSTANT") {
+      const sources = await knowledgeSourceRepository.findAllForChatbot(chatbot._id);
+      const websiteSource =
+        sources.find((s) => s.type === "URL" || s.type === "WEBPAGE") || sources[0];
+
+      if (!websiteSource) {
+        throw new AppError(
+          400,
+          "INVALID_STATE_TRANSITION",
+          "Website knowledge source has not been initialized for this Instant Bot.",
+        );
+      }
+
+      if (websiteSource.status === "FAILED") {
+        throw new AppError(
+          400,
+          "INGESTION_FAILED",
+          `Website ingestion failed: ${websiteSource.error || "Indexing failed"}. Please retry website indexing before chatting.`,
+        );
+      }
+
+      if (websiteSource.status !== "READY") {
+        throw new AppError(
+          409,
+          "INVALID_STATE_TRANSITION",
+          "Website indexing is still in progress. Please wait until ingestion is ready.",
+        );
+      }
+    }
+
+    const question = (input.message || input.question || "").trim();
+
+    try {
+      const qaResponse = await aiServiceClient.askQuestion({
+        chatbotId: chatbot._id.toString(),
+        question,
+        topK: input.topK ?? chatbot.ragTopK ?? 4,
+      });
+
+      return {
+        answer: qaResponse.answer,
+        sources: qaResponse.sources,
+        hasGroundedEvidence: qaResponse.has_grounded_evidence,
+        stats: qaResponse.stats,
+      };
+    } catch (err: unknown) {
+      if (err instanceof AIServiceError) {
+        const statusCode = err.status >= 400 && err.status < 600 ? err.status : 502;
+        throw new AppError(statusCode, "AI_SERVICE_ERROR", err.message);
+      }
+      if (err instanceof AppError) {
+        throw err;
+      }
+      const message =
+        err instanceof Error ? err.message : "Failed to communicate with AI chat service";
+      throw new AppError(502, "AI_SERVICE_ERROR", message);
+    }
   },
 };

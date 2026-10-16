@@ -31,6 +31,16 @@ interface ChatMessage {
   sender: "bot" | "user";
   text: string;
   time: string;
+  sources?: Array<{
+    chunk_id: string;
+    source_url: string;
+    canonical_url: string;
+    title: string | null;
+    score: number;
+    snippet: string;
+  }>;
+  hasGroundedEvidence?: boolean;
+  isError?: boolean;
 }
 
 export default function ChatbotOverviewPage() {
@@ -40,7 +50,7 @@ export default function ChatbotOverviewPage() {
   const [copiedScript, setCopiedScript] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Simulator state
+  // Playground chat state
   const [deviceMode, setDeviceMode] = useState<"widget" | "mobile">("widget");
   const [activeCodeTab, setActiveCodeTab] = useState<"script" | "curl" | "json">("script");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -52,7 +62,8 @@ export default function ChatbotOverviewPage() {
     },
   ]);
   const [inputValue, setInputValue] = useState("");
-  const [isSimulatingResponse, setIsSimulatingResponse] = useState(false);
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   // Instant Bot specific knowledge source & retry state
   const isInstant = chatbot?.creationMode === "INSTANT";
@@ -174,11 +185,21 @@ export default function ChatbotOverviewPage() {
     }
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = inputValue.trim();
-    if (!trimmed || isSimulatingResponse) return;
+    if (!trimmed || isLoadingResponse) return;
 
+    if (isInstant && !isReady) {
+      setChatError(
+        isFailed
+          ? "Website ingestion failed. Please retry ingestion above to enable testing."
+          : "Website indexing is in progress. Please wait until indexing completes.",
+      );
+      return;
+    }
+
+    setChatError(null);
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
       sender: "user",
@@ -188,29 +209,44 @@ export default function ChatbotOverviewPage() {
 
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
-    setIsSimulatingResponse(true);
+    setIsLoadingResponse(true);
 
-    // Simulator response
-    setTimeout(() => {
-      let botResponse = `I received your question: "${trimmed}".`;
-      if (chatbot.systemPrompt) {
-        botResponse += ` I am configured with instructions to answer based on: "${chatbot.systemPrompt.slice(0, 80)}..."`;
-      }
-      if (chatbot.ragEnabled) {
-        botResponse += `\n\n[RAG Retrieval Simulated]: Searched linked knowledge base (top K: ${chatbot.ragTopK || 5}).`;
-      }
+    try {
+      const response = await chatbotsApi.chat(chatbot.id, trimmed);
+
+      const botMsg: ChatMessage = {
+        id: `b-${Date.now()}`,
+        sender: "bot",
+        text: response.answer,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        sources: response.sources,
+        hasGroundedEvidence: response.hasGroundedEvidence,
+      };
+
+      setMessages((prev) => [...prev, botMsg]);
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to communicate with chatbot.";
+
+      setChatError(errorMessage);
 
       setMessages((prev) => [
         ...prev,
         {
-          id: `b-${Date.now()}`,
+          id: `err-${Date.now()}`,
           sender: "bot",
-          text: botResponse,
+          text: `[Error]: ${errorMessage}`,
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isError: true,
         },
       ]);
-      setIsSimulatingResponse(false);
-    }, 800);
+    } finally {
+      setIsLoadingResponse(false);
+    }
   };
 
   /* -------------------------------------------------------------------------- */
@@ -405,22 +441,58 @@ export default function ChatbotOverviewPage() {
                       className={`rounded-md p-3.5 leading-relaxed text-sm ${
                         msg.sender === "user"
                           ? "bg-violet-600/20 border border-violet-500/30 text-white font-normal"
-                          : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
+                          : msg.isError
+                            ? "bg-red-950/40 border border-red-800/60 text-red-200 text-xs font-mono"
+                            : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
                       }`}
                     >
-                      {msg.text}
+                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                      {msg.sources && msg.sources.length > 0 ? (
+                        <div className="mt-2.5 pt-2 border-t border-zinc-800/60 text-xs text-zinc-400">
+                          <span className="font-semibold text-zinc-300 text-[11px] block mb-1">
+                            Sources from indexed website:
+                          </span>
+                          <ul className="list-disc list-inside space-y-1">
+                            {msg.sources.map((s, idx) => (
+                              <li key={idx} className="truncate">
+                                <a
+                                  href={s.source_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-violet-400 hover:underline"
+                                >
+                                  {s.title || s.source_url}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
                     </div>
                     <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
                   </div>
                 ))}
 
-                {isSimulatingResponse ? (
+                {isLoadingResponse ? (
                   <div className="self-start flex items-center gap-2 rounded-md bg-[#141414] border border-zinc-800 px-3.5 py-2.5 text-xs text-zinc-400 font-mono">
                     <span className="h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
                     <span>Generating answer from indexed website…</span>
                   </div>
                 ) : null}
               </div>
+
+              {chatError ? (
+                <div className="px-4 py-2 bg-red-950/40 border-t border-red-900/60 text-xs text-red-300 flex items-center justify-between">
+                  <span>{chatError}</span>
+                  <button
+                    type="button"
+                    onClick={() => setChatError(null)}
+                    className="text-red-400 hover:text-red-200 cursor-pointer ml-2"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              ) : null}
 
               {/* Interactive Input Box */}
               <form
@@ -430,7 +502,7 @@ export default function ChatbotOverviewPage() {
                 <input
                   type="text"
                   value={inputValue}
-                  disabled={!isReady || isSimulatingResponse}
+                  disabled={!isReady || isLoadingResponse}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder={
                     !isReady
@@ -443,7 +515,7 @@ export default function ChatbotOverviewPage() {
                 />
                 <Button
                   type="submit"
-                  disabled={!isReady || !inputValue.trim() || isSimulatingResponse}
+                  disabled={!isReady || !inputValue.trim() || isLoadingResponse}
                   size="default"
                   className="h-9 px-3.5 bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50"
                 >
@@ -614,22 +686,58 @@ export default function ChatbotOverviewPage() {
                         className={`rounded-md p-3.5 leading-relaxed text-sm ${
                           msg.sender === "user"
                             ? "bg-zinc-800 border border-zinc-700 text-white font-normal"
-                            : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
+                            : msg.isError
+                              ? "bg-red-950/40 border border-red-800/60 text-red-200 text-xs font-mono"
+                              : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
                         }`}
                       >
-                        {msg.text}
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                        {msg.sources && msg.sources.length > 0 ? (
+                          <div className="mt-2.5 pt-2 border-t border-zinc-800/60 text-xs text-zinc-400">
+                            <span className="font-semibold text-zinc-300 text-[11px] block mb-1">
+                              Sources:
+                            </span>
+                            <ul className="list-disc list-inside space-y-1">
+                              {msg.sources.map((s, idx) => (
+                                <li key={idx} className="truncate">
+                                  <a
+                                    href={s.source_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-emerald-400 hover:underline"
+                                  >
+                                    {s.title || s.source_url}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
                       </div>
                       <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
                     </div>
                   ))}
 
-                  {isSimulatingResponse ? (
+                  {isLoadingResponse ? (
                     <div className="self-start flex items-center gap-2 rounded-md bg-[#141414] border border-zinc-800 px-3.5 py-2.5 text-xs text-zinc-400 font-mono">
                       <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                       <span>Generating response via {chatbot.model || "gpt-4o-mini"}…</span>
                     </div>
                   ) : null}
                 </div>
+
+                {chatError ? (
+                  <div className="px-4 py-2 bg-red-950/40 border-t border-red-900/60 text-xs text-red-300 flex items-center justify-between">
+                    <span>{chatError}</span>
+                    <button
+                      type="button"
+                      onClick={() => setChatError(null)}
+                      className="text-red-400 hover:text-red-200 cursor-pointer ml-2"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                ) : null}
 
                 {/* Interactive Input Box */}
                 <form
@@ -639,13 +747,14 @@ export default function ChatbotOverviewPage() {
                   <input
                     type="text"
                     value={inputValue}
+                    disabled={isLoadingResponse}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Ask a test question…"
-                    className="flex-1 rounded-md border border-zinc-800 bg-[#000000] px-3.5 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-500"
+                    className="flex-1 rounded-md border border-zinc-800 bg-[#000000] px-3.5 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-500 disabled:opacity-50"
                   />
                   <Button
                     type="submit"
-                    disabled={!inputValue.trim() || isSimulatingResponse}
+                    disabled={!inputValue.trim() || isLoadingResponse}
                     size="default"
                     className="h-9 px-3.5"
                   >

@@ -4,6 +4,7 @@ import { unauthorized } from "../../shared/errors.js";
 import { sendSuccess } from "../../shared/http.js";
 import { chatbotService } from "./chatbot.service.js";
 import type {
+  ChatMessageInput,
   CreateChatbotInput,
   UpdateChatbotInput,
 } from "./chatbot.types.js";
@@ -83,5 +84,19 @@ export const chatbotController = {
     );
 
     sendSuccess(res, { chatbot }, 200);
+  },
+
+  async chat(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const result = await chatbotService.chatForOwner(
+      req.auth.userId,
+      req.params.id as string,
+      req.body as ChatMessageInput,
+    );
+
+    sendSuccess(res, result, 200);
   },
 };

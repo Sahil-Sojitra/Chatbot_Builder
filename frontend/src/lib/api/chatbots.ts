@@ -32,6 +32,28 @@ export interface ChatbotListResponse {
   chatbots: Chatbot[];
 }
 
+export interface ChatSourceReference {
+  chunk_id: string;
+  source_url: string;
+  canonical_url: string;
+  title: string | null;
+  score: number;
+  snippet: string;
+}
+
+export interface ChatResponse {
+  answer: string;
+  sources?: ChatSourceReference[];
+  hasGroundedEvidence?: boolean;
+  stats?: {
+    retrieval_duration_ms: number;
+    generation_duration_ms: number;
+    total_duration_ms: number;
+    model_used: string;
+    chunks_retrieved: number;
+  };
+}
+
 /** Thin wrapper over the backend's real, already-implemented chatbot endpoints (backend/src/modules/chatbots) */
 export const chatbotsApi = {
   create: (input: CreateChatbotInput): Promise<ChatbotResponse> =>
@@ -59,5 +81,11 @@ export const chatbotsApi = {
   unpublish: (id: string): Promise<ChatbotResponse> =>
     apiRequest<ChatbotResponse>(`/api/v1/chatbots/${id}/unpublish`, {
       method: "POST",
+    }),
+
+  chat: (id: string, message: string): Promise<ChatResponse> =>
+    apiRequest<ChatResponse>(`/api/v1/chatbots/${id}/chat`, {
+      method: "POST",
+      body: { message },
     }),
 };
