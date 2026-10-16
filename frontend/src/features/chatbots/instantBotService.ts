@@ -183,10 +183,48 @@ export class InstantBotService {
 
     if (this.isCancelled) throw new Error("Cancelled");
 
-    // Verification: Show success ONLY when the backend confirms successful indexing
-    const source = ksResult.knowledgeSource;
+    // Verification: Poll until asynchronous crawler and vector indexing pipeline finishes
+    let source = ksResult.knowledgeSource;
+    if (source.status === "PROCESSING" || source.status === "PENDING") {
+      const pollIntervalMs = 2500;
+      const maxPollAttempts = 360; // Up to 15 minutes
+      let attempts = 0;
+
+      while (
+        (source.status === "PROCESSING" || source.status === "PENDING") &&
+        attempts < maxPollAttempts
+      ) {
+        if (this.isCancelled) throw new Error("Cancelled");
+        await this.delay(pollIntervalMs);
+        attempts++;
+
+        // Ensure stages advance smoothly if timers were cleared
+        if (attempts >= 2 && stages[1].status === "current") {
+          stages[1].status = "completed";
+          stages[2].status = "current";
+          onStageUpdate([...stages], "extracting");
+        } else if (attempts >= 5 && stages[2].status === "current") {
+          stages[2].status = "completed";
+          stages[3].status = "current";
+          onStageUpdate([...stages], "preparing");
+        }
+
+        try {
+          const polled = await knowledgeSourcesApi.get(createdChatbot.id, source.id);
+          source = polled.knowledgeSource;
+        } catch {
+          // Transient network failure during polling; continue next poll attempt
+        }
+      }
+    }
+
     if (source.status !== "READY") {
-      stages[3].status = "failed";
+      const activeIdx = stages.findIndex((s) => s.status === "current");
+      if (activeIdx >= 0) {
+        stages[activeIdx].status = "failed";
+      } else {
+        stages[3].status = "failed";
+      }
       onStageUpdate([...stages]);
       onStatusChange("failed");
       throw new Error(

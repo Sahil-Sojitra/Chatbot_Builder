@@ -320,8 +320,8 @@ class Crawl4AICrawler:
         6. Limits concurrent execution via asyncio.Semaphore.
         7. Collects successful CrawlResult objects and failed PageCrawlSummary records.
         """
-        # Determine page crawling limit. None means unbounded crawl (visits all reachable internal links).
-        bounded_max_pages = max_pages if (max_pages is not None and max_pages > 0) else None
+        # Determine page crawling limit. Default to 25 pages for fast and comprehensive website ingestion.
+        bounded_max_pages = max_pages if (max_pages is not None and max_pages > 0) else 25
 
         # 1. Normalize and SSRF-validate starting URL
         normalized_root = normalize_url(starting_url, starting_url)

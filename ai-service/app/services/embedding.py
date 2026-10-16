@@ -96,7 +96,7 @@ class VoyageEmbeddingService:
     """
 
     DEFAULT_MODEL: str = "voyage-4"
-    MAX_BATCH_SIZE: int = 10  # Conservative batch size to stay safely within Voyage AI free-tier 10K TPM limits
+    MAX_BATCH_SIZE: int = 20  # Safe batch size to stay within Voyage AI free-tier 10K TPM limits while optimizing throughput
 
     def __init__(
         self,
@@ -322,26 +322,38 @@ class VoyageEmbeddingService:
 
         for i in range(0, len(texts), self.batch_size):
             batch_texts = texts[i : i + self.batch_size]
-            try:
-                response = await client.embed(
-                    texts=batch_texts,
-                    model=self.model,
-                    input_type=input_type,
-                )
-                all_vectors.extend(response.embeddings)
-                tokens_used = getattr(response, "total_tokens", 0)
-                total_tokens += tokens_used
-            except Exception as exc:
-                logger.error(f"Voyage AI async embedding error on batch slice {i}: {exc}")
-                raise EmbeddingGenerationError(f"Voyage AI API error: {exc}") from exc
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    response = await client.embed(
+                        texts=batch_texts,
+                        model=self.model,
+                        input_type=input_type,
+                    )
+                    all_vectors.extend(response.embeddings)
+                    tokens_used = getattr(response, "total_tokens", 0)
+                    total_tokens += tokens_used
+                    break
+                except Exception as exc:
+                    err_str = str(exc).lower()
+                    if ("rate limit" in err_str or "rpm" in err_str or "tpm" in err_str or "billing" in err_str) and attempt < max_retries - 1:
+                        logger.warning(
+                            f"Voyage AI rate limit hit on slice {i} (attempt {attempt + 1}/{max_retries}). "
+                            "Pausing 22s for free-tier 3 RPM / 10K TPM window reset..."
+                        )
+                        await asyncio.sleep(22.0)
+                    else:
+                        logger.error(f"Voyage AI async embedding error on batch slice {i}: {exc}")
+                        raise EmbeddingGenerationError(f"Voyage AI API error: {exc}") from exc
 
-            # If accumulated tokens in this rolling cycle near 8,000, pause to allow TPM window to reset
-            if total_tokens >= 8000 and i + self.batch_size < len(texts):
-                logger.info(f"Pacing Voyage AI embeddings: reached {total_tokens} tokens. Pausing 15s to reset TPM window.")
-                await asyncio.sleep(15.0)
-                total_tokens = 0
-            elif i + self.batch_size < len(texts):
-                await asyncio.sleep(1.0)
+            # Enforce 3 RPM limit (1 request every 20 seconds) when subsequent batches remain
+            if i + self.batch_size < len(texts):
+                logger.info(
+                    f"Pacing Voyage AI embeddings for free tier (3 RPM / 10K TPM): "
+                    f"pausing 20.5s before batch slice {i + self.batch_size}/{len(texts)}."
+                )
+                await asyncio.sleep(20.5)
+
 
         expected_dims = self.get_expected_dimensions()
         embedded_records: List[EmbeddedChunk] = []

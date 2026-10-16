@@ -127,7 +127,9 @@ export class AIServiceClient {
       if (err instanceof Error && err.name === "AbortError") {
         throw new AIServiceError(504, "AI_SERVICE_TIMEOUT", `AI service ingestion timed out after ${timeoutMs}ms`);
       }
-      const message = err instanceof Error ? err.message : "Unknown network error communicating with AI service";
+      console.error("[AIServiceClient] Ingest failed:", err, "cause:", (err as any)?.cause);
+      const causeMsg = (err as any)?.cause?.message ? ` (${(err as any).cause.message})` : "";
+      const message = err instanceof Error ? `${err.message}${causeMsg}` : "Unknown network error communicating with AI service";
       throw new AIServiceError(502, "AI_SERVICE_UNAVAILABLE", `Failed to connect to AI service: ${message}`);
     } finally {
       clearTimeout(timeoutId);

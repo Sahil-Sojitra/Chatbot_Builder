@@ -89,6 +89,8 @@ export default function ChatbotOverviewPage() {
   }
 
   const websiteSource =
+    knowledgeSources.find((s) => (s.type === "URL" || s.type === "WEBPAGE") && s.status === "READY") ||
+    knowledgeSources.find((s) => (s.type === "URL" || s.type === "WEBPAGE") && (s.status === "PROCESSING" || s.status === "PENDING")) ||
     knowledgeSources.find((s) => s.type === "URL" || s.type === "WEBPAGE") ||
     knowledgeSources[0];
 

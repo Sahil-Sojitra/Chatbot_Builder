@@ -135,16 +135,12 @@ export const knowledgeSourceService = {
     if (chatbot.creationMode === "INSTANT" && (input.type === "URL" || input.type === "WEBPAGE")) {
       const existingSources = await knowledgeSourceRepository.findAllForChatbot(chatbot._id);
 
-      // 1. Prevent concurrent ingestion or double-click duplicates
+      // 1. If an ingestion is currently in progress, return it so the caller can poll its progress
       const inProgressSource = existingSources.find(
         (s) => s.status === "PENDING" || s.status === "PROCESSING",
       );
       if (inProgressSource) {
-        throw new AppError(
-          409,
-          "INVALID_STATE_TRANSITION",
-          "Website ingestion is already in progress for this chatbot.",
-        );
+        return toPublicKnowledgeSource(inProgressSource);
       }
 
       // 2. Prevent silently attaching a different website URL to an existing Instant Bot chatbot
@@ -197,35 +193,34 @@ export const knowledgeSourceService = {
         sourceToProcess = claimed ?? created;
       }
 
-      try {
-        const ingestionResult = await aiServiceClient.ingestWebsite({
-          chatbotId: chatbot._id.toString(),
-          websiteUrl: input.sourceUrl,
-        });
+      const processSourceId = sourceToProcess._id.toString();
+      const botIdStr = chatbot._id.toString();
+      const targetUrl = input.sourceUrl;
 
-        if (!ingestionResult.success) {
-          const failureMsg = ingestionResult.error_message || "Website ingestion failed in AI service";
-          await knowledgeSourceRepository.markFailed(sourceToProcess._id.toString(), failureMsg);
-          throw new AppError(422, "INGESTION_FAILED", failureMsg);
-        }
+      // Asynchronous ingestion pipeline: Execute crawling, embedding, and vector indexing
+      // in the background without blocking the HTTP request thread.
+      void (async () => {
+        try {
+          const ingestionResult = await aiServiceClient.ingestWebsite({
+            chatbotId: botIdStr,
+            websiteUrl: targetUrl,
+            maxPages: 25,
+          });
 
-        const readySource = await knowledgeSourceRepository.markReady(sourceToProcess._id.toString());
-        return {
-          ...toPublicKnowledgeSource(readySource ?? sourceToProcess),
-          pagesCrawled: ingestionResult.pages_crawled,
-          chunksIndexed: ingestionResult.chunks_indexed,
-          pagesDiscovered: ingestionResult.pages_discovered ?? ingestionResult.pages_crawled,
-          pagesFailed: ingestionResult.pages_failed ?? 0,
-        };
-      } catch (err: unknown) {
-        if (err instanceof AppError) {
-          throw err;
+          if (!ingestionResult.success) {
+            const failureMsg = ingestionResult.error_message || "Website ingestion failed in AI service";
+            await knowledgeSourceRepository.markFailed(processSourceId, failureMsg);
+            return;
+          }
+
+          await knowledgeSourceRepository.markReady(processSourceId);
+        } catch (err: unknown) {
+          const safeError = err instanceof AIServiceError ? err.message : "Website crawling and indexing failed";
+          await knowledgeSourceRepository.markFailed(processSourceId, safeError);
         }
-        const safeError = err instanceof AIServiceError ? err.message : "Website crawling and indexing failed";
-        await knowledgeSourceRepository.markFailed(sourceToProcess._id.toString(), safeError);
-        const statusCode = err instanceof AIServiceError ? err.status : 500;
-        throw new AppError(statusCode, "INGESTION_FAILED", safeError);
-      }
+      })();
+
+      return toPublicKnowledgeSource(sourceToProcess);
     }
 
     // Default flow for Custom Bots (or TEXT sources)
@@ -244,39 +239,36 @@ export const knowledgeSourceService = {
 
     const source = await knowledgeSourceRepository.create(creationInput);
 
-    // Synchronous Custom Bot ingestion via FastAPI
+    // Asynchronous Custom Bot URL ingestion via FastAPI
     if (input.type === "URL" || input.type === "WEBPAGE") {
-      await knowledgeSourceRepository.claimForProcessing(source._id.toString());
+      const claimedSource = await knowledgeSourceRepository.claimForProcessing(source._id.toString());
+      const activeSource = claimedSource ?? source;
+      const processSourceId = activeSource._id.toString();
+      const botIdStr = chatbot._id.toString();
+      const targetUrl = input.sourceUrl;
 
-      try {
-        const ingestionResult = await aiServiceClient.ingestWebsite({
-          chatbotId: chatbot._id.toString(),
-          websiteUrl: input.sourceUrl,
-        });
+      void (async () => {
+        try {
+          const ingestionResult = await aiServiceClient.ingestWebsite({
+            chatbotId: botIdStr,
+            websiteUrl: targetUrl,
+            maxPages: 25,
+          });
 
-        if (!ingestionResult.success) {
-          const failureMsg = ingestionResult.error_message || "Website ingestion failed in AI service";
-          await knowledgeSourceRepository.markFailed(source._id.toString(), failureMsg);
-          throw new AppError(422, "INGESTION_FAILED", failureMsg);
+          if (!ingestionResult.success) {
+            const failureMsg = ingestionResult.error_message || "Website ingestion failed in AI service";
+            await knowledgeSourceRepository.markFailed(processSourceId, failureMsg);
+            return;
+          }
+
+          await knowledgeSourceRepository.markReady(processSourceId);
+        } catch (err: unknown) {
+          const safeError = err instanceof AIServiceError ? err.message : "Website crawling and indexing failed";
+          await knowledgeSourceRepository.markFailed(processSourceId, safeError);
         }
+      })();
 
-        const readySource = await knowledgeSourceRepository.markReady(source._id.toString());
-        return {
-          ...toPublicKnowledgeSource(readySource ?? source),
-          pagesCrawled: ingestionResult.pages_crawled,
-          chunksIndexed: ingestionResult.chunks_indexed,
-          pagesDiscovered: ingestionResult.pages_discovered ?? ingestionResult.pages_crawled,
-          pagesFailed: ingestionResult.pages_failed ?? 0,
-        };
-      } catch (err: unknown) {
-        if (err instanceof AppError) {
-          throw err;
-        }
-        const safeError = err instanceof AIServiceError ? err.message : "Website crawling and indexing failed";
-        await knowledgeSourceRepository.markFailed(source._id.toString(), safeError);
-        const statusCode = err instanceof AIServiceError ? err.status : 500;
-        throw new AppError(statusCode, "INGESTION_FAILED", safeError);
-      }
+      return toPublicKnowledgeSource(activeSource);
     } else if (input.type === "TEXT") {
       // Mark text knowledge sources READY immediately
       await knowledgeSourceRepository.claimForProcessing(source._id.toString());

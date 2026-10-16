@@ -17,9 +17,9 @@ class WebsiteIngestionRequest(BaseModel):
         examples=["https://example.com"],
     )
     max_pages: Optional[int] = Field(
-        default=None,
+        default=25,
         ge=1,
-        description="Maximum number of pages to discover and ingest (unbounded when omitted).",
-        examples=[20],
+        description="Maximum number of pages to discover and ingest (defaults to 25 for fast and comprehensive coverage).",
+        examples=[25],
     )
 

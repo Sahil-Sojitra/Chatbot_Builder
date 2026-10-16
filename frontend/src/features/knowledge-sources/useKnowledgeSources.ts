@@ -50,8 +50,10 @@ export function useKnowledgeSources(chatbotId: string) {
             schedulePoll();
           }
         } catch {
-          // If polling fails (e.g. network disruption), stop polling to avoid tight error loops
-          clearActiveTimer();
+          // If polling encounters a transient network glitch or token refresh, retry after 3s
+          if (!cancelled) {
+            pollTimer = setTimeout(schedulePoll, 3000);
+          }
         }
       }, POLLING_INTERVAL_MS);
     };
