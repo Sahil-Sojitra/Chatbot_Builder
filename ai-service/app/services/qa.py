@@ -39,7 +39,7 @@ class QARequest(BaseModel):
         examples=["What is your return policy?"],
     )
     top_k: int = Field(
-        default=4,
+        default=6,
         ge=1,
         le=20,
         description="Maximum number of relevant knowledge chunks to retrieve as evidence.",

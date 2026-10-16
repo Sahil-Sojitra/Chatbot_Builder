@@ -127,8 +127,10 @@ def is_eligible_internal_link(
         if target_host not in allowed_domains:
             return False
     else:
-        # Default: strict same-hostname origin
-        if target_host != base_host:
+        # Default: strict same-hostname origin (treating www. and non-www as equivalent)
+        norm_target = target_host[4:] if target_host.startswith("www.") else target_host
+        norm_base = base_host[4:] if base_host.startswith("www.") else base_host
+        if norm_target != norm_base:
             return False
 
     # Check file extension
@@ -156,7 +158,9 @@ def filter_crawl4ai_internal_links(
 
     raw_items: List[Any] = []
     if isinstance(crawl4ai_links, dict):
-        raw_items = crawl4ai_links.get("internal", [])
+        # Inspect both internal and external (in case www/non-www differences put it under external)
+        raw_items.extend(crawl4ai_links.get("internal", []))
+        raw_items.extend(crawl4ai_links.get("external", []))
     elif isinstance(crawl4ai_links, list):
         raw_items = crawl4ai_links
 

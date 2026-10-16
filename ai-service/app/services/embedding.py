@@ -1,5 +1,6 @@
 import os
 import time
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
@@ -95,7 +96,7 @@ class VoyageEmbeddingService:
     """
 
     DEFAULT_MODEL: str = "voyage-4"
-    MAX_BATCH_SIZE: int = 128  # Voyage AI maximum recommended batch slice
+    MAX_BATCH_SIZE: int = 10  # Conservative batch size to stay safely within Voyage AI free-tier 10K TPM limits
 
     def __init__(
         self,
@@ -332,6 +333,10 @@ class VoyageEmbeddingService:
             except Exception as exc:
                 logger.error(f"Voyage AI async embedding error on batch slice {i}: {exc}")
                 raise EmbeddingGenerationError(f"Voyage AI API error: {exc}") from exc
+
+            # Small cooldown between multi-batch requests to respect TPM / RPM limits
+            if i + self.batch_size < len(texts):
+                await asyncio.sleep(0.5)
 
         expected_dims = self.get_expected_dimensions()
         embedded_records: List[EmbeddedChunk] = []

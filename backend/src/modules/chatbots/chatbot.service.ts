@@ -367,7 +367,7 @@ export const chatbotService = {
       const qaResponse = await aiServiceClient.askQuestion({
         chatbotId: chatbot._id.toString(),
         question,
-        topK: input.topK ?? chatbot.ragTopK ?? 4,
+        topK: input.topK ?? chatbot.ragTopK ?? 6,
       });
 
       return {

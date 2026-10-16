@@ -1,19 +1,51 @@
 import os
 import logging
-from typing import Optional
+from typing import Optional, List, Dict
 from fastapi import APIRouter, HTTPException, Header, status
 from pydantic import BaseModel, Field
 
 from app.schemas.ingestion import WebsiteIngestionRequest
 from app.services.crawler import crawler_service
 from app.services.content_normalizer import content_normalizer
-from app.services.chunker import chunker_service
+from app.services.chunker import chunker_service, ContentChunk
 from app.services.embedding import embedding_service, EmbeddingError
 from app.services.vector_store import vector_store, VectorStoreError
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ingest", tags=["Ingestion (v1)"])
+
+
+def select_balanced_chunks(chunks: List[ContentChunk], max_chunks: int = 35) -> List[ContentChunk]:
+    """Selects chunks evenly distributed across all crawled pages.
+
+    Prevents the homepage or first page from consuming the entire chunk budget and starving
+    sub-pages (such as Careers, About Us, Services, Values).
+    Uses a round-robin algorithm across distinct canonical URLs.
+    """
+    if len(chunks) <= max_chunks:
+        return chunks
+
+    grouped: Dict[str, List[ContentChunk]] = {}
+    for chunk in chunks:
+        key = chunk.canonical_url or chunk.source_url
+        grouped.setdefault(key, []).append(chunk)
+
+    selected: List[ContentChunk] = []
+    max_per_page = max(len(c_list) for c_list in grouped.values())
+
+    for chunk_idx in range(max_per_page):
+        for url, c_list in grouped.items():
+            if chunk_idx < len(c_list):
+                selected.append(c_list[chunk_idx])
+                if len(selected) >= max_chunks:
+                    logger.info(
+                        f"Balanced chunk selection reached cap of {max_chunks} chunks "
+                        f"across {len(grouped)} distinct pages."
+                    )
+                    return selected
+
+    return selected
 
 
 class IngestionResponse(BaseModel):
@@ -111,9 +143,17 @@ async def ingest_website(
             error_message="Extracted pages contained no usable text chunks to index.",
         )
 
-    # 4. Generate Voyage AI embeddings
+    # 4. Balanced selection across pages to guarantee sub-pages (Careers, Services, etc.) are indexed
+    # and remain within Voyage AI's free-tier 10K TPM limits
+    chunks_to_embed = select_balanced_chunks(chunking_result.chunks, max_chunks=35)
+    logger.info(
+        f"Selected {len(chunks_to_embed)} balanced chunks from {len(chunking_result.chunks)} total chunks "
+        f"for chatbot '{clean_bot_id}'"
+    )
+
+    # 5. Generate Voyage AI embeddings
     try:
-        embedding_result = await embedding_service.aembed_chunks(chunking_result.chunks)
+        embedding_result = await embedding_service.aembed_chunks(chunks_to_embed)
     except EmbeddingError as exc:
         logger.error(f"Embedding error during ingestion for '{clean_bot_id}': {exc}")
         raise HTTPException(

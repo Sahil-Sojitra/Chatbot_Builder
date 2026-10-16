@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 # Standard bounds for retrieval configuration
-DEFAULT_TOP_K: int = 4
+DEFAULT_TOP_K: int = 6
 MIN_TOP_K: int = 1
 MAX_TOP_K: int = 20
 

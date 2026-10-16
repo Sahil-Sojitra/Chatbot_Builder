@@ -20,6 +20,7 @@ class CrawlResult(BaseModel):
     clean_text: str
     success: bool
     status_code: Optional[int] = None
+    links: List[str] = Field(default_factory=list)
     error_message: Optional[str] = None
 
 
@@ -135,6 +136,21 @@ class Crawl4AICrawler:
             if hasattr(result, "metadata") and isinstance(result.metadata, dict):
                 title = result.metadata.get("title")
 
+            # Extract internal links from Crawl4AI links and markdown
+            extracted_links = filter_crawl4ai_internal_links(
+                crawl4ai_links=getattr(result, "links", None),
+                base_url=canonical_url,
+                max_links=50,
+            )
+
+            # Also extract links directly from markdown to catch any links missed by HTML parser
+            if markdown_text:
+                for match in re.findall(r"\[.*?\]\((https?://[^\s\)]+|/[^\s\)]+)\)", markdown_text):
+                    norm_md_link = normalize_url(match, canonical_url)
+                    if norm_md_link and is_eligible_internal_link(norm_md_link, canonical_url):
+                        if norm_md_link not in extracted_links:
+                            extracted_links.append(norm_md_link)
+
             if not markdown_text:
                 return CrawlResult(
                     url=canonical_url,
@@ -143,6 +159,7 @@ class Crawl4AICrawler:
                     clean_text=clean_text,
                     success=False,
                     status_code=result.status_code,
+                    links=extracted_links,
                     error_message="Page rendered successfully but extracted markdown content was empty.",
                 )
 
@@ -153,6 +170,7 @@ class Crawl4AICrawler:
                 clean_text=clean_text,
                 success=True,
                 status_code=result.status_code or 200,
+                links=extracted_links,
             )
 
         try:
@@ -337,22 +355,16 @@ class Crawl4AICrawler:
 
                         if crawl_res.success:
                             successful_pages.append(crawl_res)
-                            # If we still have capacity to discover more pages, extract links
-                            if len(visited_urls) + len(queue) < bounded_max_pages:
-                                disc_res = await self.discover_internal_links(
-                                    target_url,
-                                    max_links=bounded_max_pages * 2,
-                                    crawler_instance=crawler,
-                                )
-                                if disc_res.success:
-                                    for link in disc_res.discovered_links:
-                                        if (
-                                            link not in queued_urls
-                                            and link not in visited_urls
-                                            and len(queued_urls) < bounded_max_pages * 2
-                                        ):
-                                            queued_urls.add(link)
-                                            queue.append(link)
+                            # Queue eligible discovered internal links if capacity remains
+                            if len(visited_urls) + len(queue) < bounded_max_pages * 2:
+                                for link in crawl_res.links:
+                                    if (
+                                        link not in queued_urls
+                                        and link not in visited_urls
+                                        and len(queued_urls) < bounded_max_pages * 2
+                                    ):
+                                        queued_urls.add(link)
+                                        queue.append(link)
                         else:
                             failed_pages.append(
                                 PageCrawlSummary(

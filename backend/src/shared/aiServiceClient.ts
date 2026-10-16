@@ -152,7 +152,7 @@ export class AIServiceClient {
         body: JSON.stringify({
           chatbot_id: payload.chatbotId,
           question: payload.question,
-          top_k: payload.topK ?? 4,
+          top_k: payload.topK ?? 6,
         }),
         signal: controller.signal,
       });

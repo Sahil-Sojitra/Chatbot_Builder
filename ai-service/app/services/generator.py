@@ -113,9 +113,16 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
 
     @staticmethod
     def _build_sources(evidence_chunks: List[RetrievedChunk]) -> List[SourceReference]:
-        """Converts retrieved chunks into structured source references with clean snippets."""
+        """Converts retrieved chunks into unique structured source references with clean snippets."""
         sources: List[SourceReference] = []
+        seen_urls: set[str] = set()
+
         for chunk in evidence_chunks:
+            url_key = (chunk.canonical_url or chunk.source_url or "").lower().strip()
+            if url_key in seen_urls:
+                continue
+            seen_urls.add(url_key)
+
             # Produce a clean snippet (up to 200 chars)
             clean_text = " ".join(chunk.content.split())
             snippet = clean_text[:200] + "..." if len(clean_text) > 200 else clean_text
@@ -133,28 +140,33 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
 
     @staticmethod
     def _build_prompt(question: str, evidence_chunks: List[RetrievedChunk]) -> str:
-        """Constructs a strict grounding prompt preventing hallucination."""
+        """Constructs a clean grounding prompt preventing repetitive citations and hallucination."""
+        # Group chunks by unique source URL to present clean, coherent context
+        grouped_by_url: Dict[str, List[RetrievedChunk]] = {}
+        for chunk in evidence_chunks:
+            key = chunk.canonical_url or chunk.source_url
+            grouped_by_url.setdefault(key, []).append(chunk)
+
         context_blocks = []
-        for idx, chunk in enumerate(evidence_chunks, start=1):
-            title = chunk.title or "Webpage Document"
-            url = chunk.source_url
-            context_blocks.append(
-                f"[Source {idx} - {title} ({url})]:\n{chunk.content}"
-            )
+        for idx, (url, chunks) in enumerate(grouped_by_url.items(), start=1):
+            title = chunks[0].title or "Webpage"
+            passages = "\n\n".join(c.content.strip() for c in chunks)
+            context_blocks.append(f"--- Document {idx}: {title} ({url}) ---\n{passages}")
 
         context_text = "\n\n".join(context_blocks)
 
         prompt = (
-            "You are a helpful, professional, and accurate AI assistant for a website chatbot.\n"
-            "Your objective is to answer the user's question using ONLY the provided evidence passages below.\n\n"
-            "STRICT RULES:\n"
-            "1. Answer ONLY using the facts stated directly in the evidence passages.\n"
+            "You are a helpful, professional, and friendly AI assistant for this organization.\n"
+            "Your objective is to answer the user's question accurately using ONLY the provided evidence passages below.\n\n"
+            "STRICT GUIDELINES:\n"
+            "1. Answer ONLY using the facts stated directly in the provided evidence passages.\n"
             "2. If the evidence passages DO NOT contain the information needed to answer the question, state: "
             "'I do not have enough information in the indexed website knowledge base to answer this question.'\n"
-            "3. Do NOT make up, assume, or extrapolate any information that is not explicitly in the evidence.\n"
-            "4. Keep your answer concise, polite, and helpful.\n"
-            "5. Cite relevant source numbers (e.g. [Source 1]) when referencing specific facts.\n\n"
-            f"--- EVIDENCE PASSAGES ---\n{context_text}\n--- END OF EVIDENCE ---\n\n"
+            "3. Format your response cleanly using natural, polished markdown (e.g., bullet points for lists, bolding for key terms).\n"
+            "4. NEVER mention source tags like 'Source 1', 'Source 2', or '[Source X]' in your answer text. The UI already displays sources separately below your response. Write fluent, natural paragraphs and clean bullet points without citation clutter.\n"
+            "5. When the user asks for a specific page link or URL (such as Careers, Contact, or Services), provide the exact page link (e.g. [Careers Page](https://webosmotic.com/careers)) using standard markdown [Link Text](https://...). Do NOT insert a space between the closing bracket and opening parenthesis.\n"
+            "6. Keep your tone engaging, professional, and concise.\n\n"
+            f"=== EVIDENCE PASSAGES ===\n{context_text}\n=== END OF EVIDENCE ===\n\n"
             f"USER QUESTION: {question.strip()}\n\n"
             "ANSWER:"
         )

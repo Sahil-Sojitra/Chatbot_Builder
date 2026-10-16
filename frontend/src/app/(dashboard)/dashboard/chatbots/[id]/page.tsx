@@ -19,6 +19,8 @@ import { useKnowledgeSources } from "@/features/knowledge-sources/useKnowledgeSo
 import { chatbotsApi } from "@/lib/api/chatbots";
 import { knowledgeSourcesApi } from "@/lib/api/knowledgeSources";
 import { ApiRequestError } from "@/lib/api/client";
+import { ChatMessageContent } from "@/features/chatbots/components/ChatMessageContent";
+import { ChatSourcesPills } from "@/features/chatbots/components/ChatSourcesPills";
 import type { Chatbot } from "@/types/chatbot";
 
 const STATUS_BADGE_VARIANT: Record<Chatbot["status"], "default" | "success" | "warning"> = {
@@ -502,28 +504,12 @@ export default function ChatbotOverviewPage() {
                             : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
-                      {msg.sources && msg.sources.length > 0 ? (
-                        <div className="mt-2.5 pt-2 border-t border-zinc-800/60 text-xs text-zinc-400">
-                          <span className="font-semibold text-zinc-300 text-[11px] block mb-1">
-                            Sources from indexed website:
-                          </span>
-                          <ul className="list-disc list-inside space-y-1">
-                            {msg.sources.map((s, idx) => (
-                              <li key={idx} className="truncate">
-                                <a
-                                  href={s.source_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-violet-400 hover:underline"
-                                >
-                                  {s.title || s.source_url}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
+                      {msg.sender === "user" || msg.isError ? (
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                      ) : (
+                        <ChatMessageContent content={msg.text} />
+                      )}
+                      <ChatSourcesPills sources={msg.sources} theme="violet" />
                     </div>
                     <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
                   </div>
@@ -747,30 +733,14 @@ export default function ChatbotOverviewPage() {
                               : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
                         }`}
                       >
+                      {msg.sender === "user" || msg.isError ? (
                         <p className="whitespace-pre-wrap">{msg.text}</p>
-                        {msg.sources && msg.sources.length > 0 ? (
-                          <div className="mt-2.5 pt-2 border-t border-zinc-800/60 text-xs text-zinc-400">
-                            <span className="font-semibold text-zinc-300 text-[11px] block mb-1">
-                              Sources:
-                            </span>
-                            <ul className="list-disc list-inside space-y-1">
-                              {msg.sources.map((s, idx) => (
-                                <li key={idx} className="truncate">
-                                  <a
-                                    href={s.source_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-emerald-400 hover:underline"
-                                  >
-                                    {s.title || s.source_url}
-                                  </a>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : null}
-                      </div>
-                      <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
+                      ) : (
+                        <ChatMessageContent content={msg.text} />
+                      )}
+                      <ChatSourcesPills sources={msg.sources} theme="emerald" />
+                    </div>
+                    <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
                     </div>
                   ))}
 
