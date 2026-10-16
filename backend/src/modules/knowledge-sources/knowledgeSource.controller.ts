@@ -7,6 +7,7 @@ import type {
   CompleteFileUploadBody,
   CreateKnowledgeSourceBody,
   InitiateFileUploadBody,
+  UpdateKnowledgeSourceBody,
 } from "./knowledgeSource.validation.js";
 
 export const knowledgeSourceController = {
@@ -77,5 +78,34 @@ export const knowledgeSourceController = {
     );
 
     sendSuccess(res, { knowledgeSource }, 201);
+  },
+
+  async update(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const knowledgeSource = await knowledgeSourceService.updateForOwner(
+      req.auth.userId,
+      req.params.chatbotId as string,
+      req.params.sourceId as string,
+      req.body as UpdateKnowledgeSourceBody,
+    );
+
+    sendSuccess(res, { knowledgeSource }, 200);
+  },
+
+  async delete(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    await knowledgeSourceService.deleteForOwner(
+      req.auth.userId,
+      req.params.chatbotId as string,
+      req.params.sourceId as string,
+    );
+
+    sendSuccess(res, { deleted: true }, 200);
   },
 };

@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
 import { AppError, chatbotNotFound, organizationNotFound } from "../../shared/errors.js";
-import { createPresignedUploadUrl, headObject } from "../../shared/storage.js";
+import { createPresignedUploadUrl, deleteObject, headObject } from "../../shared/storage.js";
 import { chatbotRepository } from "../chatbots/chatbot.repository.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
 import { aiServiceClient, AIServiceError } from "../../shared/aiServiceClient.js";
@@ -16,6 +16,7 @@ import type {
   CompleteFileUploadBody,
   CreateKnowledgeSourceBody,
   InitiateFileUploadBody,
+  UpdateKnowledgeSourceBody,
 } from "./knowledgeSource.validation.js";
 import type { IKnowledgeSource } from "./knowledgeSource.model.js";
 import type { PublicKnowledgeSource } from "./knowledgeSource.types.js";
@@ -407,5 +408,61 @@ export const knowledgeSourceService = {
     });
 
     return toPublicKnowledgeSource(source);
+  },
+
+  /**
+   * Applies a partial update to a knowledge source (e.g. name or text content).
+   */
+  async updateForOwner(
+    ownerId: string,
+    chatbotId: string,
+    sourceId: string,
+    input: UpdateKnowledgeSourceBody,
+  ): Promise<ClientFacingKnowledgeSource> {
+    const chatbot = await resolveOwnedChatbot(ownerId, chatbotId);
+
+    const existing = await knowledgeSourceRepository.findByIdForChatbot(
+      sourceId,
+      chatbot._id,
+    );
+    if (!existing) {
+      throw knowledgeSourceNotFound();
+    }
+
+    const updated = await knowledgeSourceRepository.updateByIdForChatbot(
+      sourceId,
+      chatbot._id,
+      input,
+    );
+    if (!updated) {
+      throw knowledgeSourceNotFound();
+    }
+
+    return toPublicKnowledgeSource(updated);
+  },
+
+  /**
+   * Permanently deletes one knowledge source and its S3 file (if any).
+   */
+  async deleteForOwner(
+    ownerId: string,
+    chatbotId: string,
+    sourceId: string,
+  ): Promise<void> {
+    const chatbot = await resolveOwnedChatbot(ownerId, chatbotId);
+
+    const existing = await knowledgeSourceRepository.findByIdForChatbot(
+      sourceId,
+      chatbot._id,
+    );
+    if (!existing) {
+      throw knowledgeSourceNotFound();
+    }
+
+    if (existing.storageKey) {
+      await deleteObject(existing.storageKey);
+    }
+
+    await knowledgeSourceRepository.deleteByIdForChatbot(sourceId, chatbot._id);
   },
 };

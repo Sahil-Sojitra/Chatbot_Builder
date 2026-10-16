@@ -10,8 +10,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
   Textarea,
 } from "@/components/ui";
+import { knowledgeSourcesApi } from "@/lib/api/knowledgeSources";
+import { ApiRequestError } from "@/lib/api/client";
 import type { KnowledgeSource } from "@/types/knowledgeSource";
 
 const STATUS_BADGE_VARIANT: Record<
@@ -41,33 +44,101 @@ function formatBytes(bytes: number | null): string {
 
 export interface KnowledgeSourceCardProps {
   source: KnowledgeSource;
+  onDeleted?: (sourceId: string) => void;
+  onUpdated?: (updated: KnowledgeSource) => void;
 }
 
-export function KnowledgeSourceCard({ source }: KnowledgeSourceCardProps) {
+export function KnowledgeSourceCard({
+  source,
+  onDeleted,
+  onUpdated,
+}: KnowledgeSourceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(source.name);
+  const [draftName, setDraftName] = useState(source.name);
   const [content, setContent] = useState(source.sourceText ?? "");
   const [draftContent, setDraftContent] = useState(source.sourceText ?? "");
   const [isModified, setIsModified] = useState(false);
+
+  // Async states
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [cardError, setCardError] = useState<string | null>(null);
 
   const hasContent = Boolean(content && content.trim().length > 0);
   const isProcessing = source.status === "PENDING" || source.status === "PROCESSING";
 
   const handleStartEdit = () => {
+    setCardError(null);
+    setDraftName(name);
     setDraftContent(content);
     setIsEditing(true);
     setIsExpanded(true);
   };
 
-  const handleSave = () => {
-    setContent(draftContent);
-    setIsEditing(false);
-    setIsModified(true);
-  };
-
-  const handleCancel = () => {
+  const handleCancelEdit = () => {
+    setCardError(null);
+    setDraftName(name);
     setDraftContent(content);
     setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    setCardError(null);
+    const trimmedName = draftName.trim();
+    if (!trimmedName) {
+      setCardError("Source title/name cannot be empty.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await knowledgeSourcesApi.update(
+        source.chatbotId,
+        source.id,
+        {
+          name: trimmedName,
+          sourceText: draftContent,
+        },
+      );
+
+      setName(response.knowledgeSource.name);
+      setContent(response.knowledgeSource.sourceText ?? draftContent);
+      setIsEditing(false);
+      setIsModified(true);
+      onUpdated?.(response.knowledgeSource);
+    } catch (err: unknown) {
+      setCardError(
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to update knowledge source.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setCardError(null);
+    setIsDeleting(true);
+    try {
+      await knowledgeSourcesApi.delete(source.chatbotId, source.id);
+      setIsConfirmingDelete(false);
+      onDeleted?.(source.id);
+    } catch (err: unknown) {
+      setCardError(
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to delete knowledge source.",
+      );
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -92,14 +163,28 @@ export function KnowledgeSourceCard({ source }: KnowledgeSourceCardProps) {
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <CardTitle className="text-sm font-semibold text-zinc-100 font-mono">{source.name}</CardTitle>
-              {isModified ? (
-                <Badge variant="warning" className="text-[9px] px-1.5 py-0 font-mono">
-                  MODIFIED
-                </Badge>
-              ) : null}
-            </div>
+            {isEditing ? (
+              <div className="flex flex-col gap-1.5 max-w-md">
+                <span className="text-[11px] font-mono uppercase text-zinc-400">Source Name</span>
+                <Input
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  disabled={isSaving}
+                  className="h-8 text-xs font-mono"
+                  placeholder="Knowledge source name…"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className="text-sm font-semibold text-zinc-100 font-mono">{name}</CardTitle>
+                {isModified ? (
+                  <Badge variant="warning" className="text-[9px] px-1.5 py-0 font-mono">
+                    MODIFIED
+                  </Badge>
+                ) : null}
+              </div>
+            )}
+
             <CardDescription className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-mono">
               <span className="font-medium text-zinc-400">{TYPE_LABEL[source.type]}</span>
               <span>&middot;</span>
@@ -127,6 +212,7 @@ export function KnowledgeSourceCard({ source }: KnowledgeSourceCardProps) {
           </div>
         </div>
 
+        {/* Actions & Status Badge */}
         <div className="flex items-center gap-2 self-start">
           <Badge variant={STATUS_BADGE_VARIANT[source.status]}>
             {source.status === "PROCESSING" ? (
@@ -136,86 +222,158 @@ export function KnowledgeSourceCard({ source }: KnowledgeSourceCardProps) {
             ) : null}
             {source.status}
           </Badge>
+
+          {!isEditing && !isConfirmingDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-zinc-400 hover:text-red-400 font-mono"
+              onClick={() => setIsConfirmingDelete(true)}
+              disabled={isDeleting}
+              title="Delete source"
+            >
+              DELETE
+            </Button>
+          ) : null}
         </div>
       </CardHeader>
 
       <CardContent className="pt-0">
+        {/* Error message */}
+        {cardError ? (
+          <div className="mb-3 rounded-[3px] border border-red-900/60 bg-red-950/40 p-2.5 text-xs text-red-300 font-mono flex items-center justify-between">
+            <span>[ERROR]: {cardError}</span>
+            <button
+              type="button"
+              onClick={() => setCardError(null)}
+              className="text-red-400 hover:text-red-200 ml-2"
+            >
+              &times;
+            </button>
+          </div>
+        ) : null}
+
+        {/* Inline Delete Confirmation */}
+        {isConfirmingDelete ? (
+          <div className="rounded-[3px] border border-red-900/50 bg-red-950/20 p-3 mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+            <span className="text-xs text-red-200 font-mono">
+              Are you sure you want to delete &ldquo;{name}&rdquo;? This cannot be undone.
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs font-mono"
+                disabled={isDeleting}
+                onClick={() => setIsConfirmingDelete(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-7 text-xs font-mono"
+                disabled={isDeleting}
+                onClick={() => void handleDelete()}
+              >
+                {isDeleting ? "Deleting…" : "Confirm Delete"}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
         {isProcessing ? (
           <div className="flex items-center gap-2 rounded-[3px] border border-dashed border-amber-800/80 bg-amber-950/20 px-3 py-2 text-xs text-amber-300 font-mono">
             <span className="h-1.5 w-1.5 animate-pulse rounded-[1px] bg-amber-400" />
             <span>[WORKER]: INGESTING AND VECTORIZING DOCUMENT...</span>
           </div>
+        ) : isEditing ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-zinc-200">Edit Source Content & Metadata</span>
+              <span className="text-xs text-zinc-500">
+                {draftContent.length.toLocaleString()} characters
+              </span>
+            </div>
+            <Textarea
+              value={draftContent}
+              onChange={(e) => setDraftContent(e.target.value)}
+              rows={8}
+              disabled={isSaving}
+              className="font-mono text-xs leading-relaxed"
+              placeholder="Source text content…"
+            />
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={isSaving}
+                onClick={handleCancelEdit}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={isSaving}
+                onClick={() => void handleSave()}
+              >
+                {isSaving ? "Saving…" : "Save Changes"}
+              </Button>
+            </div>
+          </div>
         ) : hasContent ? (
           <div className="flex flex-col gap-2">
-            {isEditing ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-zinc-200">Edit Extracted Content</span>
-                  <span className="text-xs text-zinc-500">
-                    {draftContent.length.toLocaleString()} characters
-                  </span>
-                </div>
-                <Textarea
-                  value={draftContent}
-                  onChange={(e) => setDraftContent(e.target.value)}
-                  rows={8}
-                  className="font-mono text-xs leading-relaxed"
-                  placeholder="Extracted text content…"
-                />
-                <div className="flex items-center justify-end gap-2 pt-1">
-                  <Button size="sm" variant="secondary" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={handleSave}>
-                    Save Changes
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <div
-                  className={`rounded-[3px] border border-zinc-800 bg-[#09090c] p-3 font-mono text-xs text-zinc-300 leading-relaxed ${
-                    isExpanded
-                      ? "max-h-96 overflow-y-auto whitespace-pre-wrap"
-                      : "line-clamp-3 whitespace-pre-line"
-                  }`}
-                >
-                  {content}
-                </div>
+            <div
+              className={`rounded-[3px] border border-zinc-800 bg-[#09090c] p-3 font-mono text-xs text-zinc-300 leading-relaxed ${
+                isExpanded
+                  ? "max-h-96 overflow-y-auto whitespace-pre-wrap"
+                  : "line-clamp-3 whitespace-pre-line"
+              }`}
+            >
+              {content}
+            </div>
 
-                <div className="flex items-center justify-between pt-0.5">
-                  <span className="font-mono text-[10px] text-zinc-500">
-                    {content.length.toLocaleString()} CHARS INDEXED
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 text-[11px] font-mono text-zinc-400 hover:text-white"
-                      onClick={() => setIsExpanded(!isExpanded)}
-                    >
-                      {isExpanded ? "COLLAPSE" : "EXPAND"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="h-6 text-[11px] font-mono"
-                      onClick={handleStartEdit}
-                    >
-                      EDIT
-                    </Button>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between pt-0.5">
+              <span className="font-mono text-[10px] text-zinc-500">
+                {content.length.toLocaleString()} CHARS INDEXED
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[11px] font-mono text-zinc-400 hover:text-white"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                >
+                  {isExpanded ? "COLLAPSE" : "EXPAND"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-6 text-[11px] font-mono"
+                  onClick={handleStartEdit}
+                >
+                  EDIT
+                </Button>
               </div>
-            )}
+            </div>
           </div>
-        ) : source.status === "READY" ? (
-          <div className="rounded-[3px] border border-zinc-800 bg-[#09090c] px-3.5 py-2.5 font-mono text-xs text-zinc-500">
-            NO_TEXT_EXTRACTED
+        ) : (
+          <div className="flex items-center justify-between rounded-[3px] border border-zinc-800 bg-[#09090c] px-3.5 py-2.5 font-mono text-xs text-zinc-500">
+            <span>NO_TEXT_EXTRACTED</span>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-6 text-[11px] font-mono"
+              onClick={handleStartEdit}
+            >
+              EDIT
+            </Button>
           </div>
-        ) : null}
+        )}
       </CardContent>
     </Card>
   );

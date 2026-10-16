@@ -8,6 +8,7 @@ import {
   completeFileUploadSchema,
   createKnowledgeSourceSchema,
   initiateFileUploadSchema,
+  updateKnowledgeSourceSchema,
 } from "./knowledgeSource.validation.js";
 
 const router = Router();
@@ -43,6 +44,19 @@ router.get(
   "/:chatbotId/:sourceId",
   requireAuth,
   asyncHandler(knowledgeSourceController.get),
+);
+
+router.patch(
+  "/:chatbotId/:sourceId",
+  requireAuth,
+  validateBody(updateKnowledgeSourceSchema),
+  asyncHandler(knowledgeSourceController.update),
+);
+
+router.delete(
+  "/:chatbotId/:sourceId",
+  requireAuth,
+  asyncHandler(knowledgeSourceController.delete),
 );
 
 export default router;

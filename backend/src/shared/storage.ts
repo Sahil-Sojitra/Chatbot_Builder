@@ -1,4 +1,5 @@
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
@@ -121,4 +122,18 @@ export const downloadObject = async (key: string): Promise<Buffer> => {
 
   const bytes = await result.Body.transformToByteArray();
   return Buffer.from(bytes);
+};
+
+export const deleteObject = async (key: string): Promise<void> => {
+  if (!env.S3_BUCKET_NAME) {
+    return;
+  }
+
+  try {
+    await getStorageClient().send(
+      new DeleteObjectCommand({ Bucket: env.S3_BUCKET_NAME, Key: key }),
+    );
+  } catch (err) {
+    console.error(`Failed to delete S3 object with key ${key}:`, err);
+  }
 };

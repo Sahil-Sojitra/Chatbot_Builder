@@ -49,4 +49,10 @@ router.post(
   asyncHandler(chatbotController.chat),
 );
 
+router.delete(
+  "/:id",
+  requireAuth,
+  asyncHandler(chatbotController.delete),
+);
+
 export default router;

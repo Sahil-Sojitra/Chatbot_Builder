@@ -18,6 +18,11 @@ export type CreateKnowledgeSourceInput =
   | CreateTextKnowledgeSourceInput
   | CreateUrlKnowledgeSourceInput;
 
+export interface UpdateKnowledgeSourceInput {
+  name?: string;
+  sourceText?: string;
+}
+
 export interface KnowledgeSourceResponse {
   knowledgeSource: KnowledgeSource;
 }
@@ -102,4 +107,28 @@ export const knowledgeSourcesApi = {
 
   get: (chatbotId: string, sourceId: string): Promise<KnowledgeSourceResponse> =>
     apiRequest<KnowledgeSourceResponse>(`/api/v1/knowledge-sources/${chatbotId}/${sourceId}`),
+
+  update: (
+    chatbotId: string,
+    sourceId: string,
+    input: UpdateKnowledgeSourceInput,
+  ): Promise<KnowledgeSourceResponse> =>
+    apiRequest<KnowledgeSourceResponse>(
+      `/api/v1/knowledge-sources/${chatbotId}/${sourceId}`,
+      {
+        method: "PATCH",
+        body: input,
+      },
+    ),
+
+  delete: (
+    chatbotId: string,
+    sourceId: string,
+  ): Promise<{ deleted: boolean }> =>
+    apiRequest<{ deleted: boolean }>(
+      `/api/v1/knowledge-sources/${chatbotId}/${sourceId}`,
+      {
+        method: "DELETE",
+      },
+    ),
 };

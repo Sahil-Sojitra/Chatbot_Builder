@@ -122,3 +122,28 @@ export const completeFileUploadSchema = z
   .strict();
 
 export type CompleteFileUploadBody = z.infer<typeof completeFileUploadSchema>;
+
+/**
+ * PATCH /api/v1/knowledge-sources/:chatbotId/:sourceId — partial update.
+ * Allows updating name and/or sourceText (for text sources).
+ */
+export const updateKnowledgeSourceSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "name cannot be empty")
+      .max(120, "name must be at most 120 characters")
+      .optional(),
+    sourceText: z
+      .string()
+      .min(1, "sourceText cannot be empty")
+      .max(500000, "sourceText exceeds 500,000 characters")
+      .optional(),
+  })
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided to update",
+  });
+
+export type UpdateKnowledgeSourceBody = z.infer<typeof updateKnowledgeSourceSchema>;

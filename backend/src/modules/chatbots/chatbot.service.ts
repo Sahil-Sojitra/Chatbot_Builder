@@ -10,6 +10,7 @@ import {
   organizationNotFound,
 } from "../../shared/errors.js";
 import { aiServiceClient, AIServiceError } from "../../shared/aiServiceClient.js";
+import { deleteObject } from "../../shared/storage.js";
 import { generateUniqueSlug } from "../../shared/slug.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
 import { knowledgeSourceRepository } from "../knowledge-sources/knowledgeSource.repository.js";
@@ -387,5 +388,39 @@ export const chatbotService = {
         err instanceof Error ? err.message : "Failed to communicate with AI chat service";
       throw new AppError(502, "AI_SERVICE_ERROR", message);
     }
+  },
+
+  /**
+   * Permanently deletes one chatbot and cleans up its knowledge sources,
+   * S3 files, and vector store content, scoped to the user's organization.
+   */
+  async deleteForOwner(ownerId: string, chatbotId: string): Promise<void> {
+    const organization = await organizationRepository.findByOwnerId(ownerId);
+    if (!organization) {
+      throw organizationNotFound();
+    }
+
+    const chatbot = await chatbotRepository.findByIdForOrganization(
+      chatbotId,
+      organization._id,
+    );
+    if (!chatbot) {
+      throw chatbotNotFound();
+    }
+
+    // 1. Clean up attached knowledge sources & S3 storage files
+    const sources = await knowledgeSourceRepository.findAllForChatbot(chatbot._id);
+    for (const source of sources) {
+      if (source.storageKey) {
+        await deleteObject(source.storageKey);
+      }
+    }
+    await knowledgeSourceRepository.deleteAllForChatbot(chatbot._id);
+
+    // 2. Clean up vector index in AI service
+    await aiServiceClient.deleteChatbotContent(chatbot._id.toString());
+
+    // 3. Delete the chatbot document
+    await chatbotRepository.deleteByIdForOrganization(chatbotId, organization._id);
   },
 };

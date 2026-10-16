@@ -88,4 +88,9 @@ export const chatbotsApi = {
       method: "POST",
       body: { message },
     }),
+
+  delete: (id: string): Promise<{ deleted: boolean }> =>
+    apiRequest<{ deleted: boolean }>(`/api/v1/chatbots/${id}`, {
+      method: "DELETE",
+    }),
 };

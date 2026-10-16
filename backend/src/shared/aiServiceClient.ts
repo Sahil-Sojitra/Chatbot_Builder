@@ -200,6 +200,30 @@ export class AIServiceClient {
       return false;
     }
   }
+
+  /**
+   * Cleans up all indexed vector embeddings and chunks for a chatbot.
+   */
+  async deleteChatbotContent(chatbotId: string): Promise<boolean> {
+    const urls = [
+      `${this.baseUrl}/api/v1/ingest/chatbot/${encodeURIComponent(chatbotId)}`,
+      `${this.baseUrl}/vector-store/${encodeURIComponent(chatbotId)}`,
+    ];
+
+    for (const url of urls) {
+      try {
+        const response = await fetch(url, {
+          method: "DELETE",
+          headers: this.getHeaders(),
+          signal: AbortSignal.timeout(5000),
+        });
+        if (response.ok) return true;
+      } catch {
+        // Continue to fallback or ignore if endpoint is not mounted
+      }
+    }
+    return false;
+  }
 }
 
 export const aiServiceClient = new AIServiceClient();

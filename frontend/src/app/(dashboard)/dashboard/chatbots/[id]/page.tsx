@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import {
@@ -44,11 +45,16 @@ interface ChatMessage {
 }
 
 export default function ChatbotOverviewPage() {
+  const router = useRouter();
   const { chatbot, setChatbot } = useChatbotDetail();
   const [isPublishing, setIsPublishing] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [copiedScript, setCopiedScript] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Deletion state
+  const [isDeletingChatbot, setIsDeletingChatbot] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   // Playground chat state
   const [deviceMode, setDeviceMode] = useState<"widget" | "mobile">("widget");
@@ -185,6 +191,21 @@ export default function ChatbotOverviewPage() {
     }
   };
 
+  const handleDeleteChatbot = async () => {
+    setIsDeletingChatbot(true);
+    setActionError(null);
+    try {
+      await chatbotsApi.delete(chatbot.id);
+      router.push("/dashboard/chatbots");
+    } catch (err: unknown) {
+      setActionError(
+        err instanceof ApiRequestError ? err.message : "Failed to delete chatbot.",
+      );
+      setIsDeletingChatbot(false);
+      setIsConfirmingDelete(false);
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = inputValue.trim();
@@ -290,8 +311,8 @@ export default function ChatbotOverviewPage() {
               ) : null}
             </div>
 
-            {/* Ingestion Status Indicator */}
-            <div className="flex items-center gap-2 self-start sm:self-center">
+            {/* Ingestion Status Indicator & Delete Bot Action */}
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
               {isReady ? (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-800/60 bg-emerald-950/40 text-xs font-medium text-emerald-400">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -311,6 +332,41 @@ export default function ChatbotOverviewPage() {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900 text-xs font-medium text-zinc-400">
                   <span>Checking status…</span>
                 </div>
+              )}
+
+              {isConfirmingDelete ? (
+                <div className="flex items-center gap-1.5 rounded-md border border-red-900/60 bg-red-950/40 px-2 py-1">
+                  <span className="text-xs text-red-300 font-mono">Delete?</span>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-6 text-[11px] px-2 font-mono"
+                    disabled={isDeletingChatbot}
+                    onClick={() => void handleDeleteChatbot()}
+                  >
+                    {isDeletingChatbot ? "Deleting…" : "Confirm"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 text-[11px] px-1.5 text-zinc-400 hover:text-white font-mono"
+                    disabled={isDeletingChatbot}
+                    onClick={() => setIsConfirmingDelete(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs text-zinc-400 hover:text-red-400 font-mono"
+                  disabled={isDeletingChatbot}
+                  onClick={() => setIsConfirmingDelete(true)}
+                  title="Delete this Instant Bot"
+                >
+                  Delete Bot
+                </Button>
               )}
             </div>
           </div>

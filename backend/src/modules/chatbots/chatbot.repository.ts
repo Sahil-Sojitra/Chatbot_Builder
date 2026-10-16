@@ -141,4 +141,15 @@ export const chatbotRepository = {
   ): Promise<HydratedDocument<IChatbot>> {
     return ChatbotModel.create(input);
   },
+
+  async deleteByIdForOrganization(
+    id: string,
+    organizationId: Types.ObjectId,
+  ): Promise<boolean> {
+    if (!Types.ObjectId.isValid(id)) {
+      return false;
+    }
+    const result = await ChatbotModel.deleteOne({ _id: id, organizationId });
+    return result.deletedCount > 0;
+  },
 };

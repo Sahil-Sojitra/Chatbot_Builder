@@ -148,4 +148,43 @@ export const knowledgeSourceRepository = {
       { new: true },
     );
   },
+
+  async updateByIdForChatbot(
+    sourceId: string,
+    chatbotId: Types.ObjectId,
+    fields: { name?: string | undefined; sourceText?: string | undefined },
+  ): Promise<HydratedDocument<IKnowledgeSource> | null> {
+    if (!Types.ObjectId.isValid(sourceId) || !Types.ObjectId.isValid(chatbotId)) {
+      return null;
+    }
+    const updatePayload: Record<string, unknown> = {};
+    if (fields.name !== undefined) {
+      updatePayload.name = fields.name;
+    }
+    if (fields.sourceText !== undefined) {
+      updatePayload.sourceText = fields.sourceText;
+    }
+    return KnowledgeSourceModel.findOneAndUpdate(
+      { _id: sourceId, chatbotId },
+      { $set: updatePayload },
+      { new: true },
+    );
+  },
+
+  async deleteByIdForChatbot(
+    sourceId: string,
+    chatbotId: Types.ObjectId,
+  ): Promise<HydratedDocument<IKnowledgeSource> | null> {
+    if (!Types.ObjectId.isValid(sourceId) || !Types.ObjectId.isValid(chatbotId)) {
+      return null;
+    }
+    return KnowledgeSourceModel.findOneAndDelete({ _id: sourceId, chatbotId });
+  },
+
+  async deleteAllForChatbot(chatbotId: Types.ObjectId): Promise<void> {
+    if (!Types.ObjectId.isValid(chatbotId)) {
+      return;
+    }
+    await KnowledgeSourceModel.deleteMany({ chatbotId });
+  },
 };

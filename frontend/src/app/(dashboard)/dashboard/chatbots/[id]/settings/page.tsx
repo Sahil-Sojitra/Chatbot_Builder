@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
@@ -39,6 +40,7 @@ const PROVIDER_OPTIONS = [
 ];
 
 export default function ChatbotSettingsPage() {
+  const router = useRouter();
   const { isAllowed, isLoading } = useRequireCustomBot();
   const { chatbot, setChatbot } = useChatbotDetail();
 
@@ -57,6 +59,11 @@ export default function ChatbotSettingsPage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Deletion states
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Sync form state when chatbot loads or updates
   useEffect(() => {
@@ -189,6 +196,20 @@ export default function ChatbotSettingsPage() {
       );
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  const handleDeleteChatbot = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await chatbotsApi.delete(chatbot.id);
+      router.push("/dashboard/chatbots");
+    } catch (err) {
+      setDeleteError(
+        err instanceof ApiRequestError ? err.message : "Failed to delete chatbot.",
+      );
+      setIsDeleting(false);
     }
   };
 
@@ -450,6 +471,64 @@ export default function ChatbotSettingsPage() {
           </Button>
         </div>
       </form>
+
+      {/* Danger Zone: Chatbot Deletion */}
+      <Card className="border-red-900/50 bg-red-950/10">
+        <CardHeader>
+          <CardTitle className="text-red-400">Danger Zone</CardTitle>
+          <CardDescription className="text-zinc-400">
+            Permanently delete this assistant, including all attached knowledge sources, uploaded files, and vector index chunks. This action is irreversible.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {deleteError ? (
+            <div className="mb-4 rounded-md border border-red-900/60 bg-red-950/40 p-3 text-xs text-red-300 font-mono">
+              [ERROR]: {deleteError}
+            </div>
+          ) : null}
+
+          {showDeleteConfirm ? (
+            <div className="rounded-md border border-red-800/80 bg-red-950/30 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-red-200">
+                  Are you absolutely sure you want to delete &ldquo;{chatbot.name}&rdquo;?
+                </p>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  All knowledge sources and chat history will be purged permanently.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={isDeleting}
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={isDeleting}
+                  onClick={() => void handleDeleteChatbot()}
+                >
+                  {isDeleting ? "Deleting…" : "Yes, Delete Chatbot"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Delete this chatbot
+            </Button>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

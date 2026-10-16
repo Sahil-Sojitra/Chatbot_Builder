@@ -99,4 +99,17 @@ export const chatbotController = {
 
     sendSuccess(res, result, 200);
   },
+
+  async delete(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    await chatbotService.deleteForOwner(
+      req.auth.userId,
+      req.params.id as string,
+    );
+
+    sendSuccess(res, { deleted: true }, 200);
+  },
 };

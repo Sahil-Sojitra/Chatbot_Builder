@@ -81,7 +81,12 @@ function ChatbotKnowledgeViewer({ chatbotId }: { chatbotId: string }) {
       </div>
       <div className="flex flex-col gap-3">
         {knowledgeSources.map((source) => (
-          <KnowledgeSourceCard key={source.id} source={source} />
+          <KnowledgeSourceCard
+            key={source.id}
+            source={source}
+            onDeleted={() => void refetch()}
+            onUpdated={() => void refetch()}
+          />
         ))}
       </div>
     </div>
