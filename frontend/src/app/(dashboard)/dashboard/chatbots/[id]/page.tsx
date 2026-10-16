@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import {
   Badge,
@@ -75,6 +75,33 @@ export default function ChatbotOverviewPage() {
     },
   ]);
 
+  const [inputValue, setInputValue] = useState("");
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior, block: "end" });
+    } else if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior,
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Auto-scroll when messages update or response generation starts/ends
+    scrollToBottom("smooth");
+    const timer = setTimeout(() => {
+      scrollToBottom("smooth");
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [messages, isLoadingResponse]);
+
   useEffect(() => {
     if (chatbot?.name) {
       setMessages((prev) => {
@@ -92,10 +119,6 @@ export default function ChatbotOverviewPage() {
       });
     }
   }, [chatbot?.name, brandName]);
-
-  const [inputValue, setInputValue] = useState("");
-  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
-  const [chatError, setChatError] = useState<string | null>(null);
 
   // Instant Bot specific knowledge source & retry state
   const isInstant = chatbot?.creationMode === "INSTANT";
@@ -742,7 +765,10 @@ export default function ChatbotOverviewPage() {
                 </div>
 
                 {/* Message Stream */}
-                <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm">
+                <div
+                  ref={messagesContainerRef}
+                  className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm scroll-smooth"
+                >
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
@@ -776,6 +802,7 @@ export default function ChatbotOverviewPage() {
                       <span>Generating response via {chatbot.model || "gpt-4o-mini"}…</span>
                     </div>
                   ) : null}
+                  <div ref={messagesEndRef} className="h-0 w-0 flex-shrink-0" />
                 </div>
 
                 {chatError ? (
