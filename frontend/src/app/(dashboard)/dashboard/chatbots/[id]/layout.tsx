@@ -60,6 +60,11 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
                 {chatbot.status === "ACTIVE" ? "Production Ready" : chatbot.status === "PAUSED" ? "Paused" : "Draft"}
               </span>
             </div>
+            {chatbot.creationMode === "INSTANT" ? (
+              <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                Instant Bot
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -71,7 +76,7 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      <ChatbotNav chatbotId={chatbot.id} />
+      <ChatbotNav chatbotId={chatbot.id} creationMode={chatbot.creationMode} />
       {children}
     </div>
   );

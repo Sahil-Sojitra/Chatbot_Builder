@@ -17,6 +17,7 @@ import {
   Textarea,
 } from "@/components/ui";
 import { useChatbotDetail } from "@/features/chatbots/ChatbotDetailProvider";
+import { useRequireCustomBot } from "@/features/chatbots/useRequireCustomBot";
 import { chatbotsApi } from "@/lib/api/chatbots";
 import { ApiRequestError } from "@/lib/api/client";
 import type { UpdateChatbotInput } from "@/lib/api/chatbots";
@@ -38,6 +39,7 @@ const PROVIDER_OPTIONS = [
 ];
 
 export default function ChatbotSettingsPage() {
+  const { isAllowed, isLoading } = useRequireCustomBot();
   const { chatbot, setChatbot } = useChatbotDetail();
 
   const [name, setName] = useState("");
@@ -74,7 +76,7 @@ export default function ChatbotSettingsPage() {
     }
   }, [chatbot]);
 
-  if (!chatbot) {
+  if (isLoading || !isAllowed || !chatbot) {
     return null;
   }
 

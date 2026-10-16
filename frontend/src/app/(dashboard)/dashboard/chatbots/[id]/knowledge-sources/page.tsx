@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Button, EmptyState, Spinner, buttonVariants } from "@/components/ui";
 import { useChatbotDetail } from "@/features/chatbots/ChatbotDetailProvider";
+import { useRequireCustomBot } from "@/features/chatbots/useRequireCustomBot";
 import { KnowledgeSourceCard } from "@/features/knowledge-sources/components/KnowledgeSourceCard";
 import { useKnowledgeSources } from "@/features/knowledge-sources/useKnowledgeSources";
 
@@ -62,9 +63,10 @@ function KnowledgeSourcesView({ chatbotId }: { chatbotId: string }) {
 }
 
 export default function ChatbotKnowledgeSourcesPage() {
+  const { isAllowed, isLoading } = useRequireCustomBot();
   const { chatbot } = useChatbotDetail();
 
-  if (!chatbot) {
+  if (isLoading || !isAllowed || !chatbot) {
     return null;
   }
 

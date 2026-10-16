@@ -14,7 +14,9 @@ import {
   buttonVariants,
 } from "@/components/ui";
 import { useChatbotDetail } from "@/features/chatbots/ChatbotDetailProvider";
+import { useKnowledgeSources } from "@/features/knowledge-sources/useKnowledgeSources";
 import { chatbotsApi } from "@/lib/api/chatbots";
+import { knowledgeSourcesApi } from "@/lib/api/knowledgeSources";
 import { ApiRequestError } from "@/lib/api/client";
 import type { Chatbot } from "@/types/chatbot";
 
@@ -52,9 +54,58 @@ export default function ChatbotOverviewPage() {
   const [inputValue, setInputValue] = useState("");
   const [isSimulatingResponse, setIsSimulatingResponse] = useState(false);
 
+  // Instant Bot specific knowledge source & retry state
+  const isInstant = chatbot?.creationMode === "INSTANT";
+  const {
+    knowledgeSources,
+    status: ksStatus,
+    refetch: refetchKs,
+  } = useKnowledgeSources(chatbot && isInstant ? chatbot.id : "");
+
+  const [isRetryingIngestion, setIsRetryingIngestion] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+
   if (!chatbot) {
     return null;
   }
+
+  const websiteSource =
+    knowledgeSources.find((s) => s.type === "URL" || s.type === "WEBPAGE") ||
+    knowledgeSources[0];
+
+  const websiteUrl =
+    websiteSource?.sourceUrl ||
+    (chatbot.description?.startsWith("Instant AI Assistant created from ")
+      ? chatbot.description.replace("Instant AI Assistant created from ", "")
+      : "");
+
+  const isReady = websiteSource?.status === "READY";
+  const isProcessing =
+    ksStatus === "loading" ||
+    websiteSource?.status === "PENDING" ||
+    websiteSource?.status === "PROCESSING";
+  const isFailed = websiteSource?.status === "FAILED";
+
+  const handleRetryIngestion = async () => {
+    if (!websiteUrl || isRetryingIngestion) return;
+    setIsRetryingIngestion(true);
+    setRetryError(null);
+
+    try {
+      await knowledgeSourcesApi.create(chatbot.id, {
+        type: "URL",
+        name: `${chatbot.name} Knowledge Base`,
+        sourceUrl: websiteUrl,
+      });
+      refetchKs();
+    } catch (err: unknown) {
+      setRetryError(
+        err instanceof Error ? err.message : "Failed to retry website ingestion.",
+      );
+    } finally {
+      setIsRetryingIngestion(false);
+    }
+  };
 
   const embedScriptCode = `<script\n  src="https://chatbot-builder-pearl-sigma.vercel.app/widget.js"\n  data-chatbot-id="${chatbot.publicId}"\n  defer\n></script>`;
 
@@ -162,6 +213,253 @@ export default function ChatbotOverviewPage() {
     }, 800);
   };
 
+  /* -------------------------------------------------------------------------- */
+  /* INSTANT BOT VIEW: Focused, Full-Width Playground Layout                   */
+  /* -------------------------------------------------------------------------- */
+  if (isInstant) {
+    return (
+      <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
+        {actionError ? (
+          <div
+            role="alert"
+            className="rounded-md border border-red-900/60 bg-red-950/40 p-3.5 text-sm text-red-300 font-mono"
+          >
+            [ERROR]: {actionError}
+          </div>
+        ) : null}
+
+        {/* Instant Bot Header & Ingestion Status Banner */}
+        <div className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-[#0a0a0a] p-5 shadow-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                  Instant Bot Playground
+                </span>
+                <span className="text-xs text-zinc-500 font-mono">ID: {chatbot.publicId}</span>
+              </div>
+              <h1 className="text-xl font-bold tracking-tight text-white">{chatbot.name}</h1>
+              {websiteUrl ? (
+                <p className="text-xs text-zinc-400 font-mono mt-1">
+                  Target Website:{" "}
+                  <a
+                    href={websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-violet-400 hover:underline"
+                  >
+                    {websiteUrl}
+                  </a>
+                </p>
+              ) : null}
+            </div>
+
+            {/* Ingestion Status Indicator */}
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              {isReady ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-800/60 bg-emerald-950/40 text-xs font-medium text-emerald-400">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Knowledge Base Ready</span>
+                </div>
+              ) : isProcessing ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-amber-800/60 bg-amber-950/40 text-xs font-medium text-amber-300">
+                  <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                  <span>Indexing Website…</span>
+                </div>
+              ) : isFailed ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-800/60 bg-rose-950/40 text-xs font-medium text-rose-300">
+                  <span className="h-2 w-2 rounded-full bg-rose-400" />
+                  <span>Ingestion Failed</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900 text-xs font-medium text-zinc-400">
+                  <span>Checking status…</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Ingestion Failure Banner & Retry Button */}
+          {isFailed ? (
+            <div className="mt-2 rounded-md border border-rose-800/50 bg-rose-950/30 p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-rose-200">
+              <div className="flex items-center gap-2">
+                <svg
+                  className="w-4 h-4 shrink-0 text-rose-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <span>
+                  {retryError ||
+                    websiteSource?.error ||
+                    "We were unable to crawl or index your website pages. Click retry to run the pipeline again."}
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={isRetryingIngestion}
+                onClick={() => void handleRetryIngestion()}
+                className="shrink-0"
+              >
+                {isRetryingIngestion ? "Retrying…" : "Retry Ingestion"}
+              </Button>
+            </div>
+          ) : null}
+
+          {/* Ingestion in Progress Banner */}
+          {isProcessing ? (
+            <div className="mt-2 rounded-md border border-amber-800/40 bg-amber-950/20 p-3 flex items-center gap-2.5 text-xs text-amber-300">
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+              <span>
+                Crawling and indexing website pages into your assistant&apos;s knowledge base. Playground testing will be enabled automatically as soon as indexing is complete.
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Focused Full-Width Playground Card */}
+        <Card className="flex flex-col h-[650px] overflow-hidden p-0 rounded-md border border-zinc-800 bg-[#000000] shadow-xl">
+          {/* Playground Header & Controls */}
+          <div className="flex items-center justify-between border-b border-zinc-800 bg-[#0a0a0a] px-4 py-3">
+            <div className="flex items-center gap-2.5">
+              <span
+                className={`flex h-2 w-2 rounded-full ${
+                  isReady ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"
+                }`}
+              />
+              <span className="font-medium text-sm text-zinc-200">Interactive Runtime Preview</span>
+              <span className="text-xs text-zinc-500 bg-zinc-900 rounded px-1.5 py-0.5 border border-zinc-800 font-mono">
+                {isReady ? "Live Test" : "Pending Ingestion"}
+              </span>
+            </div>
+
+            {/* Viewport switchers */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setDeviceMode("widget")}
+                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                  deviceMode === "widget"
+                    ? "bg-zinc-800 text-white font-semibold"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                Widget View
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeviceMode("mobile")}
+                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                  deviceMode === "mobile"
+                    ? "bg-zinc-800 text-white font-semibold"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                Full Dock
+              </button>
+            </div>
+          </div>
+
+          {/* Chat Stage */}
+          <div className="flex-1 flex items-center justify-center p-5 bg-[#050505] architect-grid overflow-hidden">
+            <div
+              className={`flex flex-col rounded-md border border-zinc-800 bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${
+                deviceMode === "widget"
+                  ? "w-full max-w-[500px] h-[530px]"
+                  : "w-full max-w-[640px] h-[550px]"
+              }`}
+            >
+              {/* Chat Widget Top Header */}
+              <div className="flex items-center justify-between border-b border-zinc-800 bg-[#111111] px-4 py-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-6 w-6 items-center justify-center rounded bg-violet-600/30 border border-violet-500/40 text-violet-300 font-semibold text-xs">
+                    {chatbot.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white leading-tight">{chatbot.name}</p>
+                    <p className="text-xs text-zinc-400">
+                      {isReady ? "Ready · Testing assistant" : isProcessing ? "Indexing knowledge…" : "Ingestion Pending"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message Stream */}
+              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col max-w-[85%] ${
+                      msg.sender === "user" ? "self-end items-end" : "self-start items-start"
+                    }`}
+                  >
+                    <div
+                      className={`rounded-md p-3.5 leading-relaxed text-sm ${
+                        msg.sender === "user"
+                          ? "bg-violet-600/20 border border-violet-500/30 text-white font-normal"
+                          : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                    <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
+                  </div>
+                ))}
+
+                {isSimulatingResponse ? (
+                  <div className="self-start flex items-center gap-2 rounded-md bg-[#141414] border border-zinc-800 px-3.5 py-2.5 text-xs text-zinc-400 font-mono">
+                    <span className="h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
+                    <span>Generating answer from indexed website…</span>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Interactive Input Box */}
+              <form
+                onSubmit={handleSendMessage}
+                className="border-t border-zinc-800 bg-[#0e0e0e] p-2.5 flex items-center gap-2"
+              >
+                <input
+                  type="text"
+                  value={inputValue}
+                  disabled={!isReady || isSimulatingResponse}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder={
+                    !isReady
+                      ? isFailed
+                        ? "Ingestion failed — retry above to enable testing"
+                        : "Website indexing in progress… testing disabled until ready"
+                      : "Ask a test question about your website…"
+                  }
+                  className="flex-1 rounded-md border border-zinc-800 bg-[#000000] px-3.5 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <Button
+                  type="submit"
+                  disabled={!isReady || !inputValue.trim() || isSimulatingResponse}
+                  size="default"
+                  className="h-9 px-3.5 bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50"
+                >
+                  Send
+                </Button>
+              </form>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* CUSTOM BOT VIEW: Existing 2-Column Studio Layout with Embed / Config Cards */
+  /* -------------------------------------------------------------------------- */
   return (
     <div className="flex flex-col gap-6">
       {actionError ? (
