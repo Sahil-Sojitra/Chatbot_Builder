@@ -16,6 +16,7 @@ from app.services.generator import (
     GenerationError,
     GenerationTimeoutError,
     GenerationProviderError,
+    extract_brand_name,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,18 @@ class QARequest(BaseModel):
         max_length=1000,
         description="The user's natural language question.",
         examples=["What is your return policy?"],
+    )
+    bot_name: Optional[str] = Field(
+        default=None,
+        description="Optional name or persona label for the chatbot.",
+    )
+    website_url: Optional[str] = Field(
+        default=None,
+        description="Primary website URL the bot natively represents.",
+    )
+    system_prompt: Optional[str] = Field(
+        default=None,
+        description="Custom system instructions or guidelines configured by the owner.",
     )
     top_k: int = Field(
         default=8,
@@ -117,13 +130,18 @@ class RAGQuestionAnsweringService:
         if not evidence_chunks:
             total_ms = round((time.perf_counter() - total_start) * 1000, 2)
             model_name = getattr(self._generator_service, "model", "gemini-3.5-flash-lite")
+            brand = extract_brand_name(request.bot_name, request.website_url)
             logger.info(
                 f"No knowledge chunks found for chatbot '{clean_bot_id}'. Returning grounded fallback."
             )
             return QAResponse(
                 chatbot_id=clean_bot_id,
                 question=clean_question,
-                answer="I do not have enough information in the indexed website knowledge base to answer this question.",
+                answer=(
+                    f"Welcome to {brand}! We don't have those specific details on hand right now. "
+                    "Please feel free to reach out to our team directly through our contact page or support channels, "
+                    "and we'll be glad to help!"
+                ),
                 sources=[],
                 has_grounded_evidence=False,
                 stats=QAStats(
@@ -140,6 +158,9 @@ class RAGQuestionAnsweringService:
         gen_result = await self._generator_service.agenerate_answer(
             question=clean_question,
             evidence_chunks=evidence_chunks,
+            bot_name=request.bot_name,
+            website_url=request.website_url,
+            system_prompt=request.system_prompt,
         )
         generation_ms = round((time.perf_counter() - gen_start) * 1000, 2)
         total_ms = round((time.perf_counter() - total_start) * 1000, 2)
@@ -186,10 +207,15 @@ class RAGQuestionAnsweringService:
         if not evidence_chunks:
             total_ms = round((time.perf_counter() - total_start) * 1000, 2)
             model_name = getattr(self._generator_service, "model", "gemini-3.5-flash-lite")
+            brand = extract_brand_name(request.bot_name, request.website_url)
             return QAResponse(
                 chatbot_id=clean_bot_id,
                 question=clean_question,
-                answer="I do not have enough information in the indexed website knowledge base to answer this question.",
+                answer=(
+                    f"Welcome to {brand}! We don't have those specific details on hand right now. "
+                    "Please feel free to reach out to our team directly through our contact page or support channels, "
+                    "and we'll be glad to help!"
+                ),
                 sources=[],
                 has_grounded_evidence=False,
                 stats=QAStats(
@@ -206,6 +232,9 @@ class RAGQuestionAnsweringService:
         gen_result = self._generator_service.generate_answer(
             question=clean_question,
             evidence_chunks=evidence_chunks,
+            bot_name=request.bot_name,
+            website_url=request.website_url,
+            system_prompt=request.system_prompt,
         )
         generation_ms = round((time.perf_counter() - gen_start) * 1000, 2)
         total_ms = round((time.perf_counter() - total_start) * 1000, 2)

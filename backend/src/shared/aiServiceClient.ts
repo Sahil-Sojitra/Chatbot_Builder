@@ -32,7 +32,10 @@ export interface IngestWebsiteResponse {
 export interface AskQuestionPayload {
   chatbotId: string;
   question: string;
-  topK?: number;
+  botName?: string | undefined;
+  websiteUrl?: string | undefined;
+  systemPrompt?: string | undefined;
+  topK?: number | undefined;
 }
 
 export interface SourceReference {
@@ -154,6 +157,9 @@ export class AIServiceClient {
         body: JSON.stringify({
           chatbot_id: payload.chatbotId,
           question: payload.question,
+          bot_name: payload.botName,
+          website_url: payload.websiteUrl,
+          system_prompt: payload.systemPrompt,
           top_k: payload.topK ?? 8,
         }),
         signal: controller.signal,

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   Badge,
@@ -61,14 +61,38 @@ export default function ChatbotOverviewPage() {
   // Playground chat state
   const [deviceMode, setDeviceMode] = useState<"widget" | "mobile">("widget");
   const [activeCodeTab, setActiveCodeTab] = useState<"script" | "curl" | "json">("script");
+
+  const brandName = chatbot?.name
+    ? chatbot.name.replace(/\s+(?:AI\s+)?(?:Assistant|Bot|Chatbot|Agent)$/i, "").trim() || chatbot.name
+    : "our team";
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "m-1",
       sender: "bot",
-      text: `Hello! I'm ${chatbot?.name || "your assistant"}. How can I help you today?`,
+      text: `Hello! Welcome to ${brandName}. How can we help you today?`,
       time: "Just now",
     },
   ]);
+
+  useEffect(() => {
+    if (chatbot?.name) {
+      setMessages((prev) => {
+        if (prev.length === 1 && prev[0].id === "m-1" && prev[0].sender === "bot") {
+          return [
+            {
+              id: "m-1",
+              sender: "bot",
+              text: `Hello! Welcome to ${brandName}. How can we help you today?`,
+              time: "Just now",
+            },
+          ];
+        }
+        return prev;
+      });
+    }
+  }, [chatbot?.name, brandName]);
+
   const [inputValue, setInputValue] = useState("");
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);

@@ -330,12 +330,14 @@ export const chatbotService = {
       throw chatbotNotFound();
     }
 
+    const sources = await knowledgeSourceRepository.findAllForChatbot(chatbot._id);
+    const websiteSource =
+      sources.find((s) => (s.type === "URL" || s.type === "WEBPAGE") && s.sourceUrl) ||
+      sources.find((s) => s.sourceUrl) ||
+      sources[0];
+
     // Ingestion readiness gate for Instant Bots
     if (chatbot.creationMode === "INSTANT") {
-      const sources = await knowledgeSourceRepository.findAllForChatbot(chatbot._id);
-      const websiteSource =
-        sources.find((s) => s.type === "URL" || s.type === "WEBPAGE") || sources[0];
-
       if (!websiteSource) {
         throw new AppError(
           400,
@@ -362,11 +364,15 @@ export const chatbotService = {
     }
 
     const question = (input.message || input.question || "").trim();
+    const websiteUrl = websiteSource?.sourceUrl || undefined;
 
     try {
       const qaResponse = await aiServiceClient.askQuestion({
         chatbotId: chatbot._id.toString(),
         question,
+        botName: chatbot.name,
+        websiteUrl,
+        systemPrompt: chatbot.systemPrompt || undefined,
         topK: input.topK ?? chatbot.ragTopK ?? 8,
       });
 
@@ -383,10 +389,9 @@ export const chatbotService = {
         error: err instanceof Error ? err.message : String(err),
       });
 
-
       return {
         answer:
-          "I am currently experiencing a momentary delay connecting to the knowledge service. Please try asking your question again in a moment, or explore our website directly.",
+          "We are currently experiencing a brief delay connecting to our service. Please try asking your question again in a moment, or feel free to explore our website directly.",
         sources: [],
         hasGroundedEvidence: false,
         stats: {
