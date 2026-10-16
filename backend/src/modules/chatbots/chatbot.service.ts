@@ -378,10 +378,11 @@ export const chatbotService = {
       };
     } catch (err: unknown) {
       // Soft fallback for chat conversation so users never experience a broken UI error
-      logger.warn("AI service chat communication encountered an error, returning soft fallback response", {
+      console.warn("AI service chat communication encountered an error, returning soft fallback response", {
         chatbotId: chatbot._id.toString(),
         error: err instanceof Error ? err.message : String(err),
       });
+
 
       return {
         answer:
