@@ -1,16 +1,27 @@
-import os
-import time
+"""Voyage AI dense vector embedding service with rate limit pacing."""
+
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel, Field
+import os
+import time
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import voyageai
 
-from app.services.chunker import ContentChunk
+from app.core.exceptions import (
+    EmbeddingConfigurationError,
+    EmbeddingError,
+    EmbeddingGenerationError,
+)
+from app.models.content import ContentChunk
+from app.models.embedding import (
+    BatchEmbeddingResult,
+    EmbeddedChunk,
+    EmbeddingBatchStats,
+    QueryEmbeddingResult,
+)
 
 logger = logging.getLogger(__name__)
-
 
 # Standard Voyage AI embedding dimensionalities
 VOYAGE_MODEL_DIMENSIONS: Dict[str, int] = {
@@ -28,75 +39,16 @@ VOYAGE_MODEL_DIMENSIONS: Dict[str, int] = {
 }
 
 
-class EmbeddingError(Exception):
-    """Base exception for all embedding operations."""
-    pass
-
-
-class EmbeddingConfigurationError(EmbeddingError):
-    """Raised when Voyage AI is misconfigured (e.g. missing API key)."""
-    pass
-
-
-class EmbeddingGenerationError(EmbeddingError):
-    """Raised when an embedding API request fails."""
-    pass
-
-
-class EmbeddedChunk(BaseModel):
-    """Normalized content chunk enriched with dense vector embeddings."""
-
-    chunk_id: str = Field(..., description="Unique deterministic identifier matching the parent chunk.")
-    source_url: str = Field(..., description="The original raw website URL.")
-    canonical_url: str = Field(..., description="The normalized website URL.")
-    title: Optional[str] = Field(None, description="The title of the page.")
-    content: str = Field(..., description="Text content that was embedded.")
-    chunk_index: int = Field(..., description="Sequential index within the document.")  
-    embedding: List[float] = Field(..., description="Dense numerical vector embedding from Voyage AI.")
-    dimensions: int = Field(..., description="Vector dimensionality (e.g. 1024 for voyage-3).")
-    token_count: int = Field(..., description="Token count of the chunk.")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Preserved crawl and chunk metadata.")
-
-
-class EmbeddingBatchStats(BaseModel):
-    """Summary statistics for an embedding batch run."""
-
-    total_chunks: int = Field(0, description="Total chunks processed.")
-    total_tokens_used: int = Field(0, description="Total tokens consumed by the embedding model.")
-    dimensions: int = Field(0, description="Dimensionality of the generated vectors.")
-    model_name: str = Field("", description="Voyage AI model identifier used.")
-    duration_ms: float = Field(0.0, description="Total generation time in milliseconds.")
-
-
-class BatchEmbeddingResult(BaseModel):
-    """Complete structured result returned by the embedding service."""
-
-    embedded_chunks: List[EmbeddedChunk] = Field(default_factory=list)
-    stats: EmbeddingBatchStats
-    success: bool = True
-    error_message: Optional[str] = None
-
-
-class QueryEmbeddingResult(BaseModel):
-    """Result of embedding a single search query."""
-
-    query: str = Field(..., description="The input search query text.")
-    embedding: List[float] = Field(..., description="Query vector embedding.")
-    dimensions: int = Field(..., description="Vector dimensionality.")
-    model_name: str = Field(..., description="Model identifier used.")
-    token_count: int = Field(0, description="Tokens consumed by the query.")
-
-
 class VoyageEmbeddingService:
     """Production service for generating dense vector embeddings using Voyage AI.
 
     Voyage AI is MongoDB Atlas Vector Search's official embedding partner,
-    delivering state-of-the-art retrieval performance via models like 'voyage-3'
+    delivering state-of-the-art retrieval performance via models like 'voyage-4'
     (1024 dimensions) and 'voyage-3-lite' (512 dimensions).
     """
 
     DEFAULT_MODEL: str = "voyage-4"
-    MAX_BATCH_SIZE: int = 20  # Safe batch size to stay within Voyage AI free-tier 10K TPM limits while optimizing throughput
+    MAX_BATCH_SIZE: int = 20  # Safe batch size to stay within Voyage AI free-tier 10K TPM limits
 
     def __init__(
         self,
@@ -108,7 +60,7 @@ class VoyageEmbeddingService:
         self.batch_size = batch_size or int(os.getenv("VOYAGE_BATCH_SIZE", str(self.MAX_BATCH_SIZE)))
         self._api_key = api_key or os.getenv("VOYAGE_API_KEY")
 
-        # Clients are instantiated once per process
+        # Clients are instantiated lazily once per process
         self._client: Optional[voyageai.Client] = None
         self._async_client: Optional[voyageai.AsyncClient] = None
 
@@ -132,65 +84,35 @@ class VoyageEmbeddingService:
         """Returns the documented dimensionality for the configured model."""
         return VOYAGE_MODEL_DIMENSIONS.get(self.model, 1024)
 
-    def _get_client(self) -> voyageai.Client:
-        """Retrieves or creates the synchronous Voyage AI client singleton."""
-        if self._client is not None:
-            return self._client
-
+    def _get_api_key(self) -> str:
+        """Validates that a Voyage API key is present."""
         api_key = self._api_key or os.getenv("VOYAGE_API_KEY")
         if not api_key:
             raise EmbeddingConfigurationError(
                 "VOYAGE_API_KEY is not configured. Set the VOYAGE_API_KEY environment variable "
                 "or pass api_key to VoyageEmbeddingService."
             )
+        return api_key.strip()
 
-        self._client = voyageai.Client(api_key=api_key)
+    def _get_client(self) -> voyageai.Client:
+        """Retrieves or creates the synchronous Voyage AI client singleton."""
+        if self._client is not None:
+            return self._client
+        self._client = voyageai.Client(api_key=self._get_api_key())
         return self._client
 
     def _get_async_client(self) -> voyageai.AsyncClient:
         """Retrieves or creates the asynchronous Voyage AI client singleton."""
         if self._async_client is not None:
             return self._async_client
-
-        api_key = self._api_key or os.getenv("VOYAGE_API_KEY")
-        if not api_key:
-            raise EmbeddingConfigurationError(
-                "VOYAGE_API_KEY is not configured. Set the VOYAGE_API_KEY environment variable "
-                "or pass api_key to VoyageEmbeddingService."
-            )
-
-        self._async_client = voyageai.AsyncClient(api_key=api_key)
+        self._async_client = voyageai.AsyncClient(api_key=self._get_api_key())
         return self._async_client
 
-    def embed_chunks(
-        self,
-        chunks: List[Union[ContentChunk, Dict[str, Any]]],
-        input_type: str = "document",
-    ) -> BatchEmbeddingResult:
-        """Generates embeddings for a batch of content chunks synchronously.
-
-        Handles batching, extracts text, preserves chunk metadata, and returns
-        predictable List[float] vectors with the model's expected dimensionality.
-        """
-        start_time = time.perf_counter()
-
-        # Handle empty input gracefully without network calls
-        if not chunks:
-            return BatchEmbeddingResult(
-                embedded_chunks=[],
-                stats=EmbeddingBatchStats(
-                    total_chunks=0,
-                    total_tokens_used=0,
-                    dimensions=self.get_expected_dimensions(),
-                    model_name=self.model,
-                    duration_ms=0.0,
-                ),
-                success=True,
-            )
-
-        client = self._get_client()
-
-        # Prepare normalized chunk objects
+    @staticmethod
+    def _normalize_input_chunks(
+        chunks: List[Union[ContentChunk, Dict[str, Any]]]
+    ) -> Tuple[List[ContentChunk], List[str]]:
+        """Normalizes input chunks into typed ContentChunk objects and text strings."""
         normalized_chunks: List[ContentChunk] = []
         texts: List[str] = []
 
@@ -214,30 +136,20 @@ class VoyageEmbeddingService:
                 normalized_chunks.append(chunk)
                 texts.append(content)
 
-        all_vectors: List[List[float]] = []
-        total_tokens = 0
+        return normalized_chunks, texts
 
-        # Process in slices of batch_size (default 128)
-        for i in range(0, len(texts), self.batch_size):
-            batch_texts = texts[i : i + self.batch_size]
-            try:
-                response = client.embed(
-                    texts=batch_texts,
-                    model=self.model,
-                    input_type=input_type,
-                )
-                all_vectors.extend(response.embeddings)
-                total_tokens += getattr(response, "total_tokens", 0)
-            except Exception as exc:
-                logger.error(f"Voyage AI embedding error on batch slice {i}: {exc}")
-                raise EmbeddingGenerationError(f"Voyage AI API error: {exc}") from exc
-
-        # Assemble EmbeddedChunk records
+    def _build_batch_result(
+        self,
+        normalized_chunks: List[ContentChunk],
+        all_vectors: List[List[float]],
+        total_tokens: int,
+        start_time: float,
+    ) -> BatchEmbeddingResult:
+        """Assembles EmbeddedChunk models and statistical diagnostics."""
         expected_dims = self.get_expected_dimensions()
         embedded_records: List[EmbeddedChunk] = []
 
         for chunk, vector in zip(normalized_chunks, all_vectors):
-            actual_dims = len(vector)
             embedded_records.append(
                 EmbeddedChunk(
                     chunk_id=chunk.chunk_id,
@@ -247,7 +159,7 @@ class VoyageEmbeddingService:
                     content=chunk.content,
                     chunk_index=chunk.chunk_index,
                     embedding=vector,
-                    dimensions=actual_dims,
+                    dimensions=len(vector),
                     token_count=chunk.token_count,
                     metadata=chunk.metadata,
                 )
@@ -271,14 +183,50 @@ class VoyageEmbeddingService:
             success=True,
         )
 
+    def embed_chunks(
+        self,
+        chunks: List[Union[ContentChunk, Dict[str, Any]]],
+        input_type: str = "document",
+    ) -> BatchEmbeddingResult:
+        """Generates embeddings for a batch of content chunks synchronously."""
+        start_time = time.perf_counter()
+        if not chunks:
+            return BatchEmbeddingResult(
+                embedded_chunks=[],
+                stats=EmbeddingBatchStats(
+                    total_chunks=0,
+                    total_tokens_used=0,
+                    dimensions=self.get_expected_dimensions(),
+                    model_name=self.model,
+                    duration_ms=0.0,
+                ),
+                success=True,
+            )
+
+        client = self._get_client()
+        normalized_chunks, texts = self._normalize_input_chunks(chunks)
+        all_vectors: List[List[float]] = []
+        total_tokens = 0
+
+        for i in range(0, len(texts), self.batch_size):
+            batch_texts = texts[i : i + self.batch_size]
+            try:
+                response = client.embed(texts=batch_texts, model=self.model, input_type=input_type)
+                all_vectors.extend(response.embeddings)
+                total_tokens += getattr(response, "total_tokens", 0)
+            except Exception as exc:
+                logger.error(f"Voyage AI embedding error on batch slice {i}: {exc}")
+                raise EmbeddingGenerationError(f"Voyage AI API error: {exc}") from exc
+
+        return self._build_batch_result(normalized_chunks, all_vectors, total_tokens, start_time)
+
     async def aembed_chunks(
         self,
         chunks: List[Union[ContentChunk, Dict[str, Any]]],
         input_type: str = "document",
     ) -> BatchEmbeddingResult:
-        """Generates embeddings for a batch of content chunks asynchronously."""
+        """Generates embeddings for a batch of content chunks asynchronously with RPM rate limit pacing."""
         start_time = time.perf_counter()
-
         if not chunks:
             return BatchEmbeddingResult(
                 embedded_chunks=[],
@@ -293,104 +241,38 @@ class VoyageEmbeddingService:
             )
 
         client = self._get_async_client()
-
-        normalized_chunks: List[ContentChunk] = []
-        texts: List[str] = []
-
-        for item in chunks:
-            if isinstance(item, ContentChunk):
-                normalized_chunks.append(item)
-                texts.append(item.content)
-            elif isinstance(item, dict):
-                content = item.get("content") or item.get("markdown") or ""
-                chunk = ContentChunk(
-                    chunk_id=item.get("chunk_id", f"chk_{hash(content)}"),
-                    source_url=item.get("source_url", ""),
-                    canonical_url=item.get("canonical_url", ""),
-                    title=item.get("title"),
-                    content=content,
-                    chunk_index=item.get("chunk_index", 0),
-                    token_count=item.get("token_count", 0),
-                    char_count=len(content),
-                    metadata=item.get("metadata", {}),
-                )
-                normalized_chunks.append(chunk)
-                texts.append(content)
-
+        normalized_chunks, texts = self._normalize_input_chunks(chunks)
         all_vectors: List[List[float]] = []
         total_tokens = 0
 
         for i in range(0, len(texts), self.batch_size):
             batch_texts = texts[i : i + self.batch_size]
             max_retries = 3
+
             for attempt in range(max_retries):
                 try:
-                    response = await client.embed(
-                        texts=batch_texts,
-                        model=self.model,
-                        input_type=input_type,
-                    )
+                    response = await client.embed(texts=batch_texts, model=self.model, input_type=input_type)
                     all_vectors.extend(response.embeddings)
-                    tokens_used = getattr(response, "total_tokens", 0)
-                    total_tokens += tokens_used
+                    total_tokens += getattr(response, "total_tokens", 0)
                     break
                 except Exception as exc:
                     err_str = str(exc).lower()
                     if ("rate limit" in err_str or "rpm" in err_str or "tpm" in err_str or "billing" in err_str) and attempt < max_retries - 1:
                         logger.warning(
                             f"Voyage AI rate limit hit on slice {i} (attempt {attempt + 1}/{max_retries}). "
-                            "Pausing 22s for free-tier 3 RPM / 10K TPM window reset..."
+                            "Pausing 22s for free-tier window reset..."
                         )
                         await asyncio.sleep(22.0)
                     else:
                         logger.error(f"Voyage AI async embedding error on batch slice {i}: {exc}")
                         raise EmbeddingGenerationError(f"Voyage AI API error: {exc}") from exc
 
-            # Enforce 3 RPM limit (1 request every 20 seconds) when subsequent batches remain
+            # Enforce 3 RPM pacing when subsequent batches remain
             if i + self.batch_size < len(texts):
-                logger.info(
-                    f"Pacing Voyage AI embeddings for free tier (3 RPM / 10K TPM): "
-                    f"pausing 20.5s before batch slice {i + self.batch_size}/{len(texts)}."
-                )
+                logger.info(f"Pacing Voyage AI embeddings: pausing 20.5s before batch slice {i + self.batch_size}.")
                 await asyncio.sleep(20.5)
 
-
-        expected_dims = self.get_expected_dimensions()
-        embedded_records: List[EmbeddedChunk] = []
-
-        for chunk, vector in zip(normalized_chunks, all_vectors):
-            embedded_records.append(
-                EmbeddedChunk(
-                    chunk_id=chunk.chunk_id,
-                    source_url=chunk.source_url,
-                    canonical_url=chunk.canonical_url,
-                    title=chunk.title,
-                    content=chunk.content,
-                    chunk_index=chunk.chunk_index,
-                    embedding=vector,
-                    dimensions=len(vector),
-                    token_count=chunk.token_count,
-                    metadata=chunk.metadata,
-                )
-            )
-
-        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
-        logger.info(
-            f"Generated embeddings asynchronously for {len(embedded_records)} chunks in {duration_ms}ms "
-            f"(model={self.model}, tokens={total_tokens})"
-        )
-
-        return BatchEmbeddingResult(
-            embedded_chunks=embedded_records,
-            stats=EmbeddingBatchStats(
-                total_chunks=len(embedded_records),
-                total_tokens_used=total_tokens,
-                dimensions=expected_dims,
-                model_name=self.model,
-                duration_ms=duration_ms,
-            ),
-            success=True,
-        )
+        return self._build_batch_result(normalized_chunks, all_vectors, total_tokens, start_time)
 
     def embed_query(self, query: str) -> QueryEmbeddingResult:
         """Generates an embedding vector for a single user search query (input_type='query')."""
@@ -399,11 +281,7 @@ class VoyageEmbeddingService:
 
         client = self._get_client()
         try:
-            response = client.embed(
-                texts=[query.strip()],
-                model=self.model,
-                input_type="query",
-            )
+            response = client.embed(texts=[query.strip()], model=self.model, input_type="query")
             vector = response.embeddings[0]
             tokens = getattr(response, "total_tokens", 0)
             return QueryEmbeddingResult(
@@ -424,11 +302,7 @@ class VoyageEmbeddingService:
 
         client = self._get_async_client()
         try:
-            response = await client.embed(
-                texts=[query.strip()],
-                model=self.model,
-                input_type="query",
-            )
+            response = await client.embed(texts=[query.strip()], model=self.model, input_type="query")
             vector = response.embeddings[0]
             tokens = getattr(response, "total_tokens", 0)
             return QueryEmbeddingResult(
@@ -445,3 +319,16 @@ class VoyageEmbeddingService:
 
 # Global singleton instance
 embedding_service = VoyageEmbeddingService()
+
+__all__ = [
+    "VOYAGE_MODEL_DIMENSIONS",
+    "EmbeddingError",
+    "EmbeddingConfigurationError",
+    "EmbeddingGenerationError",
+    "EmbeddedChunk",
+    "EmbeddingBatchStats",
+    "BatchEmbeddingResult",
+    "QueryEmbeddingResult",
+    "VoyageEmbeddingService",
+    "embedding_service",
+]

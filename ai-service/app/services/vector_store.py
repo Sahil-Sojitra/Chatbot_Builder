@@ -1,55 +1,24 @@
-import os
+"""Pinecone vector database adapter service."""
+
 import logging
+import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
 
 from pinecone import Pinecone
-from app.services.embedding import EmbeddedChunk
+
+from app.core.exceptions import (
+    VectorStoreConfigurationError,
+    VectorStoreError,
+)
+from app.models.embedding import EmbeddedChunk
+from app.models.vector_store import (
+    VectorDeleteResult,
+    VectorSearchResult,
+    VectorUpsertResult,
+)
 
 logger = logging.getLogger(__name__)
-
-
-class VectorStoreError(Exception):
-    """Base exception for vector database operations."""
-    pass
-
-
-class VectorStoreConfigurationError(VectorStoreError):
-    """Raised when vector database credentials or index are misconfigured."""
-    pass
-
-
-class VectorSearchResult(BaseModel):
-    """Result of querying the vector database for semantically similar content chunks."""
-
-    chunk_id: str = Field(..., description="Unique deterministic identifier of the matched chunk.")
-    chatbot_id: str = Field(..., description="Chatbot identifier owning this chunk.")
-    score: float = Field(..., description="Similarity score (e.g. cosine similarity).")
-    content: str = Field(..., description="Human-readable text content of the chunk.")
-    source_url: str = Field(..., description="Original source website URL.")
-    canonical_url: str = Field(..., description="Canonicalized URL.")
-    title: Optional[str] = Field(None, description="Title of the parent webpage.")
-    chunk_index: int = Field(0, description="Sequential position within the page.")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Preserved chunk metadata.")
-
-
-class VectorUpsertResult(BaseModel):
-    """Execution result for indexing a batch of chunks into the vector database."""
-
-    chatbot_id: str
-    upserted_count: int
-    success: bool = True
-    error_message: Optional[str] = None
-
-
-class VectorDeleteResult(BaseModel):
-    """Execution result for deleting a chatbot's indexed content."""
-
-    chatbot_id: str
-    deleted_count: Optional[int] = None
-    success: bool = True
-    error_message: Optional[str] = None
 
 
 class VectorStoreAdapter(ABC):
@@ -156,7 +125,6 @@ class PineconeVectorStore(VectorStoreAdapter):
         """Checks connectivity to Pinecone and verifies that the index is accessible."""
         try:
             index = self._get_index()
-            # Calling describe_index_stats validates credentials and index connectivity
             stats = index.describe_index_stats()
             return stats is not None
         except Exception as exc:
@@ -168,17 +136,12 @@ class PineconeVectorStore(VectorStoreAdapter):
         chatbot_id: str,
         chunks: List[EmbeddedChunk],
     ) -> VectorUpsertResult:
-        """Indexes vector embeddings into Pinecone with hard namespace isolation per chatbot.
-
-        Uses deterministic chunk IDs so re-indexing existing pages updates records in place
-        without creating duplicate chunks.
-        """
+        """Indexes vector embeddings into Pinecone with hard namespace isolation per chatbot."""
         if not chatbot_id or not chatbot_id.strip():
             raise ValueError("chatbot_id must be a non-empty string.")
 
         clean_bot_id = chatbot_id.strip()
 
-        # Handle empty input gracefully
         if not chunks:
             return VectorUpsertResult(
                 chatbot_id=clean_bot_id,
@@ -209,7 +172,6 @@ class PineconeVectorStore(VectorStoreAdapter):
             }
             pinecone_vectors.append(vector_record)
 
-        # Upsert in slices of UPSERT_BATCH_SIZE (default 100)
         try:
             for i in range(0, len(pinecone_vectors), self.UPSERT_BATCH_SIZE):
                 slice_records = pinecone_vectors[i : i + self.UPSERT_BATCH_SIZE]
@@ -239,10 +201,7 @@ class PineconeVectorStore(VectorStoreAdapter):
         top_k: int = 5,
         score_threshold: Optional[float] = None,
     ) -> List[VectorSearchResult]:
-        """Queries Pinecone for the most semantically relevant chunks for a specific chatbot.
-
-        Restricts search strictly to the chatbot's namespace to guarantee tenant isolation.
-        """
+        """Queries Pinecone for the most semantically relevant chunks for a specific chatbot."""
         if not chatbot_id or not chatbot_id.strip():
             raise ValueError("chatbot_id must be a non-empty string.")
         if not query_vector:
@@ -268,14 +227,12 @@ class PineconeVectorStore(VectorStoreAdapter):
                     continue
 
                 raw_meta = getattr(match, "metadata", {}) or {}
-                # Extract structured attributes
                 text = raw_meta.get("text") or ""
                 source_url = raw_meta.get("source_url") or ""
                 canonical_url = raw_meta.get("canonical_url") or source_url
                 title = raw_meta.get("title") or None
                 chunk_index = int(raw_meta.get("chunk_index", 0))
 
-                # Extra metadata
                 extra_meta = {
                     k: v
                     for k, v in raw_meta.items()
@@ -327,3 +284,14 @@ class PineconeVectorStore(VectorStoreAdapter):
 
 # Global singleton vector store instance
 vector_store = PineconeVectorStore()
+
+__all__ = [
+    "VectorStoreError",
+    "VectorStoreConfigurationError",
+    "VectorSearchResult",
+    "VectorUpsertResult",
+    "VectorDeleteResult",
+    "VectorStoreAdapter",
+    "PineconeVectorStore",
+    "vector_store",
+]

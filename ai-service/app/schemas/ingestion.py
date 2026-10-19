@@ -1,3 +1,5 @@
+"""Schema validating incoming website ingestion requests."""
+
 from typing import Optional
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -17,9 +19,8 @@ class WebsiteIngestionRequest(BaseModel):
         examples=["https://example.com"],
     )
     max_pages: Optional[int] = Field(
-        default=25,
+        default=None,
         ge=1,
-        description="Maximum number of pages to discover and ingest (defaults to 25 for fast and comprehensive coverage).",
+        description="Maximum number of pages to discover and ingest (defaults to 25 in crawler pipeline if omitted).",
         examples=[25],
     )
-

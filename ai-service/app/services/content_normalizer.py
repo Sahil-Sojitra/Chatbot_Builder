@@ -1,45 +1,15 @@
+"""Content normalization and noise sanitization service for crawled web pages."""
+
 import hashlib
 import re
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set, Union
-from pydantic import BaseModel, Field
 
+from app.models.content import (
+    ContentNormalizationStats,
+    NormalizationResult,
+    NormalizedPageRecord,
+)
 from app.services.link_discovery import normalize_url
-
-
-class NormalizedPageRecord(BaseModel):
-    """Cleaned and normalized page content record ready for chunking and vector storage."""
-
-    source_url: str = Field(..., description="The original raw URL visited by the crawler.")
-    canonical_url: str = Field(..., description="Normalized and canonicalized page URL.")
-    title: Optional[str] = Field(None, description="Extracted or inferred page title.")
-    content: str = Field(..., description="Cleaned Markdown or text content with headings preserved.")
-    extracted_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
-        description="UTC timestamp when the content record was extracted and normalized.",
-    )
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Crawl metadata including character count, word count, status code, and content hash.",
-    )
-
-
-class ContentNormalizationStats(BaseModel):
-    """Detailed statistics summarizing the content normalization batch operation."""
-
-    total_input_pages: int = Field(0, description="Total number of page records received for processing.")
-    usable_pages: int = Field(0, description="Number of valid, non-empty, unique pages retained.")
-    empty_pages_discarded: int = Field(0, description="Pages discarded because they contained no meaningful text.")
-    duplicate_pages_discarded: int = Field(0, description="Pages discarded due to duplicate URLs or identical content.")
-    malformed_pages_discarded: int = Field(0, description="Pages discarded due to invalid structure or missing URL.")
-
-
-class NormalizationResult(BaseModel):
-    """Structured batch result returned by the content normalization service."""
-
-    records: List[NormalizedPageRecord] = Field(default_factory=list)
-    stats: ContentNormalizationStats
-    success: bool = True
 
 
 class ContentNormalizer:
@@ -51,7 +21,7 @@ class ContentNormalizer:
 
     MIN_MEANINGFUL_CHAR_COUNT: int = 15
 
-    # Common standalone noise patterns (cookie banners, skip links, scroll links, empty links)
+    # Standalone noise patterns (cookie banners, skip links, scroll links, empty links)
     NOISE_PATTERNS: List[re.Pattern] = [
         re.compile(r"^\s*(?:skip to (?:main )?content|back to top|scroll to top)\s*$", re.IGNORECASE),
         re.compile(
@@ -62,12 +32,11 @@ class ContentNormalizer:
             r"^\s*(?:we (?:value your privacy|use cookies to enhance|respect your privacy)).*$",
             re.IGNORECASE,
         ),
-        # Empty markdown images or links e.g. ![]() or []()
         re.compile(r"^\s*(?:!\[\s*\]\(\s*\)|\[\s*\]\(\s*\))\s*$"),
     ]
 
     def clean_markdown_text(self, raw_text: Optional[str]) -> str:
-        """Sanitizes text/markdown content:
+        """Sanitizes text and Markdown content:
 
         1. Removes boilerplate noise (cookie popups, skip links, empty links).
         2. Normalizes horizontal spaces while preserving code block indentation.
@@ -101,44 +70,36 @@ class ContentNormalizer:
 
             # Outside code blocks, normalize horizontal whitespace
             if stripped:
-                # Collapse multiple spaces/tabs into a single space
                 normalized_line = re.sub(r"[ \t]+", " ", line).strip()
                 cleaned_lines.append(normalized_line)
             else:
-                # Empty line representing paragraph break
                 cleaned_lines.append("")
 
-        # Join lines and collapse 3+ consecutive newlines to standard double newline (\n\n)
         joined = "\n".join(cleaned_lines)
-        normalized = re.sub(r"\n{3,}", "\n\n", joined).strip()
-        return normalized
+        return re.sub(r"\n{3,}", "\n\n", joined).strip()
 
-    def extract_title(self, raw_title: Optional[str], content: str) -> Optional[str]:
+    @staticmethod
+    def extract_title(raw_title: Optional[str], content: str) -> Optional[str]:
         """Returns the page title, falling back to the first H1 markdown heading if available."""
         if raw_title and isinstance(raw_title, str) and raw_title.strip():
-            # Clean up title (remove trailing/leading space, collapse multiple spaces)
             return re.sub(r"\s+", " ", raw_title).strip()
 
-        # Fallback: look for '# Heading' at the beginning of content
         first_line = content.splitlines()[0].strip() if content.splitlines() else ""
         if first_line.startswith("# ") and not first_line.startswith("## "):
             return first_line[2:].strip()
 
         return None
 
-    def compute_content_hash(self, text: str) -> str:
+    @staticmethod
+    def compute_content_hash(text: str) -> str:
         """Computes a SHA-256 hash of the normalized content for exact duplicate detection."""
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
-    def normalize_single_record(
-        self,
-        page_data: Any,
-    ) -> Optional[NormalizedPageRecord]:
+    def normalize_single_record(self, page_data: Any) -> Optional[NormalizedPageRecord]:
         """Processes a single raw page record into a NormalizedPageRecord.
 
         Returns None if the record is malformed or empty.
         """
-        # 1. Extract raw fields from dict or Pydantic object
         source_url: Optional[str] = None
         raw_title: Optional[str] = None
         raw_content: Optional[str] = None
@@ -161,22 +122,17 @@ class ContentNormalizer:
         else:
             return None
 
-        # 2. Validate URL
         if not source_url or not isinstance(source_url, str) or not source_url.strip():
             return None
 
         source_url = source_url.strip()
         canonical = normalize_url(source_url, source_url) or source_url
 
-        # 3. Clean and sanitize content
         cleaned_content = self.clean_markdown_text(raw_content)
         if len(cleaned_content) < self.MIN_MEANINGFUL_CHAR_COUNT:
             return None
 
-        # 4. Resolve Title
         title = self.extract_title(raw_title, cleaned_content)
-
-        # 5. Compute metadata
         content_hash = self.compute_content_hash(cleaned_content)
         words = len(re.findall(r"\b\w+\b", cleaned_content))
 
@@ -196,16 +152,12 @@ class ContentNormalizer:
             metadata=metadata,
         )
 
-    def normalize_pages(
-        self,
-        pages: Union[List[Any], Any],
-    ) -> NormalizationResult:
+    def normalize_pages(self, pages: Union[List[Any], Any]) -> NormalizationResult:
         """Normalizes a list of page objects or a MultiPageCrawlResult.
 
         Deduplicates by canonical URL and content hash, filters out empty/noise-only pages,
         and returns detailed execution statistics.
         """
-        # Handle MultiPageCrawlResult or dict with 'successful_pages'
         page_list: List[Any] = []
         if hasattr(pages, "successful_pages") and isinstance(pages.successful_pages, list):
             page_list = pages.successful_pages
@@ -226,42 +178,35 @@ class ContentNormalizer:
         malformed_count = 0
 
         for raw_page in page_list:
-            # Check for malformed input
             if raw_page is None or not (isinstance(raw_page, dict) or hasattr(raw_page, "url")):
                 malformed_count += 1
                 continue
 
-            # Extract source URL safely
             url = raw_page.get("url") if isinstance(raw_page, dict) else getattr(raw_page, "url", None)
             if not url or not isinstance(url, str) or not url.strip():
                 malformed_count += 1
                 continue
 
-            # Check if canonical URL was already seen before doing heavy cleaning
             canonical = normalize_url(url.strip(), url.strip()) or url.strip()
             if canonical in seen_canonical_urls:
                 duplicate_count += 1
                 continue
 
-            # Extract raw content
             if isinstance(raw_page, dict):
                 raw_text = raw_page.get("markdown") or raw_page.get("clean_text") or raw_page.get("content")
             else:
                 raw_text = getattr(raw_page, "markdown", None) or getattr(raw_page, "clean_text", None)
 
-            # Check for empty content
             cleaned_content = self.clean_markdown_text(raw_text)
             if len(cleaned_content) < self.MIN_MEANINGFUL_CHAR_COUNT:
                 empty_count += 1
                 continue
 
-            # Check for duplicate content (e.g. redirected or mirrored pages with different URLs)
             c_hash = self.compute_content_hash(cleaned_content)
             if c_hash in seen_content_hashes:
                 duplicate_count += 1
                 continue
 
-            # Create normalized record
             title = self.extract_title(
                 raw_page.get("title") if isinstance(raw_page, dict) else getattr(raw_page, "title", None),
                 cleaned_content,
@@ -303,3 +248,11 @@ class ContentNormalizer:
 
 # Global singleton instance
 content_normalizer = ContentNormalizer()
+
+__all__ = [
+    "NormalizedPageRecord",
+    "ContentNormalizationStats",
+    "NormalizationResult",
+    "ContentNormalizer",
+    "content_normalizer",
+]
