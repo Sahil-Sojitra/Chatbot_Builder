@@ -28,8 +28,8 @@ from app.services.prompt_builder import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_GEMINI_MODEL: str = "gemini-3.5-flash-lite"
-DEFAULT_TIMEOUT_SECONDS: float = 15.0
+DEFAULT_GEMINI_MODEL: str = "gemini-3-flash-preview"
+DEFAULT_TIMEOUT_SECONDS: float = 30.0
 
 
 class LLMGenerationAdapter(ABC):

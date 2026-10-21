@@ -44,6 +44,7 @@ interface ChatMessage {
   }>;
   hasGroundedEvidence?: boolean;
   isError?: boolean;
+  isStreaming?: boolean;
 }
 
 export default function ChatbotOverviewPage() {
@@ -71,30 +72,80 @@ export default function ChatbotOverviewPage() {
 
   const [inputValue, setInputValue] = useState("");
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [thinkingStage, setThinkingStage] = useState("Searching indexed website knowledge…");
 
+  const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-    if (messagesEndRef.current) {
+    if (messagesContainerRef.current) {
+      if (behavior === "auto") {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      } else {
+        messagesContainerRef.current.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior,
+        });
+      }
+    } else if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior, block: "end" });
-    } else if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
-        behavior,
-      });
     }
   };
 
+  // Rotating realistic thinking / retrieval stages while awaiting RAG generation
   useEffect(() => {
-    // Auto-scroll when messages update or response generation starts/ends
+    if (!isLoadingResponse) {
+      setThinkingStage("Searching indexed website knowledge…");
+      return;
+    }
+
+    const stages = [
+      "Searching indexed website embeddings…",
+      "Retrieving relevant content passages…",
+      "Cross-referencing verified facts…",
+      "Synthesizing grounded answer with Gemini…",
+    ];
+
+    let current = 0;
+    const timer = setInterval(() => {
+      current = (current + 1) % stages.length;
+      setThinkingStage(stages[current]);
+    }, 1200);
+
+    return () => clearInterval(timer);
+  }, [isLoadingResponse]);
+
+  // Clean up any streaming intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (streamIntervalRef.current) {
+        clearInterval(streamIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Auto-scroll whenever messages update, response arrives, or streaming advances
+  useEffect(() => {
     scrollToBottom("smooth");
     const timer = setTimeout(() => {
       scrollToBottom("smooth");
-    }, 60);
+    }, 50);
     return () => clearTimeout(timer);
-  }, [messages, isLoadingResponse]);
+  }, [messages, isLoadingResponse, isStreaming]);
+
+  const handleStopStreaming = () => {
+    if (streamIntervalRef.current) {
+      clearInterval(streamIntervalRef.current);
+      streamIntervalRef.current = null;
+    }
+    setMessages((prev) =>
+      prev.map((msg) => (msg.isStreaming ? { ...msg, isStreaming: false } : msg)),
+    );
+    setIsStreaming(false);
+  };
 
 
   // Instant Bot specific knowledge source & retry state
@@ -249,7 +300,7 @@ export default function ChatbotOverviewPage() {
 
   const sendQuestion = async (rawQuestion: string) => {
     const trimmed = rawQuestion.trim();
-    if (!trimmed || isLoadingResponse) return;
+    if (!trimmed || isLoadingResponse || isStreaming) return;
 
     if (isInstant && !isReady) {
       setChatError(
@@ -274,17 +325,82 @@ export default function ChatbotOverviewPage() {
 
     try {
       const response = await chatbotsApi.chat(chatbot.id, trimmed);
+      setIsLoadingResponse(false);
 
-      const botMsg: ChatMessage = {
-        id: `b-${Date.now()}`,
-        sender: "bot",
-        text: response.answer,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        sources: response.sources,
-        hasGroundedEvidence: response.hasGroundedEvidence,
-      };
+      const botMsgId = `b-${Date.now()}`;
+      const fullAnswer = response.answer;
+      const sources = response.sources;
+      const hasGroundedEvidence = response.hasGroundedEvidence;
+      const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-      setMessages((prev) => [...prev, botMsg]);
+      // Add streaming placeholder
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: botMsgId,
+          sender: "bot",
+          text: "",
+          time,
+          sources: [],
+          hasGroundedEvidence,
+          isStreaming: true,
+        },
+      ]);
+      setIsStreaming(true);
+
+      // Tokenize by word / space boundaries for natural typing cadence
+      const tokens = fullAnswer.split(/(\s+)/);
+      let currentIdx = 0;
+      let streamedText = "";
+
+      if (streamIntervalRef.current) {
+        clearInterval(streamIntervalRef.current);
+      }
+
+      await new Promise<void>((resolve) => {
+        streamIntervalRef.current = setInterval(() => {
+          // Advance by 2 tokens per tick (e.g. word + space)
+          const chunkSize = Math.min(2, tokens.length - currentIdx);
+          for (let i = 0; i < chunkSize; i++) {
+            streamedText += tokens[currentIdx + i];
+          }
+          currentIdx += chunkSize;
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === botMsgId ? { ...msg, text: streamedText } : msg,
+            ),
+          );
+
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+
+          if (currentIdx >= tokens.length) {
+            if (streamIntervalRef.current) {
+              clearInterval(streamIntervalRef.current);
+              streamIntervalRef.current = null;
+            }
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === botMsgId
+                  ? {
+                      ...msg,
+                      text: fullAnswer,
+                      sources,
+                      isStreaming: false,
+                    }
+                  : msg,
+              ),
+            );
+            setIsStreaming(false);
+            if (messagesContainerRef.current) {
+              messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+            }
+            resolve();
+          }
+        }, 16);
+      });
     } catch (err: unknown) {
       const errorMessage =
         err instanceof ApiRequestError
@@ -598,6 +714,12 @@ export default function ChatbotOverviewPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    if (streamIntervalRef.current) {
+                      clearInterval(streamIntervalRef.current);
+                      streamIntervalRef.current = null;
+                    }
+                    setIsStreaming(false);
+                    setIsLoadingResponse(false);
                     setMessages([]);
                     setInputValue("");
                     setChatError(null);
@@ -659,7 +781,10 @@ export default function ChatbotOverviewPage() {
               </div>
 
               {/* Message Stream */}
-              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm">
+              <div
+                ref={messagesContainerRef}
+                className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm scroll-smooth"
+              >
                 {messages.length === 0 && (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 my-auto">
                     <div className="h-10 w-10 rounded-full bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 font-bold mb-3 shadow-inner text-sm">
@@ -686,7 +811,7 @@ export default function ChatbotOverviewPage() {
                         <button
                           key={idx}
                           type="button"
-                          disabled={!isReady || isLoadingResponse}
+                          disabled={!isReady || isLoadingResponse || isStreaming}
                           onClick={() => void sendQuestion(question)}
                           className="text-left text-xs text-zinc-300 bg-[#121212]/80 hover:bg-violet-950/30 hover:text-violet-200 border border-zinc-800 hover:border-violet-500/40 rounded-lg px-3.5 py-2.5 transition-all duration-150 hover:translate-x-0.5 cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center justify-between gap-2.5 group shadow-sm hover:shadow-violet-950/20"
                         >
@@ -740,20 +865,29 @@ export default function ChatbotOverviewPage() {
                       {msg.sender === "user" || msg.isError ? (
                         <p className="whitespace-pre-wrap">{msg.text}</p>
                       ) : (
-                        <ChatMessageContent content={msg.text} />
+                        <div className="relative">
+                          <ChatMessageContent content={msg.text} />
+                          {msg.isStreaming && (
+                            <span className="inline-block w-1.5 h-3.5 ml-1 bg-violet-400 animate-pulse align-middle rounded-sm shadow-sm shadow-violet-400" />
+                          )}
+                        </div>
                       )}
-                      <ChatSourcesPills sources={msg.sources} theme="violet" />
+                      {!msg.isStreaming && <ChatSourcesPills sources={msg.sources} theme="violet" />}
                     </div>
                     <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
                   </div>
                 ))}
 
                 {isLoadingResponse ? (
-                  <div className="self-start flex items-center gap-2 rounded-md bg-[#141414] border border-zinc-800 px-3.5 py-2.5 text-xs text-zinc-400 font-mono">
-                    <span className="h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
-                    <span>Generating answer from indexed website…</span>
+                  <div className="self-start flex items-center gap-2.5 rounded-lg bg-zinc-900/90 border border-violet-500/30 px-3.5 py-2.5 text-xs text-zinc-300 font-mono shadow-md animate-in fade-in duration-200">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
+                    </span>
+                    <span className="text-violet-200 font-medium">{thinkingStage}</span>
                   </div>
                 ) : null}
+                <div ref={messagesEndRef} className="h-0 w-0 shrink-0" />
               </div>
 
               {chatError ? (
@@ -777,25 +911,40 @@ export default function ChatbotOverviewPage() {
                 <input
                   type="text"
                   value={inputValue}
-                  disabled={!isReady || isLoadingResponse}
+                  disabled={!isReady || isLoadingResponse || isStreaming}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder={
                     !isReady
                       ? isFailed
                         ? "Ingestion failed — retry above to enable testing"
                         : "Website indexing in progress… testing disabled until ready"
-                      : "Ask a test question about your website…"
+                      : isStreaming
+                        ? "Streaming answer…"
+                        : "Ask a test question about your website…"
                   }
                   className="flex-1 rounded-md border border-zinc-800 bg-[#000000] px-3.5 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <Button
-                  type="submit"
-                  disabled={!isReady || !inputValue.trim() || isLoadingResponse}
-                  size="default"
-                  className="h-9 px-3.5 bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50"
-                >
-                  Send
-                </Button>
+                {isStreaming ? (
+                  <Button
+                    type="button"
+                    onClick={handleStopStreaming}
+                    size="default"
+                    className="h-9 px-3.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors"
+                    title="Stop generation"
+                  >
+                    <span className="h-2 w-2 rounded-sm bg-violet-400" />
+                    <span>Stop</span>
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={!isReady || !inputValue.trim() || isLoadingResponse}
+                    size="default"
+                    className="h-9 px-3.5 bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50"
+                  >
+                    Send
+                  </Button>
+                )}
               </form>
             </div>
           </div>
@@ -966,18 +1115,26 @@ export default function ChatbotOverviewPage() {
                         {msg.sender === "user" || msg.isError ? (
                           <p className="whitespace-pre-wrap">{msg.text}</p>
                         ) : (
-                          <ChatMessageContent content={msg.text} />
+                          <div className="relative">
+                            <ChatMessageContent content={msg.text} />
+                            {msg.isStreaming && (
+                              <span className="inline-block w-1.5 h-3.5 ml-1 bg-emerald-400 animate-pulse align-middle rounded-sm shadow-sm shadow-emerald-400" />
+                            )}
+                          </div>
                         )}
-                        <ChatSourcesPills sources={msg.sources} theme="emerald" />
+                        {!msg.isStreaming && <ChatSourcesPills sources={msg.sources} theme="emerald" />}
                       </div>
                       <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
                     </div>
                   ))}
 
                   {isLoadingResponse ? (
-                    <div className="self-start flex items-center gap-2 rounded-md bg-[#141414] border border-zinc-800 px-3.5 py-2.5 text-xs text-zinc-400 font-mono">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>Generating response via {chatbot.model || "gpt-4o-mini"}…</span>
+                    <div className="self-start flex items-center gap-2.5 rounded-lg bg-zinc-900/90 border border-emerald-500/30 px-3.5 py-2.5 text-xs text-zinc-300 font-mono shadow-md animate-in fade-in duration-200">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                      </span>
+                      <span className="text-emerald-200 font-medium">{thinkingStage}</span>
                     </div>
                   ) : null}
                   <div ref={messagesEndRef} className="h-0 w-0 flex-shrink-0" />
@@ -1004,19 +1161,32 @@ export default function ChatbotOverviewPage() {
                   <input
                     type="text"
                     value={inputValue}
-                    disabled={isLoadingResponse}
+                    disabled={isLoadingResponse || isStreaming}
                     onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Ask a test question…"
+                    placeholder={isStreaming ? "Streaming answer…" : "Ask a test question…"}
                     className="flex-1 rounded-md border border-zinc-800 bg-[#000000] px-3.5 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-500 disabled:opacity-50"
                   />
-                  <Button
-                    type="submit"
-                    disabled={!inputValue.trim() || isLoadingResponse}
-                    size="default"
-                    className="h-9 px-3.5"
-                  >
-                    Send
-                  </Button>
+                  {isStreaming ? (
+                    <Button
+                      type="button"
+                      onClick={handleStopStreaming}
+                      size="default"
+                      className="h-9 px-3.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors"
+                      title="Stop generation"
+                    >
+                      <span className="h-2.5 w-2.5 rounded-sm bg-emerald-400" />
+                      <span>Stop</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={!inputValue.trim() || isLoadingResponse}
+                      size="default"
+                      className="h-9 px-3.5"
+                    >
+                      Send
+                    </Button>
+                  )}
                 </form>
               </div>
             </div>
