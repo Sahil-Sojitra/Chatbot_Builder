@@ -14,7 +14,7 @@ from app.core.brand import extract_brand_name
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_GEMINI_MODEL: str = "gemini-2.5-flash-lite"
+DEFAULT_GEMINI_MODEL: str = "gemini-3.5-flash-lite"
 DEFAULT_TIMEOUT_SECONDS: float = 12.0
 
 
@@ -125,7 +125,7 @@ class PersonaGeneratorService:
 
             if response.status_code != 200:
                 logger.warning(
-                    f"Gemini persona generation returned HTTP {response.status_code}. "
+                    f"Gemini persona generation returned HTTP {response.status_code}: {response.text[:250]}. "
                     "Using deterministic fallback."
                 )
                 return self._build_deterministic_fallback(website_url, raw_bot_name)
