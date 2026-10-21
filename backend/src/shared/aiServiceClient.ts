@@ -119,7 +119,11 @@ export class AIServiceClient {
         } catch {
           // Response body was not JSON
         }
-        throw new AIServiceError(response.status, "AI_SERVICE_ERROR", safeErrorMessage);
+        let errorCode = "AI_SERVICE_ERROR";
+        if (response.status === 422 || safeErrorMessage.toLowerCase().includes("bot security verification")) {
+          errorCode = "BOT_PROTECTION_BLOCKED";
+        }
+        throw new AIServiceError(response.status, errorCode, safeErrorMessage);
       }
 
       return (await response.json()) as IngestWebsiteResponse;

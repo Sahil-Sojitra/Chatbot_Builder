@@ -14,6 +14,7 @@ class CrawlResult(BaseModel):
     success: bool = Field(..., description="Whether the page crawl succeeded.")
     status_code: Optional[int] = Field(None, description="HTTP status code returned by the server.")
     links: List[str] = Field(default_factory=list, description="Internal links discovered on this page.")
+    is_bot_blocked: bool = Field(False, description="Whether the page was blocked by anti-bot/WAF.")
     error_message: Optional[str] = Field(None, description="Error details if the page crawl failed.")
 
 

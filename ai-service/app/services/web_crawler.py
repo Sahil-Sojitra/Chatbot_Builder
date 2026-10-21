@@ -22,6 +22,7 @@ from app.services.link_discovery import (
 )
 from app.services.security import SSRFValidationError, validate_safe_url
 from app.services.sitemap import sitemap_service
+from app.services.anti_bot import detect_bot_protection_challenge, FRIENDLY_BOT_BLOCKED_MESSAGE
 
 logger = logging.getLogger(__name__)
 
@@ -78,15 +79,6 @@ class Crawl4AICrawler:
 
         async def _run_crawl(crawler: AsyncWebCrawler) -> CrawlResult:
             result = await crawler.arun(url=canonical_url, config=run_config)
-            if not result.success:
-                return CrawlResult(
-                    url=canonical_url,
-                    markdown="",
-                    clean_text="",
-                    success=False,
-                    status_code=result.status_code,
-                    error_message=result.error_message or "Crawl4AI execution failed",
-                )
 
             markdown_text = (
                 result.markdown.raw_markdown
@@ -102,6 +94,36 @@ class Crawl4AICrawler:
             title = None
             if hasattr(result, "metadata") and isinstance(result.metadata, dict):
                 title = result.metadata.get("title")
+
+            # Check for anti-bot or WAF challenge (Cloudflare, Turnstile, Captchas)
+            is_challenge, challenge_reason = detect_bot_protection_challenge(
+                status_code=result.status_code,
+                title=title,
+                markdown_or_text=markdown_text or getattr(result, "error_message", None),
+                html=getattr(result, "cleaned_html", None),
+            )
+            if is_challenge:
+                logger.warning(f"Bot protection challenge detected on '{canonical_url}': {challenge_reason}")
+                return CrawlResult(
+                    url=canonical_url,
+                    title=title,
+                    markdown="",
+                    clean_text="",
+                    success=False,
+                    status_code=result.status_code,
+                    is_bot_blocked=True,
+                    error_message=f"Bot Protection Challenge: {challenge_reason}",
+                )
+
+            if not result.success:
+                return CrawlResult(
+                    url=canonical_url,
+                    markdown="",
+                    clean_text="",
+                    success=False,
+                    status_code=result.status_code,
+                    error_message=result.error_message or "Crawl4AI execution failed",
+                )
 
             extracted_links = filter_crawl4ai_internal_links(
                 crawl4ai_links=getattr(result, "links", None),
@@ -312,11 +334,17 @@ class Crawl4AICrawler:
         successful_pages: List[CrawlResult] = []
         failed_pages: List[PageCrawlSummary] = []
 
+        bot_blocked_detected = False
+        bot_blocked_message: Optional[str] = None
+
         semaphore = asyncio.Semaphore(concurrency)
         browser_config = BrowserConfig(headless=True, verbose=False)
 
         async with AsyncWebCrawler(config=browser_config) as crawler:
             while queue and (bounded_max_pages is None or len(visited_urls) < bounded_max_pages):
+                if bot_blocked_detected:
+                    break
+
                 if bounded_max_pages is not None:
                     remaining_slots = bounded_max_pages - len(visited_urls)
                     batch_size = min(len(queue), remaining_slots, concurrency)
@@ -326,9 +354,17 @@ class Crawl4AICrawler:
                 batch = [queue.pop(0) for _ in range(batch_size)]
 
                 async def _worker(target_url: str):
+                    nonlocal bot_blocked_detected, bot_blocked_message
                     async with semaphore:
                         visited_urls.add(target_url)
                         crawl_res = await self.crawl_page(target_url, crawler_instance=crawler)
+
+                        if crawl_res.is_bot_blocked or (crawl_res.error_message and "Bot Protection Challenge" in crawl_res.error_message):
+                            if target_url == normalized_root:
+                                logger.warning(f"Root URL '{normalized_root}' is protected by anti-bot verification. Aborting crawl immediately.")
+                                bot_blocked_detected = True
+                                bot_blocked_message = FRIENDLY_BOT_BLOCKED_MESSAGE
+                                queue.clear()
 
                         if crawl_res.success:
                             successful_pages.append(crawl_res)
@@ -364,6 +400,20 @@ class Crawl4AICrawler:
                             )
 
                 await asyncio.gather(*[_worker(url) for url in batch])
+
+        if bot_blocked_detected:
+            return MultiPageCrawlResult(
+                starting_url=normalized_root,
+                max_pages_requested=bounded_max_pages,
+                total_discovered=len(queued_urls),
+                total_processed=len(successful_pages) + len(failed_pages),
+                successful_count=0,
+                failed_count=len(failed_pages),
+                successful_pages=[],
+                failed_pages=failed_pages,
+                success=False,
+                error_message=bot_blocked_message or FRIENDLY_BOT_BLOCKED_MESSAGE,
+            )
 
         total_processed = len(successful_pages) + len(failed_pages)
         overall_success = len(successful_pages) > 0

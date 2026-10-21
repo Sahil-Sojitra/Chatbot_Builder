@@ -18,27 +18,62 @@ export function InstantBotFailure({
   onRetry,
   onEditUrl,
 }: InstantBotFailureProps) {
+  const isBotBlocked = Boolean(
+    errorMessage &&
+      (errorMessage.toLowerCase().includes("cloudflare") ||
+        errorMessage.toLowerCase().includes("bot security verification") ||
+        errorMessage.toLowerCase().includes("anti-bot"))
+  );
+
   return (
     <div className="max-w-xl mx-auto rounded-xl border border-rose-500/30 bg-[#0a0a0a] p-6 sm:p-8 shadow-xl">
       <div className="flex flex-col items-center text-center pb-6 border-b border-zinc-800">
-        <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-3">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+          isBotBlocked
+            ? "bg-amber-500/10 border border-amber-500/30 text-amber-400"
+            : "bg-rose-500/10 border border-rose-500/30 text-rose-400"
+        }`}>
+          {isBotBlocked ? (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          )}
         </div>
 
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 mb-2">
-          Setup Failed / Needs Attention
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold mb-2 ${
+          isBotBlocked
+            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+            : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+        }`}>
+          {isBotBlocked ? "Protected Website Detected" : "Setup Failed / Needs Attention"}
         </span>
 
         <h2 className="text-xl font-bold text-white tracking-tight">
-          Couldn&apos;t finish setting up your Instant Bot
+          {isBotBlocked
+            ? "Target Website Protected by Anti-Bot Security"
+            : "Couldn't finish setting up your Instant Bot"}
         </h2>
 
         <p className="text-sm text-zinc-400 mt-2 max-w-md">
           {errorMessage ||
             "We were unable to crawl your website pages or extract enough readable text to build your assistant's knowledge base."}
         </p>
+
+        {isBotBlocked && (
+          <div className="mt-4 w-full p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-left flex gap-3 items-start">
+            <span className="text-amber-400 text-sm mt-0.5">🛡️</span>
+            <div>
+              <h4 className="text-xs font-semibold text-amber-300">Cloudflare Bot Verification Active</h4>
+              <p className="text-xs text-amber-200/80 mt-1 leading-relaxed">
+                This domain requires browser verification, blocking automated scraping. You can still build this assistant by uploading website documents (PDF/TXT) or pasting content directly.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Display preserved URL */}
         <div className="mt-4 w-full p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-left">

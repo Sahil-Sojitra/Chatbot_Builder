@@ -112,6 +112,11 @@ async def ingest_website(
         err_msg = crawl_result.error_message or "Unknown crawling failure"
         if "SSRF Security Violation" in err_msg:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err_msg)
+        if "bot security verification" in err_msg.lower() or "bot protection challenge" in err_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=err_msg,
+            )
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Crawling failed: {err_msg}")
 
     pages_crawled = len(crawl_result.successful_pages)
