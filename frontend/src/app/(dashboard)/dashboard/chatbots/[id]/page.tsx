@@ -461,13 +461,52 @@ export default function ChatbotOverviewPage() {
             </div>
           ) : null}
 
-          {/* Ingestion in Progress Banner */}
-          {isProcessing ? (
-            <div className="mt-2 rounded-md border border-amber-800/40 bg-amber-950/20 p-3 flex items-center gap-2.5 text-xs text-amber-300">
-              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-              <span>
-                Crawling and indexing website pages into your assistant&apos;s knowledge base. Playground testing will be enabled automatically as soon as indexing is complete.
-              </span>
+          {/* Ingestion in Progress / Retrying Card */}
+          {(isProcessing || isRetryingIngestion) ? (
+            <div className="mt-3 rounded-lg border border-violet-500/30 bg-[#0d0d12] p-4 shadow-lg text-xs space-y-3 animate-in fade-in duration-300">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-500"></span>
+                  </span>
+                  <span className="font-semibold text-white">
+                    {isRetryingIngestion ? "Retrying Ingestion Pipeline…" : "Indexing Knowledge Base in Progress…"}
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded">
+                  Live Pipeline
+                </span>
+              </div>
+
+              {/* Animated Progress Bar */}
+              <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-violet-600 via-indigo-500 to-purple-400 animate-pulse rounded-full w-3/4 transition-all duration-700" />
+              </div>
+
+              {/* Pipeline stages badges */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+                <div className="flex items-center gap-1.5 p-1.5 rounded bg-zinc-900/80 border border-zinc-800 text-zinc-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  <span className="truncate">Sitemap & Discovery</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded bg-violet-950/30 border border-violet-800/40 text-violet-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping shrink-0" />
+                  <span className="truncate">Crawling & Anti-Bot</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded bg-zinc-900/50 border border-zinc-800 text-zinc-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0" />
+                  <span className="truncate">Chunk & Vector Index</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded bg-zinc-900/50 border border-zinc-800 text-zinc-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0" />
+                  <span className="truncate">Persona & Prompts</span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-zinc-400 pt-0.5 leading-relaxed">
+                We are actively processing <span className="text-zinc-200 font-mono">{websiteUrl}</span>. Testing in the playground below will automatically unlock the moment indexing completes.
+              </p>
             </div>
           ) : null}
         </div>
@@ -565,12 +604,35 @@ export default function ChatbotOverviewPage() {
                           type="button"
                           disabled={!isReady || isLoadingResponse}
                           onClick={() => void sendQuestion(question)}
-                          className="text-left text-xs text-zinc-300 bg-[#121212] hover:bg-violet-950/40 hover:text-violet-200 border border-zinc-800 hover:border-violet-500/40 rounded-lg px-3.5 py-2.5 transition-all hover:translate-x-0.5 cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center gap-2 group"
+                          className="text-left text-xs text-zinc-300 bg-[#121212]/80 hover:bg-violet-950/30 hover:text-violet-200 border border-zinc-800 hover:border-violet-500/40 rounded-lg px-3.5 py-2.5 transition-all duration-150 hover:translate-x-0.5 cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center justify-between gap-2.5 group shadow-sm hover:shadow-violet-950/20"
                         >
-                          <span className="text-violet-400 text-xs group-hover:scale-110 transition-transform shrink-0">
-                            💬
-                          </span>
-                          <span className="truncate">{question}</span>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="p-1 rounded-md bg-violet-500/10 border border-violet-500/20 text-violet-400 group-hover:bg-violet-500/20 group-hover:text-violet-300 transition-colors shrink-0">
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.874-.75 2.25 2.25 0 01.077-.52 5.955 5.955 0 01-1.39-3.95C3.223 15.75 3 13.924 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
+                                />
+                              </svg>
+                            </span>
+                            <span className="truncate font-medium">{question}</span>
+                          </div>
+                          <svg
+                            className="w-3.5 h-3.5 text-zinc-600 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                          </svg>
                         </button>
                       ))}
                     </div>

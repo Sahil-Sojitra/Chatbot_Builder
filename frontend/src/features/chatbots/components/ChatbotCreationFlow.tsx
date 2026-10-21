@@ -123,11 +123,21 @@ export function ChatbotCreationFlow() {
   };
 
   const handleRetry = () => {
-    if (isSubmitting) return;
     if (!websiteUrl) {
       setCurrentView("instant-url");
       return;
     }
+    // Immediately display the progress page with active stages
+    setFailureError(null);
+    const initialStages = createInitialStages();
+    if (createdChatbot) {
+      initialStages[0].status = "completed";
+      initialStages[1].status = "current";
+    }
+    setStages(initialStages);
+    setProcessingStatus(createdChatbot ? "processing" : "creating");
+    setCurrentView("instant-processing");
+
     // Retry with the preserved URL and preserved chatbot
     void handleUrlSubmit(websiteUrl, false);
   };
