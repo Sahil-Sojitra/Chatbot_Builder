@@ -19,6 +19,7 @@ export interface IChatbot {
   ragEnabled: boolean;
   ragTopK: number | null;
   ragSimilarityThreshold: number | null;
+  starterQuestions?: string[];
   uiConfig: Record<string, unknown> | null;
   createdBy: Types.ObjectId;
   publishedBy: Types.ObjectId | null;
@@ -114,6 +115,11 @@ const chatbotSchema = new Schema<IChatbot>(
     ragSimilarityThreshold: {
       type: Number,
       default: null,
+    },
+
+    starterQuestions: {
+      type: [String],
+      default: [],
     },
 
     uiConfig: {

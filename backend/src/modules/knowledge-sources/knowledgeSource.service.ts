@@ -214,6 +214,40 @@ export const knowledgeSourceService = {
           }
 
           await knowledgeSourceRepository.markReady(processSourceId);
+
+          if (ingestionResult.persona) {
+            try {
+              const updates: Record<string, unknown> = {};
+              if (
+                ingestionResult.persona.suggested_system_prompt &&
+                (!chatbot.systemPrompt || chatbot.creationMode === "INSTANT")
+              ) {
+                updates.systemPrompt = ingestionResult.persona.suggested_system_prompt;
+              }
+              if (ingestionResult.persona.starter_questions?.length) {
+                updates.starterQuestions = ingestionResult.persona.starter_questions;
+              }
+              if (ingestionResult.persona.brand_name && chatbot.creationMode === "INSTANT") {
+                updates.name = `${ingestionResult.persona.brand_name} AI Assistant`;
+              }
+              if (
+                (ingestionResult.persona.company_description || ingestionResult.persona.tagline) &&
+                chatbot.creationMode === "INSTANT"
+              ) {
+                updates.description =
+                  ingestionResult.persona.company_description || ingestionResult.persona.tagline;
+              }
+              if (Object.keys(updates).length > 0) {
+                await chatbotRepository.updateByIdForOrganization(
+                  chatbot._id.toString(),
+                  chatbot.organizationId,
+                  updates,
+                );
+              }
+            } catch (personaErr) {
+              console.warn("[KnowledgeSourceService] Failed to auto-update bot persona:", personaErr);
+            }
+          }
         } catch (err: unknown) {
           const safeError = err instanceof AIServiceError ? err.message : "Website crawling and indexing failed";
           await knowledgeSourceRepository.markFailed(processSourceId, safeError);
@@ -262,6 +296,18 @@ export const knowledgeSourceService = {
           }
 
           await knowledgeSourceRepository.markReady(processSourceId);
+
+          if (ingestionResult.persona?.starter_questions?.length && (!chatbot.starterQuestions || chatbot.starterQuestions.length === 0)) {
+            try {
+              await chatbotRepository.updateByIdForOrganization(
+                chatbot._id.toString(),
+                chatbot.organizationId,
+                { starterQuestions: ingestionResult.persona.starter_questions },
+              );
+            } catch (personaErr) {
+              console.warn("[KnowledgeSourceService] Failed to auto-update bot starter questions:", personaErr);
+            }
+          }
         } catch (err: unknown) {
           const safeError = err instanceof AIServiceError ? err.message : "Website crawling and indexing failed";
           await knowledgeSourceRepository.markFailed(processSourceId, safeError);

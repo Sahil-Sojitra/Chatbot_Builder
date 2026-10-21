@@ -18,6 +18,14 @@ export interface IngestWebsitePayload {
   maxPages?: number;
 }
 
+export interface BotPersona {
+  brand_name: string;
+  tagline?: string;
+  company_description?: string;
+  suggested_system_prompt?: string;
+  starter_questions?: string[];
+}
+
 export interface IngestWebsiteResponse {
   chatbot_id: string;
   website_url: string;
@@ -25,6 +33,7 @@ export interface IngestWebsiteResponse {
   chunks_indexed: number;
   pages_discovered?: number;
   pages_failed?: number;
+  persona?: BotPersona;
   success: boolean;
   error_message: string | null;
 }

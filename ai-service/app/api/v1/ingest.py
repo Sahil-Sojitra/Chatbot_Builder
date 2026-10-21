@@ -10,6 +10,7 @@ from app.services.content_normalizer import content_normalizer
 from app.services.chunker import chunker_service, ContentChunk
 from app.services.embedding import embedding_service, EmbeddingError
 from app.services.vector_store import vector_store, VectorStoreError
+from app.services.persona_generator import persona_generator_service, BotPersona
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,7 @@ class IngestionResponse(BaseModel):
     chunks_indexed: int = Field(0, description="Total content chunks indexed into the vector database.")
     pages_discovered: int = Field(0, description="Total unique pages discovered on domain.")
     pages_failed: int = Field(0, description="Number of discovered pages that failed to crawl.")
+    persona: Optional[BotPersona] = Field(None, description="Auto-generated brand persona and starter questions.")
     success: bool = Field(True, description="Whether the ingestion pipeline completed successfully.")
     error_message: Optional[str] = Field(None, description="Safe error details if ingestion failed.")
 
@@ -182,6 +184,18 @@ async def ingest_website(
             detail=f"Vector store indexing error: {exc}",
         )
 
+    # 6. Auto-generate brand persona and starter questions from the homepage
+    bot_persona: Optional[BotPersona] = None
+    try:
+        homepage_crawl = crawl_result.successful_pages[0]
+        bot_persona = await persona_generator_service.agenerate_persona(
+            homepage_text=homepage_crawl.markdown or homepage_crawl.clean_text,
+            website_url=url_str,
+            raw_bot_name=clean_bot_id,
+        )
+    except Exception as persona_err:
+        logger.warning(f"Persona generation failed for '{clean_bot_id}': {persona_err}")
+
     logger.info(
         f"Completed ingestion for chatbot '{clean_bot_id}': "
         f"{pages_crawled} pages crawled ({pages_failed} failed), {upsert_result.upserted_count} chunks indexed."
@@ -194,5 +208,6 @@ async def ingest_website(
         chunks_indexed=upsert_result.upserted_count,
         pages_discovered=pages_discovered,
         pages_failed=pages_failed,
+        persona=bot_persona,
         success=True,
     )

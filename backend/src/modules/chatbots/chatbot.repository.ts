@@ -18,6 +18,7 @@ export interface CreateChatbotInput {
   ragEnabled: boolean;
   ragTopK?: number;
   ragSimilarityThreshold?: number;
+  starterQuestions?: string[];
   creationMode?: ChatbotCreationMode;
   createdBy: Types.ObjectId;
 }
@@ -34,6 +35,7 @@ export interface UpdateChatbotFields {
   ragEnabled?: boolean;
   ragTopK?: number;
   ragSimilarityThreshold?: number;
+  starterQuestions?: string[];
 }
 
 export const chatbotRepository = {

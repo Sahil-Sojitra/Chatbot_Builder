@@ -62,6 +62,10 @@ export const createChatbotSchema = z
       .min(0, "ragSimilarityThreshold must be at least 0")
       .max(1, "ragSimilarityThreshold must be at most 1")
       .optional(),
+    starterQuestions: z
+      .array(z.string().trim().min(1, "question cannot be empty").max(200, "question must be at most 200 characters"))
+      .max(10, "starterQuestions must contain at most 10 questions")
+      .optional(),
     creationMode: z
       .enum(["INSTANT", "CUSTOM"], {
         message: "creationMode must be either INSTANT or CUSTOM",

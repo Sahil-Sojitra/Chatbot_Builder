@@ -19,6 +19,7 @@ export interface Chatbot {
   ragEnabled: boolean;
   ragTopK: number | null;
   ragSimilarityThreshold: number | null;
+  starterQuestions?: string[];
   uiConfig: Record<string, unknown> | null;
   createdBy: string;
   publishedBy: string | null;

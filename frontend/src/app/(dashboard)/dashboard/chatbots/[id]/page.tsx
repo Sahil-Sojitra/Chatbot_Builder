@@ -257,9 +257,8 @@ export default function ChatbotOverviewPage() {
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = inputValue.trim();
+  const sendQuestion = async (rawQuestion: string) => {
+    const trimmed = rawQuestion.trim();
     if (!trimmed || isLoadingResponse) return;
 
     if (isInstant && !isReady) {
@@ -319,6 +318,11 @@ export default function ChatbotOverviewPage() {
     } finally {
       setIsLoadingResponse(false);
     }
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    void sendQuestion(inputValue);
   };
 
   /* -------------------------------------------------------------------------- */
@@ -474,9 +478,8 @@ export default function ChatbotOverviewPage() {
           <div className="flex items-center justify-between border-b border-zinc-800 bg-[#0a0a0a] px-4 py-3">
             <div className="flex items-center gap-2.5">
               <span
-                className={`flex h-2 w-2 rounded-full ${
-                  isReady ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"
-                }`}
+                className={`flex h-2 w-2 rounded-full ${isReady ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"
+                  }`}
               />
               <span className="font-medium text-sm text-zinc-200">Interactive Runtime Preview</span>
               <span className="text-xs text-zinc-500 bg-zinc-900 rounded px-1.5 py-0.5 border border-zinc-800 font-mono">
@@ -489,22 +492,20 @@ export default function ChatbotOverviewPage() {
               <button
                 type="button"
                 onClick={() => setDeviceMode("widget")}
-                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
-                  deviceMode === "widget"
+                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${deviceMode === "widget"
                     ? "bg-zinc-800 text-white font-semibold"
                     : "text-zinc-400 hover:text-zinc-200"
-                }`}
+                  }`}
               >
                 Widget View
               </button>
               <button
                 type="button"
                 onClick={() => setDeviceMode("mobile")}
-                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
-                  deviceMode === "mobile"
+                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${deviceMode === "mobile"
                     ? "bg-zinc-800 text-white font-semibold"
                     : "text-zinc-400 hover:text-zinc-200"
-                }`}
+                  }`}
               >
                 Full Dock
               </button>
@@ -514,11 +515,10 @@ export default function ChatbotOverviewPage() {
           {/* Chat Stage */}
           <div className="flex-1 flex items-center justify-center p-5 bg-[#050505] architect-grid overflow-hidden">
             <div
-              className={`flex flex-col rounded-md border border-zinc-800 bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${
-                deviceMode === "widget"
+              className={`flex flex-col rounded-md border border-zinc-800 bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${deviceMode === "widget"
                   ? "w-full max-w-[500px] h-[530px]"
                   : "w-full max-w-[640px] h-[550px]"
-              }`}
+                }`}
             >
               {/* Chat Widget Top Header */}
               <div className="flex items-center justify-between border-b border-zinc-800 bg-[#111111] px-4 py-3">
@@ -537,21 +537,59 @@ export default function ChatbotOverviewPage() {
 
               {/* Message Stream */}
               <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm">
+                {messages.length === 0 && (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6 my-auto">
+                    <div className="h-10 w-10 rounded-full bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 font-bold mb-3 shadow-inner text-sm">
+                      {chatbot.name.charAt(0).toUpperCase()}
+                    </div>
+                    <h3 className="text-sm font-semibold text-white">
+                      Welcome to {chatbot.name}!
+                    </h3>
+                    <p className="text-xs text-zinc-400 mt-1 max-w-sm leading-relaxed">
+                      {chatbot.description ||
+                        "Ask any question about our website and products, or click a prompt below to test:"}
+                    </p>
+
+                    {/* Starter questions */}
+                    <div className="mt-4 flex flex-col gap-2 w-full max-w-md">
+                      {(chatbot.starterQuestions && chatbot.starterQuestions.length > 0
+                        ? chatbot.starterQuestions
+                        : [
+                          "What products or services do you offer?",
+                          "How do I contact customer support?",
+                          "Where can I find pricing or subscription plans?",
+                        ]
+                      ).map((question, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          disabled={!isReady || isLoadingResponse}
+                          onClick={() => void sendQuestion(question)}
+                          className="text-left text-xs text-zinc-300 bg-[#121212] hover:bg-violet-950/40 hover:text-violet-200 border border-zinc-800 hover:border-violet-500/40 rounded-lg px-3.5 py-2.5 transition-all hover:translate-x-0.5 cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center gap-2 group"
+                        >
+                          <span className="text-violet-400 text-xs group-hover:scale-110 transition-transform shrink-0">
+                            💬
+                          </span>
+                          <span className="truncate">{question}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex flex-col max-w-[85%] ${
-                      msg.sender === "user" ? "self-end items-end" : "self-start items-start"
-                    }`}
+                    className={`flex flex-col max-w-[85%] ${msg.sender === "user" ? "self-end items-end" : "self-start items-start"
+                      }`}
                   >
                     <div
-                      className={`rounded-md p-3.5 leading-relaxed text-sm ${
-                        msg.sender === "user"
+                      className={`rounded-md p-3.5 leading-relaxed text-sm ${msg.sender === "user"
                           ? "bg-violet-600/20 border border-violet-500/30 text-white font-normal"
                           : msg.isError
                             ? "bg-red-950/40 border border-red-800/60 text-red-200 text-xs font-mono"
                             : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
-                      }`}
+                        }`}
                     >
                       {msg.sender === "user" || msg.isError ? (
                         <p className="whitespace-pre-wrap">{msg.text}</p>
@@ -647,13 +685,12 @@ export default function ChatbotOverviewPage() {
               <h1 className="text-xl font-bold tracking-tight text-white">{chatbot.name}</h1>
               <Badge variant={STATUS_BADGE_VARIANT[chatbot.status]}>
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    chatbot.status === "ACTIVE"
+                  className={`h-2 w-2 rounded-full ${chatbot.status === "ACTIVE"
                       ? "bg-emerald-400 animate-pulse"
                       : chatbot.status === "PAUSED"
                         ? "bg-amber-400"
                         : "bg-zinc-500"
-                  }`}
+                    }`}
                 />
                 {chatbot.status === "ACTIVE" ? "Ready" : chatbot.status}
               </Badge>
@@ -716,22 +753,20 @@ export default function ChatbotOverviewPage() {
                 <button
                   type="button"
                   onClick={() => setDeviceMode("widget")}
-                  className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
-                    deviceMode === "widget"
+                  className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${deviceMode === "widget"
                       ? "bg-zinc-800 text-white font-semibold"
                       : "text-zinc-400 hover:text-zinc-200"
-                  }`}
+                    }`}
                 >
                   Widget View
                 </button>
                 <button
                   type="button"
                   onClick={() => setDeviceMode("mobile")}
-                  className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
-                    deviceMode === "mobile"
+                  className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${deviceMode === "mobile"
                       ? "bg-zinc-800 text-white font-semibold"
                       : "text-zinc-400 hover:text-zinc-200"
-                  }`}
+                    }`}
                 >
                   Full Dock
                 </button>
@@ -741,11 +776,10 @@ export default function ChatbotOverviewPage() {
             {/* Chat Device Stage */}
             <div className="flex-1 flex items-center justify-center p-5 bg-[#050505] architect-grid overflow-hidden">
               <div
-                className={`flex flex-col rounded-md border border-zinc-800 bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${
-                  deviceMode === "widget"
+                className={`flex flex-col rounded-md border border-zinc-800 bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${deviceMode === "widget"
                     ? "w-full max-w-[440px] h-[530px]"
                     : "w-full max-w-[480px] h-[550px]"
-                }`}
+                  }`}
               >
                 {/* Chat Widget Top Header */}
                 <div className="flex items-center justify-between border-b border-zinc-800 bg-[#111111] px-4 py-3">
@@ -772,27 +806,25 @@ export default function ChatbotOverviewPage() {
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`flex flex-col max-w-[85%] ${
-                        msg.sender === "user" ? "self-end items-end" : "self-start items-start"
-                      }`}
+                      className={`flex flex-col max-w-[85%] ${msg.sender === "user" ? "self-end items-end" : "self-start items-start"
+                        }`}
                     >
                       <div
-                        className={`rounded-md p-3.5 leading-relaxed text-sm ${
-                          msg.sender === "user"
+                        className={`rounded-md p-3.5 leading-relaxed text-sm ${msg.sender === "user"
                             ? "bg-zinc-800 border border-zinc-700 text-white font-normal"
                             : msg.isError
                               ? "bg-red-950/40 border border-red-800/60 text-red-200 text-xs font-mono"
                               : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
-                        }`}
+                          }`}
                       >
-                      {msg.sender === "user" || msg.isError ? (
-                        <p className="whitespace-pre-wrap">{msg.text}</p>
-                      ) : (
-                        <ChatMessageContent content={msg.text} />
-                      )}
-                      <ChatSourcesPills sources={msg.sources} theme="emerald" />
-                    </div>
-                    <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
+                        {msg.sender === "user" || msg.isError ? (
+                          <p className="whitespace-pre-wrap">{msg.text}</p>
+                        ) : (
+                          <ChatMessageContent content={msg.text} />
+                        )}
+                        <ChatSourcesPills sources={msg.sources} theme="emerald" />
+                      </div>
+                      <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
                     </div>
                   ))}
 
@@ -862,33 +894,30 @@ export default function ChatbotOverviewPage() {
                 <button
                   type="button"
                   onClick={() => setActiveCodeTab("script")}
-                  className={`rounded px-2 py-0.5 cursor-pointer transition-colors ${
-                    activeCodeTab === "script"
+                  className={`rounded px-2 py-0.5 cursor-pointer transition-colors ${activeCodeTab === "script"
                       ? "bg-zinc-800 text-white font-medium"
                       : "text-zinc-500 hover:text-zinc-300"
-                  }`}
+                    }`}
                 >
                   HTML
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveCodeTab("curl")}
-                  className={`rounded px-2 py-0.5 cursor-pointer transition-colors ${
-                    activeCodeTab === "curl"
+                  className={`rounded px-2 py-0.5 cursor-pointer transition-colors ${activeCodeTab === "curl"
                       ? "bg-zinc-800 text-white font-medium"
                       : "text-zinc-500 hover:text-zinc-300"
-                  }`}
+                    }`}
                 >
                   cURL
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveCodeTab("json")}
-                  className={`rounded px-2 py-0.5 cursor-pointer transition-colors ${
-                    activeCodeTab === "json"
+                  className={`rounded px-2 py-0.5 cursor-pointer transition-colors ${activeCodeTab === "json"
                       ? "bg-zinc-800 text-white font-medium"
                       : "text-zinc-500 hover:text-zinc-300"
-                  }`}
+                    }`}
                 >
                   JSON
                 </button>
@@ -973,9 +1002,8 @@ export default function ChatbotOverviewPage() {
               </span>
               <Badge variant={chatbot.ragEnabled ? "success" : "default"}>
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    chatbot.ragEnabled ? "bg-emerald-400" : "bg-zinc-500"
-                  } mr-1`}
+                  className={`h-2 w-2 rounded-full ${chatbot.ragEnabled ? "bg-emerald-400" : "bg-zinc-500"
+                    } mr-1`}
                 />
                 {chatbot.ragEnabled ? "Enabled" : "Disabled"}
               </Badge>

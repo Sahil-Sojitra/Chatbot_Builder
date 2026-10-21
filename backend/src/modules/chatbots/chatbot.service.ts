@@ -62,6 +62,7 @@ const toPublicChatbot = (
   ragEnabled: chatbot.ragEnabled,
   ragTopK: chatbot.ragTopK,
   ragSimilarityThreshold: chatbot.ragSimilarityThreshold,
+  starterQuestions: chatbot.starterQuestions ?? [],
   uiConfig: chatbot.uiConfig,
   createdBy: chatbot.createdBy.toString(),
   publishedBy: chatbot.publishedBy ? chatbot.publishedBy.toString() : null,
@@ -123,6 +124,9 @@ export const chatbotService = {
     }
     if (input.ragSimilarityThreshold !== undefined) {
       creationInput.ragSimilarityThreshold = input.ragSimilarityThreshold;
+    }
+    if (input.starterQuestions !== undefined) {
+      creationInput.starterQuestions = input.starterQuestions;
     }
 
     const chatbot = await chatbotRepository.create(creationInput);
@@ -222,6 +226,9 @@ export const chatbotService = {
     }
     if (input.ragSimilarityThreshold !== undefined) {
       fields.ragSimilarityThreshold = input.ragSimilarityThreshold;
+    }
+    if (input.starterQuestions !== undefined) {
+      fields.starterQuestions = input.starterQuestions;
     }
 
     const chatbot = await chatbotRepository.updateByIdForOrganization(

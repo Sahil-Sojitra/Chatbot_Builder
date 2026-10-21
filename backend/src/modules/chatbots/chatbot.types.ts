@@ -18,6 +18,7 @@ export interface CreateChatbotInput {
   ragEnabled?: boolean;
   ragTopK?: number;
   ragSimilarityThreshold?: number;
+  starterQuestions?: string[];
   creationMode?: ChatbotCreationMode;
 }
 
@@ -47,6 +48,7 @@ export interface PublicChatbot {
   ragEnabled: boolean;
   ragTopK: number | null;
   ragSimilarityThreshold: number | null;
+  starterQuestions: string[];
   uiConfig: Record<string, unknown> | null;
   createdBy: string;
   publishedBy: string | null;
