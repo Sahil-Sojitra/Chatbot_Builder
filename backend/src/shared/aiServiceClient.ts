@@ -1,4 +1,17 @@
+import { Agent, setGlobalDispatcher } from "undici";
 import { env } from "../config/env.js";
+
+const DEFAULT_INGEST_TIMEOUT_MS = 900_000; // 15 minutes for thorough crawling and embedding without premature timeout
+const DEFAULT_QA_TIMEOUT_MS = 45_000;     // 45 seconds for retrieval + Gemini answer
+
+// Configure global dispatcher so undici fetch doesn't abort long crawl/index operations
+setGlobalDispatcher(
+  new Agent({
+    headersTimeout: DEFAULT_INGEST_TIMEOUT_MS,
+    bodyTimeout: DEFAULT_INGEST_TIMEOUT_MS,
+    connectTimeout: 30_000,
+  }),
+);
 
 export class AIServiceError extends Error {
   public readonly status: number;
@@ -70,9 +83,6 @@ export interface AskQuestionResponse {
     chunks_retrieved: number;
   };
 }
-
-const DEFAULT_INGEST_TIMEOUT_MS = 900_000; // 15 minutes for thorough crawling and embedding without premature timeout
-const DEFAULT_QA_TIMEOUT_MS = 45_000;     // 45 seconds for retrieval + Gemini answer
 
 export class AIServiceClient {
   private readonly baseUrl: string;

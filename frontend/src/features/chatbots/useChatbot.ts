@@ -39,7 +39,6 @@ export function useChatbot(chatbotId: string) {
   }, [chatbotId, reloadToken]);
 
   const refetch = useCallback(() => {
-    setStatus("loading");
     setError(null);
     setReloadToken((token) => token + 1);
   }, []);

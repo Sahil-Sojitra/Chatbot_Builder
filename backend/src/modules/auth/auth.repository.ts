@@ -39,7 +39,7 @@ export const authRepository = {
     return UserModel.findByIdAndUpdate(
       userId,
       { $set: fields },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 
@@ -50,7 +50,7 @@ export const authRepository = {
     return UserModel.findByIdAndUpdate(
       userId,
       { $set: { passwordHash } },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 };

@@ -278,6 +278,13 @@ class PineconeVectorStore(VectorStoreAdapter):
                 success=True,
             )
         except Exception as exc:
+            # If the namespace was already deleted or never existed, it's an idempotent success
+            if "not found" in str(exc).lower() or "404" in str(exc):
+                logger.info(f"Chatbot namespace '{clean_bot_id}' was not found in Pinecone (already clean).")
+                return VectorDeleteResult(
+                    chatbot_id=clean_bot_id,
+                    success=True,
+                )
             logger.error(f"Pinecone delete error for chatbot '{clean_bot_id}': {exc}")
             raise VectorStoreError(f"Pinecone deletion failed: {exc}") from exc
 

@@ -10,7 +10,7 @@ import { ChatbotDetailProvider, useChatbotDetail } from "@/features/chatbots/Cha
 function ChatbotDetailShell({ children }: { children: ReactNode }) {
   const { status, chatbot, error, refetch } = useChatbotDetail();
 
-  if (status === "loading") {
+  if (status === "loading" && !chatbot) {
     return (
       <div className="flex flex-1 items-center justify-center py-16">
         <Spinner label="Loading chatbot…" />

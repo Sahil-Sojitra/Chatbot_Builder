@@ -48,7 +48,7 @@ interface ChatMessage {
 
 export default function ChatbotOverviewPage() {
   const router = useRouter();
-  const { chatbot, setChatbot } = useChatbotDetail();
+  const { chatbot, refetch: refetchChatbot, setChatbot } = useChatbotDetail();
   const [isPublishing, setIsPublishing] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [copiedScript, setCopiedScript] = useState(false);
@@ -66,14 +66,8 @@ export default function ChatbotOverviewPage() {
     ? chatbot.name.replace(/\s+(?:AI\s+)?(?:Assistant|Bot|Chatbot|Agent)$/i, "").trim() || chatbot.name
     : "our team";
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "m-1",
-      sender: "bot",
-      text: `Hello! Welcome to ${brandName}. How can we help you today?`,
-      time: "Just now",
-    },
-  ]);
+  // Initial messages start empty so the custom Persona Welcome Card and Starter Questions render immediately
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const [inputValue, setInputValue] = useState("");
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
@@ -102,23 +96,6 @@ export default function ChatbotOverviewPage() {
     return () => clearTimeout(timer);
   }, [messages, isLoadingResponse]);
 
-  useEffect(() => {
-    if (chatbot?.name) {
-      setMessages((prev) => {
-        if (prev.length === 1 && prev[0].id === "m-1" && prev[0].sender === "bot") {
-          return [
-            {
-              id: "m-1",
-              sender: "bot",
-              text: `Hello! Welcome to ${brandName}. How can we help you today?`,
-              time: "Just now",
-            },
-          ];
-        }
-        return prev;
-      });
-    }
-  }, [chatbot?.name, brandName]);
 
   // Instant Bot specific knowledge source & retry state
   const isInstant = chatbot?.creationMode === "INSTANT";
@@ -130,6 +107,7 @@ export default function ChatbotOverviewPage() {
 
   const [isRetryingIngestion, setIsRetryingIngestion] = useState(false);
   const [retryError, setRetryError] = useState<string | null>(null);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
 
   if (!chatbot) {
     return null;
@@ -154,10 +132,20 @@ export default function ChatbotOverviewPage() {
     websiteSource?.status === "PROCESSING";
   const isFailed = websiteSource?.status === "FAILED";
 
+  // Auto-refresh chatbot details once when ingestion transitions to READY to sync newly synthesized persona & starter questions
+  const hasRefetchedOnReadyRef = useRef(false);
+  useEffect(() => {
+    if (isReady && !hasRefetchedOnReadyRef.current) {
+      hasRefetchedOnReadyRef.current = true;
+      refetchChatbot();
+    }
+  }, [isReady, refetchChatbot]);
+
   const handleRetryIngestion = async () => {
     if (!websiteUrl || isRetryingIngestion) return;
     setIsRetryingIngestion(true);
     setRetryError(null);
+    setSyncNotice(null);
 
     try {
       await knowledgeSourcesApi.create(chatbot.id, {
@@ -166,9 +154,11 @@ export default function ChatbotOverviewPage() {
         sourceUrl: websiteUrl,
       });
       refetchKs();
+      setSyncNotice("Re-sync pipeline initiated! Scanning website for updated content.");
+      setTimeout(() => setSyncNotice(null), 6000);
     } catch (err: unknown) {
       setRetryError(
-        err instanceof Error ? err.message : "Failed to retry website ingestion.",
+        err instanceof Error ? err.message : "Failed to re-sync website ingestion.",
       );
     } finally {
       setIsRetryingIngestion(false);
@@ -389,6 +379,39 @@ export default function ChatbotOverviewPage() {
                 </div>
               )}
 
+              {/* Sync Latest Website Button (Available even when READY so users can pull updated website data) */}
+              {websiteUrl ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isProcessing || isRetryingIngestion}
+                  onClick={() => void handleRetryIngestion()}
+                  className="h-8 text-xs border-zinc-700 bg-zinc-900/90 hover:bg-violet-950/40 hover:border-violet-500/50 text-zinc-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  title="Re-crawl and update knowledge base with the latest changes from your website"
+                >
+                  <svg
+                    className={`w-3.5 h-3.5 text-violet-400 ${
+                      isRetryingIngestion || isProcessing ? "animate-spin" : ""
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                    />
+                  </svg>
+                  <span>
+                    {isRetryingIngestion || isProcessing
+                      ? "Syncing Pipeline…"
+                      : "Sync Latest Website"}
+                  </span>
+                </Button>
+              ) : null}
+
               {isConfirmingDelete ? (
                 <div className="flex items-center gap-1.5 rounded-md border border-red-900/60 bg-red-950/40 px-2 py-1">
                   <span className="text-xs text-red-300 font-mono">Delete?</span>
@@ -509,6 +532,23 @@ export default function ChatbotOverviewPage() {
               </p>
             </div>
           ) : null}
+
+          {/* Re-sync success notice banner */}
+          {syncNotice && (
+            <div className="mt-2 rounded-md border border-violet-500/30 bg-violet-950/20 px-3.5 py-2.5 text-xs text-violet-200 flex items-center justify-between gap-2 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+                <span>{syncNotice}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSyncNotice(null)}
+                className="text-violet-400 hover:text-white cursor-pointer font-bold text-sm"
+              >
+                &times;
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Focused Full-Width Playground Card */}
@@ -526,8 +566,52 @@ export default function ChatbotOverviewPage() {
               </span>
             </div>
 
-            {/* Viewport switchers */}
-            <div className="flex items-center gap-1">
+            {/* Viewport switchers & Quick Sync */}
+            <div className="flex items-center gap-1.5">
+              {websiteUrl && (
+                <button
+                  type="button"
+                  disabled={isProcessing || isRetryingIngestion}
+                  onClick={() => void handleRetryIngestion()}
+                  className="rounded px-2 py-1 text-xs font-medium text-zinc-400 hover:text-violet-300 hover:bg-violet-950/30 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  title="Website content changed? Re-run the ingestion pipeline to refresh knowledge base"
+                >
+                  <svg
+                    className={`w-3 h-3 text-violet-400 ${
+                      isRetryingIngestion || isProcessing ? "animate-spin" : ""
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                    />
+                  </svg>
+                  <span className="hidden sm:inline">Sync Changes</span>
+                </button>
+              )}
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessages([]);
+                    setInputValue("");
+                    setChatError(null);
+                  }}
+                  className="rounded px-2 py-1 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer flex items-center gap-1"
+                  title="Reset conversation and show persona starter prompts"
+                >
+                  <svg className="w-3 h-3 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="hidden sm:inline">New Chat</span>
+                </button>
+              )}
+              <div className="h-3 w-px bg-zinc-800 hidden sm:block" />
               <button
                 type="button"
                 onClick={() => setDeviceMode("widget")}

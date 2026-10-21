@@ -43,7 +43,7 @@ export const organizationRepository = {
     return OrganizationModel.findOneAndUpdate(
       { ownerId },
       { $set: fields },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 };

@@ -9,7 +9,7 @@ from app.services.crawler import crawler_service, get_url_priority
 from app.services.content_normalizer import content_normalizer
 from app.services.chunker import chunker_service, ContentChunk
 from app.services.embedding import embedding_service, EmbeddingError
-from app.services.vector_store import vector_store, VectorStoreError
+from app.services.vector_store import vector_store, VectorStoreError, VectorDeleteResult
 from app.services.persona_generator import persona_generator_service, BotPersona
 
 logger = logging.getLogger(__name__)
@@ -211,3 +211,21 @@ async def ingest_website(
         persona=bot_persona,
         success=True,
     )
+
+
+@router.delete("/chatbot/{chatbot_id}", response_model=VectorDeleteResult)
+async def delete_chatbot_content(
+    chatbot_id: str,
+    x_api_key: Optional[str] = Header(None),
+):
+    """Deletes all indexed vectors and knowledge base content associated with a chatbot."""
+    clean_bot_id = chatbot_id.strip()
+    try:
+        return vector_store.delete_chatbot_content(chatbot_id=clean_bot_id)
+    except Exception as exc:
+        logger.error(f"Failed to delete chatbot vectors for '{clean_bot_id}': {exc}")
+        return VectorDeleteResult(
+            chatbot_id=clean_bot_id,
+            success=False,
+            error_message=str(exc),
+        )

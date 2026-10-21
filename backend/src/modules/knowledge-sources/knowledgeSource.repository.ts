@@ -66,7 +66,7 @@ export const knowledgeSourceRepository = {
     return KnowledgeSourceModel.findOneAndUpdate(
       { _id: id, status: "PENDING" },
       { $set: { status: "PROCESSING" } },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 
@@ -92,7 +92,7 @@ export const knowledgeSourceRepository = {
           ...(extractedText !== undefined ? { sourceText: extractedText } : {}),
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 
@@ -118,7 +118,7 @@ export const knowledgeSourceRepository = {
           error: errorMessage,
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 
@@ -145,7 +145,7 @@ export const knowledgeSourceRepository = {
           ...(sourceUrl ? { sourceUrl } : {}),
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 
@@ -167,7 +167,7 @@ export const knowledgeSourceRepository = {
     return KnowledgeSourceModel.findOneAndUpdate(
       { _id: sourceId, chatbotId },
       { $set: updatePayload },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 

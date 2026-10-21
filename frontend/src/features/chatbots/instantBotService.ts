@@ -242,6 +242,17 @@ export class InstantBotService {
     onStageUpdate([...stages], "completing");
     await this.delay(500);
 
+    // Refresh the chatbot to pick up the auto-generated persona name, tagline, and questions
+    try {
+      const refreshed = await chatbotsApi.get(createdChatbot.id);
+      if (refreshed.chatbot) {
+        createdChatbot = refreshed.chatbot;
+        onChatbotCreated?.(createdChatbot);
+      }
+    } catch {
+      // Non-blocking fallback
+    }
+
     if (this.isCancelled) throw new Error("Cancelled");
     stages[4].status = "completed";
 

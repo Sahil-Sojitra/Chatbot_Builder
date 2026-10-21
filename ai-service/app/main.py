@@ -16,3 +16,15 @@ app.include_router(health_router)
 app.include_router(demo_router)
 app.include_router(v1_chat_router, prefix="/api/v1")
 app.include_router(v1_ingest_router, prefix="/api/v1")
+
+
+@app.delete("/vector-store/{chatbot_id}")
+async def delete_vector_store(chatbot_id: str):
+    """Direct alias to clean up chatbot vector store."""
+    from app.services.vector_store import vector_store
+    clean_bot_id = chatbot_id.strip()
+    try:
+        return vector_store.delete_chatbot_content(chatbot_id=clean_bot_id)
+    except Exception as exc:
+        return {"chatbot_id": clean_bot_id, "success": False, "error_message": str(exc)}
+

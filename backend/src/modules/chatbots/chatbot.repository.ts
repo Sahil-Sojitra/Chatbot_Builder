@@ -90,7 +90,7 @@ export const chatbotRepository = {
     return ChatbotModel.findOneAndUpdate(
       { _id: id, organizationId },
       { $set: fields },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 
@@ -113,7 +113,7 @@ export const chatbotRepository = {
     return ChatbotModel.findOneAndUpdate(
       { _id: id, organizationId },
       { $set: { status: "ACTIVE", publishedBy, publishedAt: new Date() } },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 
@@ -134,7 +134,7 @@ export const chatbotRepository = {
     return ChatbotModel.findOneAndUpdate(
       { _id: id, organizationId },
       { $set: { status: "PAUSED" } },
-      { new: true },
+      { returnDocument: "after" },
     );
   },
 
