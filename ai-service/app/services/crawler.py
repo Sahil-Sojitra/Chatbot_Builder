@@ -11,6 +11,7 @@ from app.services.web_crawler import (
     crawler_service,
     get_url_priority,
     web_crawler_service,
+    sitemap_service,
 )
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     "Crawl4AICrawler",
     "crawler_service",
     "web_crawler_service",
+    "sitemap_service",
     "AsyncWebCrawler",
 ]

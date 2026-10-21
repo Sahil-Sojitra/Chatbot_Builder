@@ -21,6 +21,7 @@ from app.services.link_discovery import (
     normalize_url,
 )
 from app.services.security import SSRFValidationError, validate_safe_url
+from app.services.sitemap import sitemap_service
 
 logger = logging.getLogger(__name__)
 
@@ -283,6 +284,30 @@ class Crawl4AICrawler:
         visited_urls: Set[str] = set()
         queued_urls: Set[str] = {normalized_root}
         queue: List[str] = [normalized_root]
+
+        # 1. Proactively discover XML sitemap and robots.txt links to seed the crawl queue
+        try:
+            sitemap_links = await sitemap_service.discover_sitemap_urls(
+                starting_url=normalized_root,
+                max_links=bounded_max_pages * 2 if bounded_max_pages else 50,
+            )
+            added_sm_count = 0
+            for sm_link in sitemap_links:
+                if sm_link not in queued_urls:
+                    queued_urls.add(sm_link)
+                    queue.append(sm_link)
+                    added_sm_count += 1
+
+            if added_sm_count > 0:
+                # Keep root homepage first, then sort remaining sitemap links by priority
+                root_url = queue[0]
+                other_links = sorted(queue[1:], key=get_url_priority)
+                queue = [root_url] + other_links
+                logger.info(
+                    f"Bootstrapped crawl queue with {added_sm_count} links from sitemap.xml for '{normalized_root}'"
+                )
+        except Exception as sm_exc:
+            logger.debug(f"Sitemap probe skipped or failed for '{normalized_root}': {sm_exc}")
 
         successful_pages: List[CrawlResult] = []
         failed_pages: List[PageCrawlSummary] = []

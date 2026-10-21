@@ -9,6 +9,10 @@ from app.services.crawler import (
     crawler_service,
     web_crawler_service,
 )
+from app.services.sitemap import (
+    SitemapService,
+    sitemap_service,
+)
 from app.services.security import (
     FORBIDDEN_HOSTNAMES,
     SSRFValidationError,
