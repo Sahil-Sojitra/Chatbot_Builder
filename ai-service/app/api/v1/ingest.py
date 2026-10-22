@@ -191,7 +191,7 @@ async def ingest_website(
         bot_persona = await persona_generator_service.agenerate_persona(
             homepage_text=homepage_crawl.markdown or homepage_crawl.clean_text,
             website_url=url_str,
-            raw_bot_name=clean_bot_id,
+            raw_bot_name=None,
         )
     except Exception as persona_err:
         logger.warning(f"Persona generation failed for '{clean_bot_id}': {persona_err}")

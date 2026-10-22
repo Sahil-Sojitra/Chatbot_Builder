@@ -34,6 +34,28 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
 
   const isInstant = chatbot.creationMode === "INSTANT";
 
+  // Cleanly derive human-readable brand name if database name is a raw hex ObjectId
+  const botDisplayName = (() => {
+    const rawName = chatbot.name || "";
+    if (
+      /^[0-9a-fA-F]{24}(\s+AI\s+Assistant)?$/i.test(rawName.trim()) ||
+      /^[0-9a-fA-F-]{32,36}/i.test(rawName.trim())
+    ) {
+      if (chatbot.description?.startsWith("Instant AI Assistant created from ")) {
+        try {
+          const urlStr = chatbot.description.replace("Instant AI Assistant created from ", "");
+          const parsed = new URL(urlStr);
+          const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+          const parts = host.split(".");
+          const brand = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : "Website";
+          return `${brand} Assistant`;
+        } catch {}
+      }
+      return "Website AI Assistant";
+    }
+    return rawName;
+  })();
+
   return (
     <div className="flex flex-col gap-6">
       {/* Dynamic Header: Instant Bot (Managed Playground) vs Custom Bot (Studio) */}
@@ -44,7 +66,7 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
               <>
                 <span className="text-zinc-500">instant-bots</span>
                 <span className="text-zinc-600">/</span>
-                <span className="text-zinc-300 font-semibold">{chatbot.name.toLowerCase().replace(/\s+/g, "-")}</span>
+                <span className="text-zinc-300 font-semibold">{botDisplayName.toLowerCase().replace(/\s+/g, "-")}</span>
                 <span className="text-zinc-600">•</span>
                 <span className="text-violet-400">managed-rag-pipeline</span>
               </>
@@ -52,14 +74,14 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
               <>
                 <span className="text-zinc-500">deployments</span>
                 <span className="text-zinc-600">/</span>
-                <span className="text-zinc-300 font-semibold">{chatbot.name.toLowerCase().replace(/\s+/g, "-")}</span>
+                <span className="text-zinc-300 font-semibold">{botDisplayName.toLowerCase().replace(/\s+/g, "-")}</span>
                 <span className="text-zinc-600">•</span>
                 <span className="text-zinc-400">{chatbot.provider || "openai"}:{chatbot.model || "gpt-4o-mini"}</span>
               </>
             )}
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-white">{chatbot.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-white">{botDisplayName}</h1>
             {isInstant ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />

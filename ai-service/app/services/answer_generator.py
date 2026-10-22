@@ -205,6 +205,10 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
         try:
             with httpx.Client(timeout=self.timeout_seconds) as client:
                 response = client.post(url, json=payload)
+                if response.status_code == 503 and self.model != "gemini-3-flash-preview":
+                    logger.warning(f"Gemini {self.model} returned HTTP 503. Automatic failover to 'gemini-3-flash-preview'...")
+                    fallback_url = f"{self.BASE_URL}/gemini-3-flash-preview:generateContent?key={self._get_api_key()}"
+                    response = client.post(fallback_url, json=payload)
         except httpx.TimeoutException as exc:
             logger.warning(f"Gemini API request timed out after {self.timeout_seconds}s: {exc}.")
             return create_soft_fallback(
@@ -245,6 +249,10 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
         try:
             async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
                 response = await client.post(url, json=payload)
+                if response.status_code == 503 and self.model != "gemini-3-flash-preview":
+                    logger.warning(f"Gemini {self.model} returned HTTP 503. Automatic failover to 'gemini-3-flash-preview'...")
+                    fallback_url = f"{self.BASE_URL}/gemini-3-flash-preview:generateContent?key={self._get_api_key()}"
+                    response = await client.post(fallback_url, json=payload)
         except httpx.TimeoutException as exc:
             logger.warning(f"Gemini async API request timed out after {self.timeout_seconds}s: {exc}.")
             return create_soft_fallback(

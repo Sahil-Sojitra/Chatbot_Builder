@@ -177,6 +177,27 @@ export default function ChatbotOverviewPage() {
       ? chatbot.description.replace("Instant AI Assistant created from ", "")
       : "");
 
+  // Cleanly derive human-readable brand name if database name is a raw hex ObjectId
+  const botDisplayName = (() => {
+    const rawName = chatbot.name || "";
+    if (
+      /^[0-9a-fA-F]{24}(\s+AI\s+Assistant)?$/i.test(rawName.trim()) ||
+      /^[0-9a-fA-F-]{32,36}/i.test(rawName.trim())
+    ) {
+      if (websiteUrl) {
+        try {
+          const parsed = new URL(websiteUrl);
+          const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+          const parts = host.split(".");
+          const brand = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : "Website";
+          return `${brand} Assistant`;
+        } catch {}
+      }
+      return "Website AI Assistant";
+    }
+    return rawName;
+  })();
+
   const isReady = websiteSource?.status === "READY";
   const isProcessing =
     ksStatus === "loading" ||
@@ -463,7 +484,7 @@ export default function ChatbotOverviewPage() {
                 </span>
                 <span className="text-xs text-zinc-500 font-mono">ID: {chatbot.publicId}</span>
               </div>
-              <h1 className="text-xl font-bold tracking-tight text-white">{chatbot.name}</h1>
+              <h1 className="text-xl font-bold tracking-tight text-white">{botDisplayName}</h1>
               {websiteUrl ? (
                 <p className="text-xs text-zinc-400 font-mono mt-1">
                   Target Website:{" "}
@@ -776,10 +797,10 @@ export default function ChatbotOverviewPage() {
               <div className="flex items-center justify-between border-b border-zinc-800 bg-[#111111] px-4 py-3">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-6 w-6 items-center justify-center rounded bg-violet-600/30 border border-violet-500/40 text-violet-300 font-semibold text-xs">
-                    {chatbot.name.charAt(0).toUpperCase()}
+                    {botDisplayName.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white leading-tight">{chatbot.name}</p>
+                    <p className="text-sm font-semibold text-white leading-tight">{botDisplayName}</p>
                     <p className="text-xs text-zinc-400">
                       {isReady ? "Ready · Testing assistant" : isProcessing ? "Indexing knowledge…" : "Ingestion Pending"}
                     </p>
@@ -795,10 +816,10 @@ export default function ChatbotOverviewPage() {
                 {messages.length === 0 && (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 my-auto">
                     <div className="h-10 w-10 rounded-full bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 font-bold mb-3 shadow-inner text-sm">
-                      {chatbot.name.charAt(0).toUpperCase()}
+                      {botDisplayName.charAt(0).toUpperCase()}
                     </div>
                     <h3 className="text-sm font-semibold text-white">
-                      Welcome to {chatbot.name}!
+                      Welcome to {botDisplayName}!
                     </h3>
                     <p className="text-xs text-zinc-400 mt-1 max-w-sm leading-relaxed">
                       {chatbot.description ||

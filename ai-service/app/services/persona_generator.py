@@ -122,6 +122,10 @@ class PersonaGeneratorService:
         try:
             async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
                 response = await client.post(url, json=payload)
+                if response.status_code == 503 and self.model != "gemini-3-flash-preview":
+                    logger.warning(f"Gemini persona generation {self.model} returned HTTP 503. Automatic failover to 'gemini-3-flash-preview'...")
+                    fallback_url = f"{self.BASE_URL}/gemini-3-flash-preview:generateContent?key={api_key}"
+                    response = await client.post(fallback_url, json=payload)
 
             if response.status_code != 200:
                 logger.warning(

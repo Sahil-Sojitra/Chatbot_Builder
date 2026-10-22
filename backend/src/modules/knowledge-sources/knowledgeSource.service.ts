@@ -228,7 +228,19 @@ export const knowledgeSourceService = {
                 updates.starterQuestions = ingestionResult.persona.starter_questions;
               }
               if (ingestionResult.persona.brand_name && chatbot.creationMode === "INSTANT") {
-                updates.name = `${ingestionResult.persona.brand_name} AI Assistant`;
+                let cleanBrand = ingestionResult.persona.brand_name.trim();
+                if (/^[0-9a-fA-F]{24}$/i.test(cleanBrand) && targetUrl) {
+                  try {
+                    const parsed = new URL(targetUrl);
+                    const host = parsed.hostname.replace(/^www\./i, "");
+                    const parts = host.split(".");
+                    const firstPart = parts[0] || host;
+                    if (firstPart) {
+                      cleanBrand = firstPart.charAt(0).toUpperCase() + firstPart.slice(1);
+                    }
+                  } catch {}
+                }
+                updates.name = `${cleanBrand} Assistant`;
               }
               if (
                 (ingestionResult.persona.company_description || ingestionResult.persona.tagline) &&
