@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import type { InstantBotStage, InstantBotStatus } from "../instantBotTypes";
 import { Button } from "@/components/ui";
 
 interface InstantBotProgressProps {
   websiteUrl: string;
   chatbotName: string;
+  chatbotId?: string;
   status: InstantBotStatus;
   stages: InstantBotStage[];
   onCancel?: () => void;
@@ -14,6 +16,7 @@ interface InstantBotProgressProps {
 export function InstantBotProgress({
   websiteUrl,
   chatbotName,
+  chatbotId,
   stages,
   onCancel,
 }: InstantBotProgressProps) {
@@ -150,9 +153,28 @@ export function InstantBotProgress({
         })}
       </div>
 
+      {/* Bot workspace created info card if bot ID is known */}
+      {chatbotId && (
+        <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg bg-violet-950/20 border border-violet-500/25 text-xs">
+          <div className="flex items-center gap-2 text-violet-200">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
+            </span>
+            <span>Assistant created! Knowledge base is indexing in background.</span>
+          </div>
+          <Link
+            href={`/dashboard/chatbots/${chatbotId}`}
+            className="text-violet-400 hover:text-white font-medium underline flex items-center gap-1 shrink-0"
+          >
+            Open Playground now &rarr;
+          </Link>
+        </div>
+      )}
+
       {/* Footer safe action */}
       <div className="mt-6 pt-4 border-t border-zinc-800 flex items-center justify-between text-xs text-zinc-500">
-        <span>This takes approximately 10-15 seconds.</span>
+        <span>You can safely refresh or leave — your bot is created and indexing continues.</span>
         {onCancel && (
           <Button
             variant="ghost"

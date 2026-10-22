@@ -96,6 +96,15 @@ export default function ChatbotOverviewPage() {
     }
   };
 
+  // Clear any pending instant bot creation flag once arriving at the chatbot page
+  useEffect(() => {
+    try {
+      localStorage.removeItem("pending_instant_bot");
+    } catch {
+      // Non-blocking
+    }
+  }, []);
+
   // Rotating realistic thinking / retrieval stages while awaiting RAG generation
   useEffect(() => {
     if (!isLoadingResponse) {

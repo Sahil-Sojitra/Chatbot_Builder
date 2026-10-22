@@ -52,6 +52,24 @@ export function ChatbotCreationFlow() {
   // Keep a reference to the active service instance so it can be cancelled if the user leaves
   const serviceRef = useRef<InstantBotService | null>(null);
 
+  // If user refreshes or navigates back while an instant bot is being processed, redirect to the chatbot overview
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("pending_instant_bot");
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (data?.id && Date.now() - (data.createdAt || 0) < 15 * 60 * 1000) {
+          localStorage.removeItem("pending_instant_bot");
+          router.replace(`/dashboard/chatbots/${data.id}`);
+          return;
+        }
+        localStorage.removeItem("pending_instant_bot");
+      }
+    } catch {
+      // Storage unavailable or parsing error
+    }
+  }, [router]);
+
   useEffect(() => {
     return () => {
       // Cleanup running request on unmount
@@ -100,11 +118,26 @@ export function ChatbotCreationFlow() {
         existingChatbot: botToReuse ?? undefined,
         onChatbotCreated: (bot) => {
           setCreatedChatbot(bot);
+          try {
+            // Save pending bot info so page refresh or navigation redirects to /dashboard/chatbots/[id]
+            localStorage.setItem(
+              "pending_instant_bot",
+              JSON.stringify({ id: bot.id, websiteUrl: url, createdAt: Date.now() })
+            );
+            // Replace browser URL bar with the chatbot URL so standard F5 / browser reload
+            // immediately reloads /dashboard/chatbots/[id]
+            window.history.replaceState(null, "", `/dashboard/chatbots/${bot.id}`);
+          } catch {
+            // Non-blocking
+          }
         },
         onStatusChange: (status: InstantBotStatus) => setProcessingStatus(status),
         onStageUpdate: (updatedStages: InstantBotStage[]) => setStages(updatedStages),
       });
       setInstantResult(result);
+      try {
+        localStorage.removeItem("pending_instant_bot");
+      } catch {}
       setCurrentView("instant-success");
     } catch (err: unknown) {
       if (err instanceof Error && err.message === "Cancelled") {
@@ -143,6 +176,10 @@ export function ChatbotCreationFlow() {
   };
 
   const handleCancelProgress = () => {
+    try {
+      localStorage.removeItem("pending_instant_bot");
+      window.history.replaceState(null, "", "/dashboard/chatbots");
+    } catch {}
     if (serviceRef.current) {
       serviceRef.current.cancel();
     }
@@ -150,6 +187,10 @@ export function ChatbotCreationFlow() {
   };
 
   const handleReset = () => {
+    try {
+      localStorage.removeItem("pending_instant_bot");
+      window.history.replaceState(null, "", "/dashboard/chatbots/new");
+    } catch {}
     setWebsiteUrl("");
     setBotName("");
     setCreatedChatbot(null);
@@ -185,6 +226,7 @@ export function ChatbotCreationFlow() {
         <InstantBotProgress
           websiteUrl={websiteUrl}
           chatbotName={botName}
+          chatbotId={createdChatbot?.id}
           status={processingStatus}
           stages={stages}
           onCancel={handleCancelProgress}
@@ -203,6 +245,7 @@ export function ChatbotCreationFlow() {
       {currentView === "instant-failure" && (
         <InstantBotFailure
           websiteUrl={websiteUrl}
+          chatbotId={createdChatbot?.id}
           errorMessage={failureError ?? undefined}
           isRetrying={isSubmitting}
           onRetry={handleRetry}

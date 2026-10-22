@@ -78,22 +78,67 @@ function renderLink(
 }
 
 /**
+ * Pre-processes and heals LLM markdown glitches before block parsing:
+ * - Reconnects links broken across newlines: [Title]\n(url) -> [Title](url)
+ * - Reconnects links broken by numbered citations: [Title]\n1. (url) -> 1. [Title](url)
+ * - Fixes split links with space: [Title] (url) -> [Title](url)
+ * - Cleans stray asterisks around links: **[Title](url)** or • ** [Title](url)
+ * - Removes bracketed citations like [Source 1] or [1] before URLs
+ */
+function normalizeMessageMarkdown(raw: string): string {
+  let text = raw.replace(/\r\n/g, "\n");
+
+  // Remove bracketed citation tags like [Source 1], [Source 1, Source 2], Source 2
+  text = text.replace(/\[Source\s*\d+(?:,\s*(?:Source\s*)?\d+)*\]/gi, "");
+  text = text.replace(/\bSource\s*\d+\b/gi, "");
+
+  // Reconnect broken links where title is on one line and number/bullet + URL is on next line:
+  // e.g. [Custom AI Development Services]\n1. (https://...) -> 1. [Custom AI Development Services](https://...)
+  text = text.replace(/\[([^\]]+)\]\s*\n\s*(\d+\.|\*|\-|\u2022|\[\d+\])\s*\((https?:\/\/[^\s\)]+)\)/g, "$2 [$1]($3)");
+
+  // Reconnect broken links where title is on one line and URL is on next line:
+  // e.g. [Custom AI Development Services]\n(https://...) -> [Custom AI Development Services](https://...)
+  text = text.replace(/\[([^\]]+)\]\s*\n\s*\((https?:\/\/[^\s\)]+)\)/g, "[$1]($2)");
+
+  // Fix split links with space between ] and (: [Title] (https://...) -> [Title](https://...)
+  text = text.replace(/\[([^\]]+)\]\s+\((https?:\/\/[^\s\)]+)\)/g, "[$1]($2)");
+
+  // Clean stray bold markers wrapped around links or starting bullets with links:
+  // e.g. • ** [AI Agents](url) -> • [AI Agents](url)
+  // e.g. - **[Item](url)**: -> - [Item](url):
+  text = text.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
+  text = text.replace(/([\*\-\+\u2022]\s+)\*\*\s*(\[[^\]]+\]\([^\)]+\))/g, "$1$2");
+  text = text.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))/g, "$1");
+  text = text.replace(/(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
+
+  // Fix stray unclosed ** on bullet list items: e.g. "• ** AI Agents" -> "• **AI Agents**"
+  text = text.replace(/^([\*\-\+\u2022]\s+)\*\*\s+([^:\n\*]+)(:|\s|$)/gm, (match, bullet, term, rest) => {
+    return `${bullet}**${term.trim()}**${rest}`;
+  });
+
+  return text;
+}
+
+/**
  * Tokenizes and parses inline markdown:
  * - Markdown links [Title](url)
  * - Raw URLs https://...
- * - **bold**
+ * - **bold** (supports nested links or styles)
  * - *italic*
  * - `code`
- * - Strips bracketed citation markers like [Source 1]
  */
 function renderInlineContent(rawText: string): React.ReactNode[] {
-  // 1. Remove bracketed citation tags like [Source 1], [Source 1, Source 2], Source 2
-  const cleanedText = rawText
+  let cleanedText = rawText
     .replace(/\[Source\s*\d+(?:,\s*(?:Source\s*)?\d+)*\]/gi, "")
     .replace(/\bSource\s*\d+\b/gi, "")
     .trimEnd();
 
-  // 2. Tokenize using a single outer capture group to prevent group leakage
+  // Strip stray bold delimiters around links
+  cleanedText = cleanedText.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
+  cleanedText = cleanedText.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))/g, "$1");
+  cleanedText = cleanedText.replace(/(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
+
+  // Tokenize using a single outer capture group to prevent group leakage
   const tokenRegex =
     /(?:(\[(?:[^\]]+)\]\s*\((?:https?:\/\/[^\s\)]+)\)|https?:\/\/[^\s\)\],]+|\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`))/g;
 
@@ -103,6 +148,11 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     if (!part) continue;
+
+    // Ignore pure stray asterisks like "**" or "*" so literal asterisks never display to user
+    if (/^\*+$/.test(part.trim())) {
+      continue;
+    }
 
     // Check markdown link: [title] (url) or [title](url)
     const mdLinkMatch = part.match(
@@ -144,11 +194,22 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
       continue;
     }
 
-    // Check bold **text**
+    // Check bold **text** (recursively process children so links inside bold render properly)
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       elements.push(
         <strong key={`b-${i}`} className="font-semibold text-white">
-          {part.slice(2, -2)}
+          {renderInlineContent(part.slice(2, -2))}
+        </strong>,
+      );
+      continue;
+    }
+
+    // Check unclosed leading **text that was never terminated
+    const unclosedBold = part.match(/^\*\*\s*([^*]+)$/);
+    if (unclosedBold) {
+      elements.push(
+        <strong key={`b-${i}`} className="font-semibold text-white">
+          {renderInlineContent(unclosedBold[1])}
         </strong>,
       );
       continue;
@@ -244,8 +305,8 @@ function isListItem(line: string): boolean {
   const trimmed = line.trim();
   if (/^[\*\-\+\u2022]\s+/.test(trimmed)) return true;
   if (/^\d+\.\s+/.test(trimmed)) return true;
-  // Feature item: [Name](url): or **Name**:
-  if (/^\[[^\]]+\]\s*\([^\)]+\)\s*:/.test(trimmed)) return true;
+  // Feature item: [Name](url): or **Name**: or **[Name](url)**:
+  if (/^(?:\*\*)?\[[^\]]+\]\s*\([^\)]+\)(?:\*\*)?\s*:/.test(trimmed)) return true;
   if (/^\*\*[^*]+\*\*\s*:/.test(trimmed)) return true;
   return false;
 }
@@ -273,7 +334,8 @@ type Block =
  * Parses raw text into semantic blocks, handling LLMs that may omit double newlines
  */
 function parseBlocks(rawContent: string): Block[] {
-  const lines = rawContent.replace(/\r\n/g, "\n").split("\n");
+  const normalized = normalizeMessageMarkdown(rawContent);
+  const lines = normalized.split("\n");
   const blocks: Block[] = [];
   let currentParagraph: string[] = [];
 
@@ -421,13 +483,14 @@ function renderStructuredListItem(item: string, index: number) {
     cleanItem = cleanItem.replace(/^\d+\.\s+/, "");
   }
 
-  // Feature item matching: [Title](url): Description or **Title**: Description
+  // Feature item matching: [Title](url): Description or **[Title](url)**: Description
   const linkFeatureMatch = cleanItem.match(
-    /^(\[[^\]]+\]\s*\([^\)]+\))\s*:\s*(.+)$/,
+    /^(?:\*\*)?\[([^\]]+)\]\s*\((https?:\/\/[^\s\)]+)\)(?:\*\*)?\s*:\s*(.+)$/,
   );
   if (linkFeatureMatch) {
-    const linkToken = linkFeatureMatch[1];
-    const description = linkFeatureMatch[2];
+    const linkTitle = linkFeatureMatch[1].trim();
+    const linkUrl = linkFeatureMatch[2].trim();
+    const description = linkFeatureMatch[3].trim();
 
     return (
       <li
@@ -439,7 +502,7 @@ function renderStructuredListItem(item: string, index: number) {
             {index + 1}
           </span>
           <div className="font-semibold text-white text-[13px] tracking-wide">
-            {renderInlineContent(linkToken)}
+            {renderLink(`feature-link-${index}`, linkTitle, linkUrl)}
           </div>
         </div>
         <div className="pl-8 leading-relaxed text-zinc-300 text-sm">
@@ -474,11 +537,13 @@ function renderStructuredListItem(item: string, index: number) {
     );
   }
 
-  // Standard bullet item
+  // Standard bullet item (normalize any leading bold markers)
+  const normalizedItem = cleanItem.replace(/^\*\*\s*(.+?)\s*\*\*$/, "$1").replace(/^\*\*\s*/, "");
+
   return (
     <li key={index} className="flex items-start gap-2.5 leading-relaxed text-zinc-200 pl-1">
       <span className="h-1.5 w-1.5 rounded-full bg-violet-400 mt-2 shrink-0 opacity-80" />
-      <span className="flex-1">{renderInlineContent(cleanItem)}</span>
+      <span className="flex-1">{renderInlineContent(normalizedItem)}</span>
     </li>
   );
 }

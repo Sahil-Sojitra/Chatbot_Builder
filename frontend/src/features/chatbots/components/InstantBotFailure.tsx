@@ -5,6 +5,7 @@ import { Button, buttonVariants } from "@/components/ui";
 
 interface InstantBotFailureProps {
   websiteUrl: string;
+  chatbotId?: string;
   errorMessage?: string;
   isRetrying?: boolean;
   onRetry: () => void;
@@ -13,6 +14,7 @@ interface InstantBotFailureProps {
 
 export function InstantBotFailure({
   websiteUrl,
+  chatbotId,
   errorMessage,
   isRetrying = false,
   onRetry,
@@ -105,12 +107,22 @@ export function InstantBotFailure({
 
       {/* Action Buttons */}
       <div className="pt-4 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <Link
-          href="/dashboard/chatbots"
-          className={buttonVariants({ variant: "outline", size: "default" })}
-        >
-          ← Return to Dashboard
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard/chatbots"
+            className={buttonVariants({ variant: "outline", size: "default" })}
+          >
+            ← Return to Dashboard
+          </Link>
+          {chatbotId && (
+            <Link
+              href={`/dashboard/chatbots/${chatbotId}`}
+              className={buttonVariants({ variant: "ghost", size: "default" }) + " text-violet-400 hover:text-white"}
+            >
+              View Bot Overview &rarr;
+            </Link>
+          )}
+        </div>
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <Button
             type="button"

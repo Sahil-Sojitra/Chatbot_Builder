@@ -132,7 +132,7 @@ def build_grounding_prompt(
         "8. ADAPTIVE, DOMAIN-AGNOSTIC PRESENTATION & BEAUTIFICATION:\n"
         "   - Present answers cleanly using structured Markdown with generous spacing:\n"
         "     * Paragraphs: ALWAYS separate distinct paragraphs, lead-in statements, and conclusion/CTA sections with double newlines (\\n\\n). Never clump distinct ideas into single-spaced run-on text.\n"
-        "     * Lists & Agents: When presenting agents, features, services, benefits, or workflows, ALWAYS format each one as a distinct bullet point starting with a hyphen: '- **[Item Name](URL)**: Description...' or '- **Item Name**: Description...'.\n"
+        "     * Lists & Features: When presenting features, services, products, or workflows, ALWAYS format each one as a distinct bullet point starting with a hyphen: '- [Item Name](URL): Description...' or '- **Item Name**: Description...' (never break links across newlines or wrap links in extra asterisks).\n"
         "     * Technical / Docs: Use code blocks (```) with language identifiers for commands, API endpoints, code snippets, or configuration.\n"
         "     * Comparisons & Data: Use Markdown tables for structured comparisons, pricing tiers, and specifications.\n"
         "     * How-To / Procedures: Use numbered sequential steps (1., 2., 3.) for workflows and instructions.\n"

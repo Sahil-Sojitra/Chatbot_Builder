@@ -48,7 +48,15 @@ export default function ChatbotsPage() {
             Build, calibrate, and embed production-ready conversational agents.
           </p>
         </div>
-        <Link href="/dashboard/chatbots/new" className={buttonVariants({ variant: "default", size: "default" })}>
+        <Link
+          href="/dashboard/chatbots/new"
+          onClick={() => {
+            try {
+              localStorage.removeItem("pending_instant_bot");
+            } catch {}
+          }}
+          className={buttonVariants({ variant: "default", size: "default" })}
+        >
           Deploy New Chatbot
         </Link>
       </div>
