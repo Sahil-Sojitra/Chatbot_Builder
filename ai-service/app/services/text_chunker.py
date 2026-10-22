@@ -187,6 +187,7 @@ class ContentChunker:
 
         all_chunks: List[ContentChunk] = []
         empty_pages = 0
+        seen_body_hashes: set = set()
 
         for page in page_list:
             page_chunks = self.chunk_page(
@@ -197,7 +198,20 @@ class ContentChunker:
             if not page_chunks:
                 empty_pages += 1
             else:
-                all_chunks.extend(page_chunks)
+                for chunk in page_chunks:
+                    # Strip the "Page: Title (URL)\n\n" context header to hash actual body text
+                    raw_content = chunk.content or ""
+                    if "\n\n" in raw_content and raw_content.startswith("Page:"):
+                        body_text = raw_content.split("\n\n", 1)[1].strip()
+                    else:
+                        body_text = raw_content.strip()
+
+                    # Deduplicate chunks that have identical body text across different pages
+                    body_hash = hashlib.md5(body_text.encode("utf-8")).hexdigest()
+                    if body_hash in seen_body_hashes:
+                        continue
+                    seen_body_hashes.add(body_hash)
+                    all_chunks.append(chunk)
 
         total_chunks = len(all_chunks)
         if total_chunks > 0:

@@ -14,7 +14,7 @@ from app.core.brand import extract_brand_name
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_GEMINI_MODEL: str = "gemini-3-flash-preview"
+DEFAULT_GEMINI_MODEL: str = "gemini-3.5-flash"
 DEFAULT_TIMEOUT_SECONDS: float = 30.0
 
 

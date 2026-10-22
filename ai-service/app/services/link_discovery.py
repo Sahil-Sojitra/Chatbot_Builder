@@ -19,11 +19,13 @@ EXCLUDED_EXTENSIONS = {
     ".json", ".xml", ".csv", ".tsv", ".yaml", ".yml", ".rss", ".atom",
 }
 
-# Substrings identifying authentication endpoints or destructive actions
+# Substrings identifying authentication endpoints, destructive actions, or low-value boilerplate (legal, sitemaps, admin)
 DISALLOWED_PATH_PATTERNS = [
     re.compile(r"/(log[ -_]?out|sign[ -_]?out)", re.IGNORECASE),
     re.compile(r"/(delete|destroy|remove|cancel|terminate)", re.IGNORECASE),
     re.compile(r"/(reset[ -_]?password|forgot[ -_]?password)", re.IGNORECASE),
+    re.compile(r"/(privacy(-|_)?policy|terms(-|_)?(of(-|_)?service|and(-|_)?conditions|of(-|_)?use)|cookie(-|_)?policy|disclaimer|impressum|legal)", re.IGNORECASE),
+    re.compile(r"/(sitemap(\.xml)?|feed|rss|search|cart|checkout|wp-admin|wp-login)", re.IGNORECASE),
 ]
 
 # Query parameters commonly used for tracking, sessions, or infinite pagination loops

@@ -1,4 +1,5 @@
 import { clearAuth, setAccessToken } from "@/features/auth/authSlice";
+import { logger } from "@/lib/logger";
 import { getStore } from "@/lib/store";
 import type { ApiErrorBody, ApiResult } from "@/types/api";
 
@@ -36,8 +37,11 @@ export async function rawRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
+  const method = options.method ?? "GET";
+  const start = typeof performance !== "undefined" ? performance.now() : Date.now();
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: options.method ?? "GET",
+    method,
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -45,6 +49,9 @@ export async function rawRequest<T>(
     },
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
+
+  const duration = (typeof performance !== "undefined" ? performance.now() : Date.now()) - start;
+  logger.api(method, path, response.status, duration);
 
   let json: ApiResult<T> | undefined;
   try {
@@ -57,6 +64,7 @@ export async function rawRequest<T>(
     const body: ApiErrorBody = json?.success === false
       ? json.error
       : { code: "UNKNOWN_ERROR", message: `Request failed with status ${response.status}` };
+    logger.error("API", `${method} ${path} failed with [${response.status}] ${body.code}: ${body.message}`);
     throw new ApiRequestError(response.status, body);
   }
 

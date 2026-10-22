@@ -1,5 +1,6 @@
 import { Agent, setGlobalDispatcher } from "undici";
 import { env } from "../config/env.js";
+import { logger } from "./logger.js";
 
 const DEFAULT_INGEST_TIMEOUT_MS = 900_000; // 15 minutes for thorough crawling and embedding without premature timeout
 const DEFAULT_QA_TIMEOUT_MS = 45_000;     // 45 seconds for retrieval + Gemini answer
@@ -115,6 +116,9 @@ export class AIServiceClient {
     const url = `${this.baseUrl}/api/v1/ingest/website`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const start = performance.now();
+
+    logger.info("AI-CLIENT", `-> POST /api/v1/ingest/website [bot=${payload.chatbotId}, url=${payload.websiteUrl}]`);
 
     try {
       const response = await fetch(url, {
@@ -127,6 +131,8 @@ export class AIServiceClient {
         }),
         signal: controller.signal,
       });
+
+      const elapsed = ((performance.now() - start) / 1000).toFixed(2);
 
       if (!response.ok) {
         let safeErrorMessage = `AI service returned HTTP ${response.status}`;
@@ -142,18 +148,26 @@ export class AIServiceClient {
         if (response.status === 422 || safeErrorMessage.toLowerCase().includes("bot security verification")) {
           errorCode = "BOT_PROTECTION_BLOCKED";
         }
+        logger.error("AI-CLIENT", `<- ${response.status} Error on /ingest/website (${elapsed}s): ${safeErrorMessage}`);
         throw new AIServiceError(response.status, errorCode, safeErrorMessage);
       }
 
-      return (await response.json()) as IngestWebsiteResponse;
+      const result = (await response.json()) as IngestWebsiteResponse;
+      logger.info(
+        "AI-CLIENT",
+        `<- 200 OK /ingest/website (${elapsed}s): crawled=${result.pages_crawled}, indexed=${result.chunks_indexed} chunks`,
+      );
+      return result;
     } catch (err: unknown) {
       if (err instanceof AIServiceError) {
         throw err;
       }
+      const elapsed = ((performance.now() - start) / 1000).toFixed(2);
       if (err instanceof Error && err.name === "AbortError") {
+        logger.error("AI-CLIENT", `<- Ingestion timed out after ${timeoutMs}ms (${elapsed}s)`);
         throw new AIServiceError(504, "AI_SERVICE_TIMEOUT", `AI service ingestion timed out after ${timeoutMs}ms`);
       }
-      console.error("[AIServiceClient] Ingest failed:", err, "cause:", (err as any)?.cause);
+      logger.error("AI-CLIENT", `<- Ingestion failed (${elapsed}s):`, err);
       const causeMsg = (err as any)?.cause?.message ? ` (${(err as any).cause.message})` : "";
       const message = err instanceof Error ? `${err.message}${causeMsg}` : "Unknown network error communicating with AI service";
       throw new AIServiceError(502, "AI_SERVICE_UNAVAILABLE", `Failed to connect to AI service: ${message}`);
@@ -172,6 +186,10 @@ export class AIServiceClient {
     const url = `${this.baseUrl}/api/v1/chat/ask`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const start = performance.now();
+
+    const shortQ = payload.question.length > 50 ? `${payload.question.substring(0, 50)}...` : payload.question;
+    logger.info("AI-CLIENT", `-> POST /api/v1/chat/ask [bot=${payload.chatbotId}] "${shortQ}"`);
 
     try {
       const response = await fetch(url, {
@@ -188,6 +206,8 @@ export class AIServiceClient {
         signal: controller.signal,
       });
 
+      const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+
       if (!response.ok) {
         let safeErrorMessage = `AI service returned HTTP ${response.status}`;
         try {
@@ -198,17 +218,26 @@ export class AIServiceClient {
         } catch {
           // Response body was not JSON
         }
+        logger.error("AI-CLIENT", `<- ${response.status} Error on /chat/ask (${elapsed}s): ${safeErrorMessage}`);
         throw new AIServiceError(response.status, "AI_SERVICE_ERROR", safeErrorMessage);
       }
 
-      return (await response.json()) as AskQuestionResponse;
+      const result = (await response.json()) as AskQuestionResponse;
+      logger.info(
+        "AI-CLIENT",
+        `<- 200 OK /chat/ask (${elapsed}s): answerLen=${result.answer?.length || 0}, sources=${result.sources?.length || 0}`,
+      );
+      return result;
     } catch (err: unknown) {
       if (err instanceof AIServiceError) {
         throw err;
       }
+      const elapsed = ((performance.now() - start) / 1000).toFixed(2);
       if (err instanceof Error && err.name === "AbortError") {
+        logger.error("AI-CLIENT", `<- /chat/ask timed out after ${timeoutMs}ms (${elapsed}s)`);
         throw new AIServiceError(504, "AI_SERVICE_TIMEOUT", `AI service question answering timed out after ${timeoutMs}ms`);
       }
+      logger.error("AI-CLIENT", `<- /chat/ask failed (${elapsed}s):`, err);
       const message = err instanceof Error ? err.message : "Unknown network error communicating with AI service";
       throw new AIServiceError(502, "AI_SERVICE_UNAVAILABLE", `Failed to connect to AI service: ${message}`);
     } finally {

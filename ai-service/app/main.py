@@ -4,12 +4,19 @@ from app.api.routes.demo import router as demo_router
 from app.api.routes.health import router as health_router
 from app.api.v1.chat import router as v1_chat_router
 from app.api.v1.ingest import router as v1_ingest_router
+from app.core.logging_config import RequestLoggingMiddleware, setup_logging
+
+# Initialize high-visibility ANSI colored logging
+setup_logging()
 
 app = FastAPI(
     title="Chatbot Builder AI Service",
     description="FastAPI service for AI processing, website crawling, semantic retrieval, and RAG answer generation.",
     version="0.1.0",
 )
+
+# Intercept and log all inbound HTTP requests and latencies
+app.add_middleware(RequestLoggingMiddleware)
 
 # Register route modules
 app.include_router(health_router)

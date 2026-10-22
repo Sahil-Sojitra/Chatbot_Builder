@@ -19,6 +19,7 @@ import { useKnowledgeSources } from "@/features/knowledge-sources/useKnowledgeSo
 import { chatbotsApi } from "@/lib/api/chatbots";
 import { knowledgeSourcesApi } from "@/lib/api/knowledgeSources";
 import { ApiRequestError } from "@/lib/api/client";
+import { logger } from "@/lib/logger";
 import { ChatMessageContent } from "@/features/chatbots/components/ChatMessageContent";
 import { ChatSourcesPills } from "@/features/chatbots/components/ChatSourcesPills";
 import type { Chatbot } from "@/types/chatbot";
@@ -323,9 +324,15 @@ export default function ChatbotOverviewPage() {
     setInputValue("");
     setIsLoadingResponse(true);
 
+    logger.info("PLAYGROUND", `User asked: "${trimmed}"`);
+
     try {
       const response = await chatbotsApi.chat(chatbot.id, trimmed);
       setIsLoadingResponse(false);
+      logger.info(
+        "PLAYGROUND",
+        `Received answer (${response.answer.length} chars, ${response.sources?.length || 0} sources, grounded=${response.hasGroundedEvidence})`,
+      );
 
       const botMsgId = `b-${Date.now()}`;
       const fullAnswer = response.answer;

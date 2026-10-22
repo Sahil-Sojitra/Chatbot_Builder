@@ -245,7 +245,10 @@ class VoyageEmbeddingService:
         all_vectors: List[List[float]] = []
         total_tokens = 0
 
-        for i in range(0, len(texts), self.batch_size):
+        total_batches = (len(texts) + self.batch_size - 1) // self.batch_size
+        pacing_seconds = float(os.getenv("VOYAGE_PACING_SECONDS", "20.5"))
+
+        for idx, i in enumerate(range(0, len(texts), self.batch_size), start=1):
             batch_texts = texts[i : i + self.batch_size]
             max_retries = 3
 
@@ -259,7 +262,7 @@ class VoyageEmbeddingService:
                     err_str = str(exc).lower()
                     if ("rate limit" in err_str or "rpm" in err_str or "tpm" in err_str or "billing" in err_str) and attempt < max_retries - 1:
                         logger.warning(
-                            f"Voyage AI rate limit hit on slice {i} (attempt {attempt + 1}/{max_retries}). "
+                            f"Voyage AI rate limit hit on batch {idx}/{total_batches} (slice {i}, attempt {attempt + 1}/{max_retries}). "
                             "Pausing 22s for free-tier window reset..."
                         )
                         await asyncio.sleep(22.0)
@@ -267,10 +270,14 @@ class VoyageEmbeddingService:
                         logger.error(f"Voyage AI async embedding error on batch slice {i}: {exc}")
                         raise EmbeddingGenerationError(f"Voyage AI API error: {exc}") from exc
 
-            # Enforce 3 RPM pacing when subsequent batches remain
-            if i + self.batch_size < len(texts):
-                logger.info(f"Pacing Voyage AI embeddings: pausing 20.5s before batch slice {i + self.batch_size}.")
-                await asyncio.sleep(20.5)
+            processed_chunks = min(i + self.batch_size, len(texts))
+            pct = int((processed_chunks / len(texts)) * 100)
+            logger.info(f"Voyage AI progress: batch {idx}/{total_batches} complete ({processed_chunks}/{len(texts)} chunks, {pct}%)...")
+
+            # Enforce pacing when subsequent batches remain and pacing is configured
+            if i + self.batch_size < len(texts) and pacing_seconds > 0:
+                await asyncio.sleep(pacing_seconds)
+                
 
         return self._build_batch_result(normalized_chunks, all_vectors, total_tokens, start_time)
 

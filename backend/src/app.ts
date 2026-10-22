@@ -5,6 +5,7 @@ import express from "express";
 import { env } from "./config/env.js";
 import { requireAuth } from "./middleware/auth.middleware.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware.js";
+import { requestLogger } from "./middleware/logger.middleware.js";
 import { validateBody } from "./middleware/validate.js";
 import { authController } from "./modules/auth/auth.controller.js";
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -28,6 +29,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(requestLogger);
 app.use(express.json());
 app.use(cookieParser());
 

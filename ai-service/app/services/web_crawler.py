@@ -72,7 +72,7 @@ class Crawl4AICrawler:
         run_config = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             page_timeout=self.DEFAULT_TIMEOUT_MS,
-            delay_before_return_html=1.0,
+            delay_before_return_html=0.25,
             remove_overlay_elements=True,
             word_count_threshold=5,
         )
@@ -214,7 +214,7 @@ class Crawl4AICrawler:
         run_config = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             page_timeout=self.DEFAULT_TIMEOUT_MS,
-            delay_before_return_html=1.0,
+            delay_before_return_html=0.25,
             remove_overlay_elements=True,
         )
 
