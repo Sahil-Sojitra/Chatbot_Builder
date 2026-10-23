@@ -19,11 +19,12 @@ import {
   Textarea,
 } from "@/components/ui";
 import { useChatbotDetail } from "@/features/chatbots/ChatbotDetailProvider";
-import { useRequireCustomBot } from "@/features/chatbots/useRequireCustomBot";
 import { LLM_PROVIDERS, LLM_MODELS_BY_PROVIDER } from "@/features/chatbots/llmCatalog";
 import { chatbotsApi } from "@/lib/api/chatbots";
 import { ApiRequestError } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 import type { UpdateChatbotInput } from "@/lib/api/chatbots";
+import Link from "next/link";
 
 const NAME_MAX_LENGTH = 120;
 const DESCRIPTION_MAX_LENGTH = 500;
@@ -34,8 +35,7 @@ const MAX_TOKENS_MAX = 32000;
 
 export default function ChatbotSettingsPage() {
   const router = useRouter();
-  const { isAllowed, isLoading } = useRequireCustomBot();
-  const { chatbot, setChatbot } = useChatbotDetail();
+  const { chatbot, setChatbot, status } = useChatbotDetail();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -49,6 +49,10 @@ export default function ChatbotSettingsPage() {
   const [ragEnabled, setRagEnabled] = useState(false);
   const [ragTopK, setRagTopK] = useState("");
   const [ragSimilarityThreshold, setRagSimilarityThreshold] = useState("");
+
+  // Session message rate limit: "unlimited" vs "custom"
+  const [sessionLimitType, setSessionLimitType] = useState<"unlimited" | "custom">("unlimited");
+  const [sessionCustomLimit, setSessionCustomLimit] = useState<string>("10");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -70,6 +74,13 @@ export default function ChatbotSettingsPage() {
       setModel(chatbot.model ?? "");
       setTemperature(chatbot.temperature !== null ? String(chatbot.temperature) : "");
       setMaxTokens(chatbot.maxTokens !== null ? String(chatbot.maxTokens) : "");
+      if (chatbot.sessionMessageLimit && chatbot.sessionMessageLimit > 0) {
+        setSessionLimitType("custom");
+        setSessionCustomLimit(String(chatbot.sessionMessageLimit));
+      } else {
+        setSessionLimitType("unlimited");
+        setSessionCustomLimit("10");
+      }
       setRagEnabled(chatbot.ragEnabled ?? false);
       setRagTopK(chatbot.ragTopK !== null ? String(chatbot.ragTopK) : "");
       setRagSimilarityThreshold(
@@ -78,7 +89,7 @@ export default function ChatbotSettingsPage() {
     }
   }, [chatbot]);
 
-  if (isLoading || !isAllowed || !chatbot) {
+  if (status === "loading" || !chatbot) {
     return null;
   }
 
@@ -139,6 +150,16 @@ export default function ChatbotSettingsPage() {
       }
     }
 
+    let resolvedSessionLimit: number | null = null;
+    if (sessionLimitType === "custom") {
+      const parsed = Number(sessionCustomLimit);
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 1000) {
+        setFormError("Custom session message limit must be an integer between 1 and 1000.");
+        return;
+      }
+      resolvedSessionLimit = parsed;
+    }
+
     setIsSubmitting(true);
 
     const payload: UpdateChatbotInput = {
@@ -150,6 +171,7 @@ export default function ChatbotSettingsPage() {
       apiKey: apiKey.trim() || undefined,
       temperature: temperature.trim() !== "" ? Number(temperature) : undefined,
       maxTokens: maxTokens.trim() !== "" ? Number(maxTokens) : undefined,
+      sessionMessageLimit: resolvedSessionLimit,
       ragEnabled,
       ragTopK: ragTopK.trim() !== "" ? Number(ragTopK) : undefined,
       ragSimilarityThreshold:
@@ -211,6 +233,21 @@ export default function ChatbotSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Top Breadcrumb & Return Link */}
+      <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+          <Link
+            href={`/dashboard/chatbots/${chatbot.id}`}
+            className="text-violet-400 hover:text-violet-300 hover:underline flex items-center gap-1 font-sans text-xs"
+          >
+            ← Back to Chatbot Overview
+          </Link>
+          <span className="text-zinc-600">/</span>
+          <span className="text-zinc-200 font-medium font-sans">Settings</span>
+        </div>
+        <span className="text-xs text-zinc-500 font-mono">ID: {chatbot.publicId}</span>
+      </div>
+
       {/* Lifecycle Banner & Actions */}
       <Card>
         <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -435,6 +472,121 @@ export default function ChatbotSettingsPage() {
                 />
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Chat Usage & Session Rate Limits */}
+        <Card className="border-zinc-800 bg-zinc-950/60 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base sm:text-lg">Chat Usage & Session Rate Limits</CardTitle>
+              <Badge variant="outline" className="border-violet-500/30 text-violet-300 bg-violet-500/10 text-xs">
+                Cost Control
+              </Badge>
+            </div>
+            <CardDescription>
+              Control your LLM API spending by setting how many questions a public visitor can ask in a single chat session.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Option 1: Unlimited */}
+              <button
+                type="button"
+                onClick={() => setSessionLimitType("unlimited")}
+                className={cn(
+                  "flex flex-col items-start p-3.5 rounded-xl border text-left transition-all cursor-pointer",
+                  sessionLimitType === "unlimited"
+                    ? "border-violet-500 bg-violet-950/20 shadow-sm shadow-violet-500/10 ring-1 ring-violet-500/40"
+                    : "border-zinc-800 bg-[#0c0c10] hover:border-zinc-700 hover:bg-[#111116]",
+                )}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-medium text-sm text-zinc-100">Unlimited Messages</span>
+                  <span
+                    className={cn(
+                      "w-4 h-4 rounded-full border flex items-center justify-center",
+                      sessionLimitType === "unlimited" ? "border-violet-500 bg-violet-500" : "border-zinc-600",
+                    )}
+                  >
+                    {sessionLimitType === "unlimited" && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  No restrictions. Public visitors can ask unlimited questions per conversation.
+                </p>
+              </button>
+
+              {/* Option 2: Custom Limit */}
+              <button
+                type="button"
+                onClick={() => setSessionLimitType("custom")}
+                className={cn(
+                  "flex flex-col items-start p-3.5 rounded-xl border text-left transition-all cursor-pointer",
+                  sessionLimitType === "custom"
+                    ? "border-violet-500 bg-violet-950/20 shadow-sm shadow-violet-500/10 ring-1 ring-violet-500/40"
+                    : "border-zinc-800 bg-[#0c0c10] hover:border-zinc-700 hover:bg-[#111116]",
+                )}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-medium text-sm text-zinc-100">Custom Limit</span>
+                  <span
+                    className={cn(
+                      "w-4 h-4 rounded-full border flex items-center justify-center",
+                      sessionLimitType === "custom" ? "border-violet-500 bg-violet-500" : "border-zinc-600",
+                    )}
+                  >
+                    {sessionLimitType === "custom" && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Caps questions per session to protect your API usage and quota.
+                </p>
+              </button>
+            </div>
+
+            {/* If Custom Limit selected, show number input & quick presets */}
+            {sessionLimitType === "custom" && (
+              <div className="flex flex-col gap-2 pt-2 p-3.5 rounded-xl border border-zinc-800/80 bg-[#09090d]">
+                <Label htmlFor="setting-session-limit" className="text-xs text-zinc-300">
+                  Maximum Messages Per Session
+                </Label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Input
+                    id="setting-session-limit"
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={sessionCustomLimit}
+                    onChange={(e) => setSessionCustomLimit(e.target.value)}
+                    disabled={isSubmitting}
+                    placeholder="e.g. 10"
+                    className="w-28 font-mono text-sm"
+                  />
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                    <span>Quick presets:</span>
+                    {[5, 10, 20, 50].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setSessionCustomLimit(String(preset))}
+                        className={cn(
+                          "px-2.5 py-1 rounded text-xs border font-mono transition-colors cursor-pointer",
+                          sessionCustomLimit === String(preset)
+                            ? "bg-violet-600 text-white border-violet-500"
+                            : "bg-zinc-800/60 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-white",
+                        )}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Once a visitor reaches this limit, chat input will pause with a notice prompting them to refresh or start a new chat.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -125,6 +125,7 @@ export function ChatbotCreationFlow() {
         provider: formData.provider,
         model: formData.model,
         apiKey: formData.apiKey,
+        sessionMessageLimit: formData.sessionMessageLimit,
         existingChatbot: botToReuse ?? undefined,
         onChatbotCreated: (bot) => {
           setCreatedChatbot(bot);

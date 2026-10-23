@@ -79,9 +79,11 @@
     starterQuestions: [],
     isPublished: true,
     status: "ACTIVE",
+    sessionMessageLimit: null,
   };
   let messages = [];
   let isSending = false;
+  let sessionMessageCount = 0;
 
   // Insert Styles
   const styleEl = document.createElement("style");
@@ -530,6 +532,42 @@
       font-weight: 500;
     }
 
+    /* Session Message Rate Limit Card */
+    .session-limit-card {
+      margin: 12px 16px;
+      padding: 12px 14px;
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      text-align: center;
+    }
+    .session-limit-text {
+      font-size: 12px;
+      color: #fde68a;
+      line-height: 1.4;
+    }
+    .session-limit-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #7c3aed;
+      color: #ffffff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .session-limit-btn:hover {
+      background: #6d28d9;
+    }
+
     /* Mobile Responsive */
     @media (max-width: 480px) {
       .widget-root {
@@ -764,9 +802,62 @@
     if (el) el.remove();
   }
 
+  function renderSessionLimitBanner(limit) {
+    if (shadow.getElementById("cb-session-limit-card")) return;
+
+    const card = document.createElement("div");
+    card.id = "cb-session-limit-card";
+    card.className = "session-limit-card";
+    card.innerHTML = `
+      <div class="session-limit-text">
+        <strong>Session Message Limit Reached</strong><br />
+        You've reached the maximum limit of ${limit} questions for this session. Please refresh or click below to start a new chat.
+      </div>
+      <button type="button" class="session-limit-btn" id="cb-reset-session-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M23 4v6h-6"></path>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        <span>Start New Session</span>
+      </button>
+    `;
+
+    chatBody.appendChild(card);
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    const resetBtn = card.querySelector("#cb-reset-session-btn");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        resetSession();
+      });
+    }
+
+    chatInput.disabled = true;
+    chatInput.placeholder = "Session message limit reached.";
+    sendBtn.disabled = true;
+  }
+
+  function resetSession() {
+    sessionMessageCount = 0;
+    const banner = shadow.getElementById("cb-session-limit-card");
+    if (banner) banner.remove();
+    chatInput.disabled = false;
+    chatInput.placeholder = "Type your question…";
+    sendBtn.disabled = false;
+    chatInput.focus();
+  }
+
   async function handleSendQuestion(question) {
     const trimmed = question.trim();
     if (!trimmed || isSending) return;
+
+    const limit = botConfig.sessionMessageLimit;
+    if (typeof limit === "number" && limit > 0 && sessionMessageCount >= limit) {
+      renderSessionLimitBanner(limit);
+      return;
+    }
+
+    sessionMessageCount++;
 
     // Hide welcome card once a conversation begins
     const welcomeCard = shadow.getElementById("cb-welcome-card");
@@ -812,8 +903,13 @@
       );
     } finally {
       isSending = false;
-      sendBtn.disabled = false;
-      chatInput.focus();
+      const currentLimit = botConfig.sessionMessageLimit;
+      if (typeof currentLimit === "number" && currentLimit > 0 && sessionMessageCount >= currentLimit) {
+        renderSessionLimitBanner(currentLimit);
+      } else {
+        sendBtn.disabled = false;
+        chatInput.focus();
+      }
     }
   }
 

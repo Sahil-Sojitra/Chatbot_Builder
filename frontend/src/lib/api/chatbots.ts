@@ -17,6 +17,7 @@ export interface CreateChatbotInput {
   apiKey?: string;
   temperature?: number;
   maxTokens?: number;
+  sessionMessageLimit?: number | null;
   ragEnabled?: boolean;
   ragTopK?: number;
   ragSimilarityThreshold?: number;

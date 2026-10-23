@@ -24,6 +24,7 @@ export interface InstantBotFormData {
   provider: string;
   model: string;
   apiKey: string;
+  sessionMessageLimit?: number | null;
 }
 
 interface InstantBotUrlFormProps {
@@ -73,6 +74,8 @@ export function InstantBotUrlForm({
   const [model, setModel] = useState(initialModel);
   const [apiKey, setApiKey] = useState(initialApiKey);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [sessionLimitType, setSessionLimitType] = useState<"unlimited" | "custom">("unlimited");
+  const [sessionCustomLimit, setSessionCustomLimit] = useState("10");
 
   const [touchedUrl, setTouchedUrl] = useState(false);
   const [touchedKey, setTouchedKey] = useState(false);
@@ -144,6 +147,7 @@ export function InstantBotUrlForm({
       provider,
       model,
       apiKey: apiKey.trim(),
+      sessionMessageLimit: sessionLimitType === "custom" ? (Number(sessionCustomLimit) || 10) : null,
     });
   };
 
@@ -302,7 +306,86 @@ export function InstantBotUrlForm({
             )}
           </div>
 
-          {/* 4. Action Buttons */}
+          {/* 4. Session Rate Limit (Cost Control) */}
+          <div className="flex flex-col gap-2.5 pt-1 border-t border-zinc-800/60">
+            <div className="flex items-center justify-between">
+              <Label className="text-zinc-200 font-medium">Session Rate Limiting</Label>
+              <span className="text-[11px] text-zinc-500">API Cost Protection</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSessionLimitType("unlimited")}
+                className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs text-left transition-all cursor-pointer ${
+                  sessionLimitType === "unlimited"
+                    ? "border-violet-500/80 bg-violet-950/25 text-violet-200 font-medium"
+                    : "border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                }`}
+              >
+                <span>Unlimited</span>
+                <span
+                  className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                    sessionLimitType === "unlimited" ? "border-violet-500 bg-violet-500" : "border-zinc-600"
+                  }`}
+                >
+                  {sessionLimitType === "unlimited" && <span className="w-1 h-1 rounded-full bg-white" />}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSessionLimitType("custom")}
+                className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs text-left transition-all cursor-pointer ${
+                  sessionLimitType === "custom"
+                    ? "border-violet-500/80 bg-violet-950/25 text-violet-200 font-medium"
+                    : "border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                }`}
+              >
+                <span>Custom Limit</span>
+                <span
+                  className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                    sessionLimitType === "custom" ? "border-violet-500 bg-violet-500" : "border-zinc-600"
+                  }`}
+                >
+                  {sessionLimitType === "custom" && <span className="w-1 h-1 rounded-full bg-white" />}
+                </span>
+              </button>
+            </div>
+
+            {sessionLimitType === "custom" && (
+              <div className="flex items-center gap-2 p-2.5 rounded-lg border border-zinc-800 bg-zinc-950/70">
+                <span className="text-xs text-zinc-400 shrink-0">Max messages:</span>
+                <Input
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={sessionCustomLimit}
+                  onChange={(e) => setSessionCustomLimit(e.target.value)}
+                  disabled={isSubmitting}
+                  className="h-8 w-20 text-xs font-mono bg-zinc-900 border-zinc-700"
+                />
+                <div className="flex items-center gap-1 text-[11px] text-zinc-500 ml-auto">
+                  {[5, 10, 20].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setSessionCustomLimit(String(preset))}
+                      className={`px-1.5 py-0.5 rounded border text-[10px] font-mono ${
+                        sessionCustomLimit === String(preset)
+                          ? "bg-violet-600 text-white border-violet-500"
+                          : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 5. Action Buttons */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800/80">
             <button
               type="button"
