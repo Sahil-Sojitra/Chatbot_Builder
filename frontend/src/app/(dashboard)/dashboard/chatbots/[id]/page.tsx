@@ -597,16 +597,16 @@ export default function ChatbotOverviewPage() {
             </div>
 
             {websiteUrl ? (
-              <p className="text-xs text-zinc-400 flex items-center gap-1.5">
+              <p className="text-xs text-zinc-400 flex items-center gap-1.5 flex-wrap">
                 <span>Target:</span>
                 <a
                   href={websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-violet-400 hover:text-violet-300 hover:underline flex items-center gap-1 font-mono"
+                  className="text-violet-400 hover:text-violet-300 hover:underline inline-flex items-center gap-1 font-mono max-w-[220px] sm:max-w-md truncate"
                 >
-                  {websiteUrl}
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <span className="truncate">{websiteUrl}</span>
+                  <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </a>
@@ -647,17 +647,17 @@ export default function ChatbotOverviewPage() {
         </div>
 
         {/* 3-Tab Navigation Bar */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-950/70 border border-zinc-800/80 rounded-xl w-fit">
+        <div className="flex items-center gap-1.5 p-1 bg-zinc-950/70 border border-zinc-800/80 rounded-xl w-full sm:w-fit overflow-x-auto scrollbar-none">
           <button
             type="button"
             onClick={() => setInstantActiveTab("playground")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0 ${
               instantActiveTab === "playground"
                 ? "bg-zinc-800 text-white shadow-sm font-semibold"
                 : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
             }`}
           >
-            <svg className="w-3.5 h-3.5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 text-violet-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             <span>Playground</span>
@@ -666,31 +666,31 @@ export default function ChatbotOverviewPage() {
           <button
             type="button"
             onClick={() => setInstantActiveTab("integration")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0 ${
               instantActiveTab === "integration"
                 ? "bg-zinc-800 text-white shadow-sm font-semibold"
                 : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
             }`}
           >
-            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
             </svg>
             <span>Embed &amp; Integration</span>
             {chatbot.status === "ACTIVE" ? (
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
             ) : null}
           </button>
 
           <button
             type="button"
             onClick={() => setInstantActiveTab("settings")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0 ${
               instantActiveTab === "settings"
                 ? "bg-zinc-800 text-white shadow-sm font-semibold"
                 : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
             }`}
           >
-            <svg className="w-3.5 h-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -805,31 +805,35 @@ export default function ChatbotOverviewPage() {
           )}
 
         {/* Focused Full-Width Playground Card */}
-        <Card className="flex flex-col h-[650px] overflow-hidden p-0 rounded-md border border-zinc-800 bg-[#000000] shadow-xl">
+        <Card className="flex flex-col h-[580px] sm:h-[650px] overflow-hidden p-0 rounded-md border border-zinc-800 bg-[#000000] shadow-xl">
           {/* Playground Header & Controls */}
-          <div className="flex items-center justify-between border-b border-zinc-800 bg-[#0a0a0a] px-4 py-3">
-            <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between border-b border-zinc-800 bg-[#0a0a0a] px-3 sm:px-4 py-2.5 sm:py-3 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <span
-                className={`flex h-2 w-2 rounded-full ${isReady ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"
-                  }`}
+                className={`flex h-2 w-2 rounded-full shrink-0 ${
+                  isReady ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"
+                }`}
               />
-              <span className="font-medium text-sm text-zinc-200">Interactive Runtime Preview</span>
-              <span className="text-xs text-zinc-500 bg-zinc-900 rounded px-1.5 py-0.5 border border-zinc-800 font-mono">
+              <span className="font-medium text-xs sm:text-sm text-zinc-200 truncate">Runtime Preview</span>
+              <span className="hidden sm:inline-block text-[11px] text-zinc-500 bg-zinc-900 rounded px-1.5 py-0.5 border border-zinc-800 font-mono shrink-0">
                 {isReady ? "Live Test" : "Pending Ingestion"}
               </span>
             </div>
 
             {/* Viewport switchers & Quick Action buttons */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={handleToggleFloatingWidget}
-                className="rounded px-2.5 py-1 text-xs font-medium border border-violet-500/30 text-violet-300 hover:bg-violet-950/30 transition-colors cursor-pointer flex items-center gap-1.5"
+                className="rounded px-2.5 py-1 text-xs font-medium border border-violet-500/30 text-violet-300 hover:bg-violet-950/30 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
                 title="Launch the floating bubble widget directly on this screen to preview it"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                 <span className="hidden sm:inline">
                   {isFloatingWidgetActive ? "Close Widget" : "Test Floating Widget"}
+                </span>
+                <span className="sm:hidden">
+                  {isFloatingWidgetActive ? "Close" : "Test Widget"}
                 </span>
               </button>
 
@@ -847,7 +851,7 @@ export default function ChatbotOverviewPage() {
                     setInputValue("");
                     setChatError(null);
                   }}
-                  className="rounded px-2 py-1 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer flex items-center gap-1"
+                  className="rounded px-2 py-1 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer flex items-center gap-1 shrink-0"
                   title="Reset conversation"
                 >
                   <svg className="w-3 h-3 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -856,24 +860,26 @@ export default function ChatbotOverviewPage() {
                   <span className="hidden sm:inline">Clear Chat</span>
                 </button>
               )}
-              <div className="h-3 w-px bg-zinc-800 hidden sm:block" />
+              <div className="h-3 w-px bg-zinc-800 hidden md:block" />
               <button
                 type="button"
                 onClick={() => setDeviceMode("widget")}
-                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${deviceMode === "widget"
+                className={`hidden md:inline-block rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                  deviceMode === "widget"
                     ? "bg-zinc-800 text-white font-semibold"
                     : "text-zinc-400 hover:text-zinc-200"
-                  }`}
+                }`}
               >
                 Widget View
               </button>
               <button
                 type="button"
                 onClick={() => setDeviceMode("mobile")}
-                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${deviceMode === "mobile"
+                className={`hidden md:inline-block rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                  deviceMode === "mobile"
                     ? "bg-zinc-800 text-white font-semibold"
                     : "text-zinc-400 hover:text-zinc-200"
-                  }`}
+                }`}
               >
                 Full Dock
               </button>
@@ -881,12 +887,13 @@ export default function ChatbotOverviewPage() {
           </div>
 
           {/* Chat Stage */}
-          <div className="flex-1 flex items-center justify-center p-5 bg-[#050505] architect-grid overflow-hidden">
+          <div className="flex-1 flex items-center justify-center p-2.5 sm:p-5 bg-[#050505] architect-grid overflow-hidden">
             <div
-              className={`flex flex-col rounded-md border border-zinc-800 bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${deviceMode === "widget"
-                  ? "w-full max-w-[500px] h-[530px]"
-                  : "w-full max-w-[640px] h-[550px]"
-                }`}
+              className={`flex flex-col rounded-md border border-zinc-800 bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${
+                deviceMode === "widget"
+                  ? "w-full max-w-[500px] h-full sm:h-[530px]"
+                  : "w-full max-w-[640px] h-full sm:h-[550px]"
+              }`}
             >
               {/* Chat Widget Top Header */}
               <div className="flex items-center justify-between border-b border-zinc-800 bg-[#111111] px-4 py-3">
@@ -1410,18 +1417,20 @@ export default function ChatbotOverviewPage() {
 
         {/* In-App Floating Widget Simulator Controller Banner */}
         {isFloatingWidgetActive && (
-          <div className="fixed bottom-6 left-6 z-50 flex items-center gap-3.5 rounded-xl border border-violet-500/40 bg-[#09090d]/95 px-4 py-3 shadow-2xl backdrop-blur-md text-xs animate-in slide-in-from-bottom-4">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-            </span>
-            <div className="flex flex-col">
-              <span className="font-semibold text-white">Live Floating Widget Active</span>
-              <span className="text-zinc-400">
-                Testing launcher bubble in bottom-right corner as a website visitor
+          <div className="fixed bottom-20 sm:bottom-6 left-3 right-3 sm:left-6 sm:right-auto z-50 flex items-center justify-between sm:justify-start gap-3 rounded-xl border border-violet-500/40 bg-[#09090d]/95 px-3.5 sm:px-4 py-2.5 sm:py-3 shadow-2xl backdrop-blur-md text-xs animate-in slide-in-from-bottom-4">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
+              <div className="flex flex-col min-w-0">
+                <span className="font-semibold text-white truncate">Live Widget Active</span>
+                <span className="text-[11px] text-zinc-400 hidden sm:inline">
+                  Testing launcher bubble in bottom-right corner as a website visitor
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 ml-2 pl-3 border-l border-zinc-800">
+            <div className="flex items-center gap-1.5 shrink-0 pl-2 sm:pl-3 border-l border-zinc-800">
               <Button
                 size="sm"
                 variant="outline"
@@ -1432,15 +1441,15 @@ export default function ChatbotOverviewPage() {
                   }
                 }}
               >
-                Toggle Widget Window
+                Toggle
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 text-xs text-zinc-400 hover:text-white cursor-pointer"
+                className="h-7 text-xs text-zinc-400 hover:text-white cursor-pointer px-2"
                 onClick={handleToggleFloatingWidget}
               >
-                ✕ Dismiss
+                ✕
               </Button>
             </div>
           </div>
