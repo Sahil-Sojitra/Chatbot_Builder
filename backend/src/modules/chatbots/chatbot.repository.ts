@@ -13,6 +13,7 @@ export interface CreateChatbotInput {
   systemPrompt?: string;
   provider?: string;
   model?: string;
+  apiKey?: string | null;
   temperature?: number;
   maxTokens?: number;
   ragEnabled: boolean;
@@ -30,6 +31,7 @@ export interface UpdateChatbotFields {
   systemPrompt?: string;
   provider?: string;
   model?: string;
+  apiKey?: string | null;
   temperature?: number;
   maxTokens?: number;
   ragEnabled?: boolean;

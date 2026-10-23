@@ -59,6 +59,9 @@ export interface AskQuestionPayload {
   websiteUrl?: string | undefined;
   systemPrompt?: string | undefined;
   topK?: number | undefined;
+  llmProvider?: string | undefined;
+  llmModel?: string | undefined;
+  llmApiKey?: string | undefined;
 }
 
 export interface SourceReference {
@@ -202,6 +205,9 @@ export class AIServiceClient {
           website_url: payload.websiteUrl,
           system_prompt: payload.systemPrompt,
           top_k: payload.topK ?? 8,
+          llm_provider: payload.llmProvider,
+          llm_model: payload.llmModel,
+          llm_api_key: payload.llmApiKey,
         }),
         signal: controller.signal,
       });

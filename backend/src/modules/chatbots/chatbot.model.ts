@@ -14,6 +14,7 @@ export interface IChatbot {
   systemPrompt: string | null;
   provider: string | null;
   model: string | null;
+  apiKey: string | null;
   temperature: number | null;
   maxTokens: number | null;
   ragEnabled: boolean;
@@ -87,6 +88,11 @@ const chatbotSchema = new Schema<IChatbot>(
     },
 
     model: {
+      type: String,
+      default: null,
+    },
+
+    apiKey: {
       type: String,
       default: null,
     },
