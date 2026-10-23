@@ -14,6 +14,7 @@ export interface Chatbot {
   systemPrompt: string | null;
   provider: string | null;
   model: string | null;
+  hasApiKey?: boolean;
   temperature: number | null;
   maxTokens: number | null;
   ragEnabled: boolean;

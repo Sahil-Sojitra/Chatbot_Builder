@@ -81,12 +81,18 @@ export class InstantBotService {
 
   public async runSetup({
     websiteUrl,
+    provider,
+    model,
+    apiKey,
     existingChatbot,
     onChatbotCreated,
     onStatusChange,
     onStageUpdate,
   }: {
     websiteUrl: string;
+    provider?: string;
+    model?: string;
+    apiKey?: string;
     existingChatbot?: { id: string; publicId: string; name: string };
     onChatbotCreated?: (chatbot: { id: string; publicId: string; name: string }) => void;
     onStatusChange: (status: InstantBotStatus) => void;
@@ -114,6 +120,9 @@ export class InstantBotService {
           name: botName,
           description: `Instant AI Assistant created from ${websiteUrl}`,
           creationMode: "INSTANT",
+          provider: provider || "openai",
+          model: model || "gpt-4o-mini",
+          apiKey: apiKey || undefined,
         });
         createdChatbot = response.chatbot;
         onChatbotCreated?.(createdChatbot);
