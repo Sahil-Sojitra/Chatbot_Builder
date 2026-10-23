@@ -13,7 +13,7 @@ export interface ChatSourceItem {
 
 interface ChatSourcesPillsProps {
   sources?: ChatSourceItem[];
-  theme?: "violet" | "emerald";
+  theme?: "violet" | "emerald" | "zinc";
 }
 
 function formatSourceTitle(title: string | null, url: string): string {
@@ -48,7 +48,7 @@ function formatSourceTitle(title: string | null, url: string): string {
   }
 }
 
-export function ChatSourcesPills({ sources, theme = "violet" }: ChatSourcesPillsProps) {
+export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!sources || sources.length === 0) return null;
@@ -66,6 +66,7 @@ export function ChatSourcesPills({ sources, theme = "violet" }: ChatSourcesPills
   if (uniqueSources.length === 0) return null;
 
   const isViolet = theme === "violet";
+  const isEmerald = theme === "emerald";
   const INITIAL_MAX = 3;
   const hasMore = uniqueSources.length > INITIAL_MAX;
   const visibleSources = isExpanded ? uniqueSources : uniqueSources.slice(0, INITIAL_MAX);
@@ -75,7 +76,7 @@ export function ChatSourcesPills({ sources, theme = "violet" }: ChatSourcesPills
       <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono">
         <div className="flex items-center gap-1.5">
           <svg
-            className={`h-3.5 w-3.5 ${isViolet ? "text-violet-400" : "text-emerald-400"}`}
+            className={`h-3.5 w-3.5 ${isViolet ? "text-violet-400" : isEmerald ? "text-emerald-400" : "text-zinc-400"}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -118,7 +119,9 @@ export function ChatSourcesPills({ sources, theme = "violet" }: ChatSourcesPills
               className={`group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-all duration-150 cursor-pointer shadow-xs max-w-full ${
                 isViolet
                   ? "border-violet-500/20 bg-violet-950/30 text-zinc-300 hover:border-violet-500/50 hover:bg-violet-900/40 hover:text-white"
-                  : "border-emerald-500/20 bg-emerald-950/30 text-zinc-300 hover:border-emerald-500/50 hover:bg-emerald-900/40 hover:text-white"
+                  : isEmerald
+                  ? "border-emerald-500/20 bg-emerald-950/30 text-zinc-300 hover:border-emerald-500/50 hover:bg-emerald-900/40 hover:text-white"
+                  : "border-zinc-800 bg-zinc-900/80 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800 hover:text-white"
               }`}
             >
               {/* Globe Icon */}

@@ -156,17 +156,17 @@ export function InstantBotUrlForm({
   const isFormValid = url.trim().length > 0 && !urlError && apiKey.trim().length > 0 && !apiKeyError;
 
   return (
-    <Card className="max-w-xl mx-auto border-zinc-800 bg-[#0a0a0a]">
+    <Card className="max-w-xl mx-auto border-zinc-800 bg-[#0d0d10] shadow-xl">
       <CardHeader>
         <div className="flex items-center gap-2 mb-1">
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
-            Instant Bot Flow
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+            Website Ingestion
           </span>
-          <span className="text-xs text-zinc-500">• Step 1 of 2</span>
+          <span className="text-xs text-zinc-500 font-mono">Automated Setup</span>
         </div>
-        <CardTitle className="text-xl text-white">Create your Instant Bot</CardTitle>
-        <CardDescription className="text-zinc-400">
-          Enter your website URL and select your preferred LLM provider. Our platform indexes your knowledge base, and uses your API key for client-side grounded answers.
+        <CardTitle className="text-lg font-semibold tracking-tight text-white">Create your Instant Bot</CardTitle>
+        <CardDescription className="text-zinc-400 text-xs leading-relaxed">
+          Enter your website domain and choose your LLM provider. Our crawler indexes public pages into vector embeddings, using your provider API key for client-side grounded answers.
         </CardDescription>
       </CardHeader>
 
@@ -338,17 +338,17 @@ export function InstantBotUrlForm({
                 onClick={() => setSessionLimitType("custom")}
                 className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs text-left transition-all cursor-pointer ${
                   sessionLimitType === "custom"
-                    ? "border-violet-500/80 bg-violet-950/25 text-violet-200 font-medium"
+                    ? "border-zinc-700 bg-zinc-800 text-white font-medium"
                     : "border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:border-zinc-700 hover:text-white"
                 }`}
               >
                 <span>Custom Limit</span>
                 <span
                   className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                    sessionLimitType === "custom" ? "border-violet-500 bg-violet-500" : "border-zinc-600"
+                    sessionLimitType === "custom" ? "border-zinc-400 bg-zinc-200" : "border-zinc-600"
                   }`}
                 >
-                  {sessionLimitType === "custom" && <span className="w-1 h-1 rounded-full bg-white" />}
+                  {sessionLimitType === "custom" && <span className="w-1 h-1 rounded-full bg-zinc-950" />}
                 </span>
               </button>
             </div>
@@ -371,10 +371,10 @@ export function InstantBotUrlForm({
                       key={preset}
                       type="button"
                       onClick={() => setSessionCustomLimit(String(preset))}
-                      className={`px-1.5 py-0.5 rounded border text-[10px] font-mono ${
+                      className={`px-2 py-0.5 rounded border text-[10px] font-mono transition-colors ${
                         sessionCustomLimit === String(preset)
-                          ? "bg-violet-600 text-white border-violet-500"
-                          : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white"
+                          ? "bg-zinc-200 text-zinc-950 border-zinc-300 font-semibold"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white"
                       }`}
                     >
                       {preset}
@@ -386,25 +386,25 @@ export function InstantBotUrlForm({
           </div>
 
           {/* 5. Action Buttons */}
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800/80">
+          <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800/80">
             <button
               type="button"
               onClick={onBack}
               disabled={isSubmitting}
-              className="text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer py-2 px-1"
+              className="text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer py-1.5"
             >
-              ← Back to chatbot options
+              &larr; Back to options
             </button>
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <Button
+              <button
                 type="submit"
                 disabled={!isFormValid || isSubmitting}
-                className="w-full sm:w-auto bg-[#0052CC] hover:bg-[#0747A6] text-white border-0 shadow-sm font-medium"
+                className="w-full sm:w-auto bg-white hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-950 font-medium py-2 px-5 text-xs rounded-md shadow-xs transition-colors cursor-pointer"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <svg
-                      className="animate-spin h-4 w-4 text-white"
+                      className="animate-spin h-3.5 w-3.5 text-zinc-950"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
@@ -425,9 +425,9 @@ export function InstantBotUrlForm({
                     Initializing bot...
                   </span>
                 ) : (
-                  "Create Instant Bot"
+                  "Create Instant Bot &rarr;"
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         </form>

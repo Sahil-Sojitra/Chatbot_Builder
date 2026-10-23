@@ -12,6 +12,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CustomSelect,
+  Input,
+  Label,
   buttonVariants,
 } from "@/components/ui";
 import { useChatbotDetail } from "@/features/chatbots/ChatbotDetailProvider";
@@ -22,6 +25,7 @@ import { ApiRequestError } from "@/lib/api/client";
 import { logger } from "@/lib/logger";
 import { ChatMessageContent } from "@/features/chatbots/components/ChatMessageContent";
 import { ChatSourcesPills } from "@/features/chatbots/components/ChatSourcesPills";
+import { LLM_PROVIDERS, LLM_MODELS_BY_PROVIDER } from "@/features/chatbots/llmCatalog";
 import type { Chatbot } from "@/types/chatbot";
 
 const STATUS_BADGE_VARIANT: Record<Chatbot["status"], "default" | "success" | "warning"> = {
@@ -67,6 +71,115 @@ export default function ChatbotOverviewPage() {
   const [instantIntegrationTab, setInstantIntegrationTab] = useState<"html" | "react" | "curl">("html");
   const [copiedIntegration, setCopiedIntegration] = useState(false);
   const [isFloatingWidgetActive, setIsFloatingWidgetActive] = useState(false);
+
+  // In-place Settings State for AI Engine & Parameters
+  const [editProvider, setEditProvider] = useState(chatbot?.provider || "google");
+  const [editModel, setEditModel] = useState(chatbot?.model || "gemini-3.5-flash");
+  const [editApiKey, setEditApiKey] = useState("");
+  const [showEditApiKey, setShowEditApiKey] = useState(false);
+  const [editTemperature, setEditTemperature] = useState(
+    chatbot?.temperature !== null && chatbot?.temperature !== undefined
+      ? String(chatbot.temperature)
+      : "0.7",
+  );
+  const [editMaxTokens, setEditMaxTokens] = useState(
+    chatbot?.maxTokens ? String(chatbot.maxTokens) : "2048",
+  );
+  const [editSessionLimitType, setEditSessionLimitType] = useState<"unlimited" | "custom">(
+    chatbot?.sessionMessageLimit && chatbot.sessionMessageLimit > 0 ? "custom" : "unlimited",
+  );
+  const [editSessionCustomLimit, setEditSessionCustomLimit] = useState(
+    chatbot?.sessionMessageLimit && chatbot.sessionMessageLimit > 0
+      ? String(chatbot.sessionMessageLimit)
+      : "10",
+  );
+
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsSuccessNotice, setSettingsSuccessNotice] = useState<string | null>(null);
+  const [settingsErrorNotice, setSettingsErrorNotice] = useState<string | null>(null);
+
+  // Sync state when chatbot changes
+  useEffect(() => {
+    if (chatbot) {
+      setEditProvider(chatbot.provider || "google");
+      setEditModel(chatbot.model || "gemini-3.5-flash");
+      setEditTemperature(
+        chatbot.temperature !== null && chatbot.temperature !== undefined
+          ? String(chatbot.temperature)
+          : "0.7",
+      );
+      setEditMaxTokens(chatbot.maxTokens ? String(chatbot.maxTokens) : "2048");
+      if (chatbot.sessionMessageLimit && chatbot.sessionMessageLimit > 0) {
+        setEditSessionLimitType("custom");
+        setEditSessionCustomLimit(String(chatbot.sessionMessageLimit));
+      } else {
+        setEditSessionLimitType("unlimited");
+        setEditSessionCustomLimit("10");
+      }
+    }
+  }, [chatbot]);
+
+  const handleEditProviderChange = (newProvider: string) => {
+    setEditProvider(newProvider);
+    const providerMeta = LLM_PROVIDERS.find((p) => p.value === newProvider);
+    const defaultM = providerMeta?.defaultModel || LLM_MODELS_BY_PROVIDER[newProvider]?.[0]?.value || "";
+    setEditModel(defaultM);
+  };
+
+  const handleSaveEngineSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSavingSettings || !chatbot) return;
+    setSettingsErrorNotice(null);
+    setSettingsSuccessNotice(null);
+
+    let resolvedLimit: number | null = null;
+    if (editSessionLimitType === "custom") {
+      const parsed = Number(editSessionCustomLimit);
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 1000) {
+        setSettingsErrorNotice("Custom message limit must be an integer between 1 and 1000.");
+        return;
+      }
+      resolvedLimit = parsed;
+    }
+
+    const tempVal = Number(editTemperature);
+    if (Number.isNaN(tempVal) || tempVal < 0 || tempVal > 2) {
+      setSettingsErrorNotice("Temperature must be between 0.0 and 2.0.");
+      return;
+    }
+
+    const tokensVal = Number(editMaxTokens);
+    if (!Number.isInteger(tokensVal) || tokensVal < 1 || tokensVal > 32000) {
+      setSettingsErrorNotice("Max tokens must be an integer between 1 and 32000.");
+      return;
+    }
+
+    setIsSavingSettings(true);
+    try {
+      const payload = {
+        provider: editProvider.trim() || undefined,
+        model: editModel.trim() || undefined,
+        apiKey: editApiKey.trim() || undefined,
+        temperature: tempVal,
+        maxTokens: tokensVal,
+        sessionMessageLimit: resolvedLimit,
+      };
+
+      const res = await chatbotsApi.update(chatbot.id, payload);
+      setChatbot(res.chatbot);
+      setSettingsSuccessNotice("Engine parameters & session limits updated successfully!");
+      if (editApiKey.trim()) {
+        setEditApiKey("");
+      }
+      setTimeout(() => setSettingsSuccessNotice(null), 4000);
+    } catch (err) {
+      setSettingsErrorNotice(
+        err instanceof ApiRequestError ? err.message : "Failed to save settings. Please retry.",
+      );
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   const brandName = chatbot?.name
     ? chatbot.name.replace(/\s+(?:AI\s+)?(?:Assistant|Bot|Chatbot|Agent)$/i, "").trim() || chatbot.name
@@ -669,18 +782,18 @@ export default function ChatbotOverviewPage() {
           </div>
         </div>
 
-        {/* 3-Tab Navigation Bar */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-950/70 border border-zinc-800/80 rounded-xl w-full sm:w-fit overflow-x-auto scrollbar-none">
+        {/* Clean Segmented Tab Control */}
+        <div className="flex items-center gap-1 p-1 bg-zinc-900 border border-zinc-800 rounded-lg w-full sm:w-fit overflow-x-auto scrollbar-none">
           <button
             type="button"
             onClick={() => setInstantActiveTab("playground")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
               instantActiveTab === "playground"
-                ? "bg-zinc-800 text-white shadow-sm font-semibold"
-                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                ? "bg-zinc-800 text-white font-semibold shadow-xs"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            <svg className="w-3.5 h-3.5 text-violet-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             <span>Playground</span>
@@ -689,13 +802,13 @@ export default function ChatbotOverviewPage() {
           <button
             type="button"
             onClick={() => setInstantActiveTab("integration")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
               instantActiveTab === "integration"
-                ? "bg-zinc-800 text-white shadow-sm font-semibold"
-                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                ? "bg-zinc-800 text-white font-semibold shadow-xs"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
             </svg>
             <span>Embed &amp; Integration</span>
@@ -707,10 +820,10 @@ export default function ChatbotOverviewPage() {
           <button
             type="button"
             onClick={() => setInstantActiveTab("settings")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
               instantActiveTab === "settings"
-                ? "bg-zinc-800 text-white shadow-sm font-semibold"
-                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                ? "bg-zinc-800 text-white font-semibold shadow-xs"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -828,18 +941,18 @@ export default function ChatbotOverviewPage() {
           )}
 
         {/* Focused Full-Width Playground Card */}
-        <Card className="flex flex-col h-[580px] sm:h-[650px] overflow-hidden p-0 rounded-md border border-zinc-800 bg-[#000000] shadow-xl">
+        <div className="flex flex-col h-[580px] sm:h-[650px] overflow-hidden rounded-xl border border-white/[0.08] bg-zinc-950/80 shadow-2xl">
           {/* Playground Header & Controls */}
-          <div className="flex items-center justify-between border-b border-zinc-800 bg-[#0a0a0a] px-3 sm:px-4 py-2.5 sm:py-3 gap-2">
+          <div className="flex items-center justify-between border-b border-white/[0.08] bg-zinc-900/60 backdrop-blur-md px-3 sm:px-4 py-2.5 sm:py-3 gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <span
                 className={`flex h-2 w-2 rounded-full shrink-0 ${
                   isReady ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"
                 }`}
               />
-              <span className="font-medium text-xs sm:text-sm text-zinc-200 truncate">Runtime Preview</span>
-              <span className="hidden sm:inline-block text-[11px] text-zinc-500 bg-zinc-900 rounded px-1.5 py-0.5 border border-zinc-800 font-mono shrink-0">
-                {isReady ? "Live Test" : "Pending Ingestion"}
+              <span className="font-semibold text-xs sm:text-sm text-zinc-200 truncate">Runtime Simulator</span>
+              <span className="hidden sm:inline-block text-[11px] text-zinc-400 bg-white/[0.04] rounded-md px-2 py-0.5 border border-white/[0.06] font-mono shrink-0">
+                {isReady ? "Live Ready" : "Pending Ingestion"}
               </span>
             </div>
 
@@ -910,23 +1023,23 @@ export default function ChatbotOverviewPage() {
           </div>
 
           {/* Chat Stage */}
-          <div className="flex-1 flex items-center justify-center p-2.5 sm:p-5 bg-[#050505] architect-grid overflow-hidden">
+          <div className="flex-1 flex items-center justify-center p-2.5 sm:p-5 bg-[#050507] architect-grid overflow-hidden">
             <div
-              className={`flex flex-col rounded-md border border-zinc-800 bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${
+              className={`flex flex-col rounded-xl border border-white/[0.08] bg-[#0c0c0f] shadow-2xl transition-all duration-200 overflow-hidden ${
                 deviceMode === "widget"
                   ? "w-full max-w-[500px] h-full sm:h-[530px]"
                   : "w-full max-w-[640px] h-full sm:h-[550px]"
               }`}
             >
               {/* Chat Widget Top Header */}
-              <div className="flex items-center justify-between border-b border-zinc-800 bg-[#111111] px-4 py-3">
+              <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-6 w-6 items-center justify-center rounded bg-violet-600/30 border border-violet-500/40 text-violet-300 font-semibold text-xs">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-700 bg-zinc-800 text-zinc-200 font-semibold text-xs shadow-xs">
                     {botDisplayName.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white leading-tight">{botDisplayName}</p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs sm:text-sm font-semibold text-white leading-tight">{botDisplayName}</p>
+                    <p className="text-[11px] text-zinc-400">
                       {isReady ? "Ready · Testing assistant" : isProcessing ? "Indexing knowledge…" : "Ingestion Pending"}
                     </p>
                   </div>
@@ -940,7 +1053,7 @@ export default function ChatbotOverviewPage() {
               >
                 {messages.length === 0 && (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 my-auto">
-                    <div className="h-10 w-10 rounded-full bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 font-bold mb-3 shadow-inner text-sm">
+                    <div className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-800 flex items-center justify-center text-zinc-200 font-semibold mb-3 shadow-xs text-sm">
                       {botDisplayName.charAt(0).toUpperCase()}
                     </div>
                     <h3 className="text-sm font-semibold text-white">
@@ -966,10 +1079,10 @@ export default function ChatbotOverviewPage() {
                           type="button"
                           disabled={!isReady || isLoadingResponse || isStreaming}
                           onClick={() => void sendQuestion(question)}
-                          className="text-left text-xs text-zinc-300 bg-[#121212]/80 hover:bg-violet-950/30 hover:text-violet-200 border border-zinc-800 hover:border-violet-500/40 rounded-lg px-3.5 py-2.5 transition-all duration-150 hover:translate-x-0.5 cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center justify-between gap-2.5 group shadow-sm hover:shadow-violet-950/20"
+                          className="text-left text-xs text-zinc-300 bg-zinc-900/60 hover:bg-zinc-800 hover:text-white border border-zinc-800 hover:border-zinc-700 rounded-lg px-3.5 py-2.5 transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center justify-between gap-2.5 group shadow-xs"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="p-1 rounded-md bg-violet-500/10 border border-violet-500/20 text-violet-400 group-hover:bg-violet-500/20 group-hover:text-violet-300 transition-colors shrink-0">
+                            <span className="p-1 rounded-md border border-zinc-800 bg-zinc-850 text-zinc-400 group-hover:text-zinc-200 transition-colors shrink-0">
                               <svg
                                 className="w-3.5 h-3.5"
                                 fill="none"
@@ -1008,12 +1121,13 @@ export default function ChatbotOverviewPage() {
                       }`}
                   >
                     <div
-                      className={`rounded-md p-3.5 leading-relaxed text-sm ${msg.sender === "user"
-                          ? "bg-violet-600/20 border border-violet-500/30 text-white font-normal"
+                      className={`rounded-lg p-3.5 leading-relaxed text-sm ${
+                        msg.sender === "user"
+                          ? "bg-zinc-800 border border-zinc-700 text-white font-normal"
                           : msg.isError
-                            ? "bg-red-950/40 border border-red-800/60 text-red-200 text-xs font-mono"
-                            : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
-                        }`}
+                          ? "bg-red-950/40 border border-red-800/60 text-red-200 text-xs font-mono"
+                          : "bg-[#131316] border border-zinc-800 text-zinc-100 font-normal"
+                      }`}
                     >
                       {msg.sender === "user" || msg.isError ? (
                         <p className="whitespace-pre-wrap">{msg.text}</p>
@@ -1021,23 +1135,20 @@ export default function ChatbotOverviewPage() {
                         <div className="relative">
                           <ChatMessageContent content={msg.text} />
                           {msg.isStreaming && (
-                            <span className="inline-block w-1.5 h-3.5 ml-1 bg-violet-400 animate-pulse align-middle rounded-sm shadow-sm shadow-violet-400" />
+                            <span className="inline-block w-1.5 h-3.5 ml-1 bg-zinc-300 animate-pulse align-middle rounded-sm" />
                           )}
                         </div>
                       )}
-                      {!msg.isStreaming && <ChatSourcesPills sources={msg.sources} theme="violet" />}
+                      {!msg.isStreaming && <ChatSourcesPills sources={msg.sources} theme="zinc" />}
                     </div>
                     <span className="text-xs text-zinc-500 mt-1 px-1 font-mono">{msg.time}</span>
                   </div>
                 ))}
 
                 {isLoadingResponse ? (
-                  <div className="self-start flex items-center gap-2.5 rounded-lg bg-zinc-900/90 border border-violet-500/30 px-3.5 py-2.5 text-xs text-zinc-300 font-mono shadow-md animate-in fade-in duration-200">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
-                    </span>
-                    <span className="text-violet-200 font-medium">{thinkingStage}</span>
+                  <div className="self-start flex items-center gap-2 rounded-md bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-zinc-300 font-mono shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    <span>{thinkingStage}</span>
                   </div>
                 ) : null}
                 <div ref={messagesEndRef} className="h-0 w-0 shrink-0" />
@@ -1059,7 +1170,7 @@ export default function ChatbotOverviewPage() {
               {/* Interactive Input Box */}
               <form
                 onSubmit={handleSendMessage}
-                className="border-t border-zinc-800 bg-[#0e0e0e] p-2.5 flex items-center gap-2"
+                className="border-t border-zinc-800 bg-[#0e0e11] p-2.5 flex items-center gap-2"
               >
                 <input
                   type="text"
@@ -1070,40 +1181,38 @@ export default function ChatbotOverviewPage() {
                     !isReady
                       ? isFailed
                         ? "Ingestion failed — retry above to enable testing"
-                        : "Website indexing in progress… testing disabled until ready"
+                        : "Indexing in progress… testing unlocks once ready"
                       : isStreaming
-                        ? "Streaming answer…"
-                        : "Ask a test question about your website…"
+                      ? "Streaming answer…"
+                      : "Ask a question about your website…"
                   }
-                  className="flex-1 rounded-md border border-zinc-800 bg-[#000000] px-3.5 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 rounded-md border border-zinc-800 bg-[#09090b] px-3.5 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 {isStreaming ? (
-                  <Button
+                  <button
                     type="button"
                     onClick={handleStopStreaming}
-                    size="default"
-                    className="h-9 px-3.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors"
+                    className="h-9 px-3.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors text-xs font-medium"
                     title="Stop generation"
                   >
-                    <span className="h-2 w-2 rounded-sm bg-violet-400" />
+                    <span className="h-2 w-2 rounded-sm bg-zinc-400" />
                     <span>Stop</span>
-                  </Button>
+                  </button>
                 ) : (
-                  <Button
+                  <button
                     type="submit"
                     disabled={!isReady || !inputValue.trim() || isLoadingResponse}
-                    size="default"
-                    className="h-9 px-3.5 bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50"
+                    className="h-9 px-4 rounded-md bg-white hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-950 font-medium text-xs transition-colors cursor-pointer"
                   >
                     Send
-                  </Button>
+                  </button>
                 )}
               </form>
             </div>
           </div>
-        </Card>
-          </div>
-        )}
+        </div>
+      </div>
+    )}
 
         {/* ========================================================================= */}
         {/* TAB 2: EMBED & INTEGRATION                                                */}
@@ -1172,32 +1281,6 @@ export default function ChatbotOverviewPage() {
                 </div>
               )}
 
-              {/* Interactive Widget Test Callout */}
-              <div className="rounded-xl border border-violet-500/25 bg-gradient-to-r from-violet-950/30 via-zinc-900/50 to-zinc-900/30 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 shrink-0">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-white">Test Floating Launcher on Screen</h4>
-                    <p className="text-xs text-zinc-400">
-                      Experience how the floating icon, launcher animation, and expandable window look to your visitors.
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  size="default"
-                  variant="outline"
-                  onClick={handleToggleFloatingWidget}
-                  className="border-violet-500/40 bg-violet-950/20 text-violet-300 hover:bg-violet-900/40 hover:text-white text-xs font-semibold shrink-0 cursor-pointer h-9 px-4"
-                >
-                  {isFloatingWidgetActive ? "✕ Dismiss Live Simulator" : "🚀 Launch Widget Simulator"}
-                </Button>
-              </div>
-
               {/* Snippet Code Tabs */}
               <div className="flex flex-col gap-2.5">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -1207,7 +1290,7 @@ export default function ChatbotOverviewPage() {
                       onClick={() => setInstantIntegrationTab("html")}
                       className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
                         instantIntegrationTab === "html"
-                          ? "bg-violet-600 text-white font-medium shadow-sm"
+                          ? "bg-zinc-800 text-white font-medium shadow-xs"
                           : "text-zinc-400 hover:text-zinc-200"
                       }`}
                     >
@@ -1218,7 +1301,7 @@ export default function ChatbotOverviewPage() {
                       onClick={() => setInstantIntegrationTab("react")}
                       className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
                         instantIntegrationTab === "react"
-                          ? "bg-violet-600 text-white font-medium shadow-sm"
+                          ? "bg-zinc-800 text-white font-medium shadow-xs"
                           : "text-zinc-400 hover:text-zinc-200"
                       }`}
                     >
@@ -1229,7 +1312,7 @@ export default function ChatbotOverviewPage() {
                       onClick={() => setInstantIntegrationTab("curl")}
                       className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
                         instantIntegrationTab === "curl"
-                          ? "bg-violet-600 text-white font-medium shadow-sm"
+                          ? "bg-zinc-800 text-white font-medium shadow-xs"
                           : "text-zinc-400 hover:text-zinc-200"
                       }`}
                     >
@@ -1396,30 +1479,287 @@ export default function ChatbotOverviewPage() {
               </div>
             </Card>
 
-            {/* AI Runtime Configuration */}
-            <Card className="rounded-xl border border-zinc-800 bg-[#0a0a0a] p-5 shadow-lg flex flex-col gap-4">
-              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
-                <span className="text-sm font-semibold text-white">AI Engine &amp; Parameters</span>
-                <span className="text-xs text-zinc-500 font-mono">Auto-Tuned</span>
+            {/* AI Runtime Configuration & Direct Engine Controls */}
+            <Card className="rounded-xl border border-zinc-800 bg-[#0a0a0a] p-6 shadow-xl flex flex-col gap-5">
+              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <span>AI Engine & Parameters</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700/60">
+                      Direct Control
+                    </span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Update model, API key, and session limits directly without leaving this page.
+                  </p>
+                </div>
+                <Link
+                  href={`/dashboard/chatbots/${chatbot.id}/settings`}
+                  className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors inline-flex items-center gap-1 hover:underline"
+                >
+                  Advanced Settings
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
               </div>
-              <div className="flex flex-col divide-y divide-zinc-800/80 text-xs">
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-zinc-400">LLM Provider</span>
-                  <span className="text-zinc-200 capitalize font-medium">{chatbot.provider || "OpenAI"}</span>
+
+              {settingsSuccessNotice && (
+                <div className="p-3 text-xs rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{settingsSuccessNotice}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettingsSuccessNotice(null)}
+                    className="text-zinc-400 hover:text-white text-xs ml-2 cursor-pointer"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-zinc-400">Model Name</span>
-                  <span className="text-zinc-200 font-mono">{chatbot.model || "gpt-4o-mini"}</span>
+              )}
+
+              {settingsErrorNotice && (
+                <div className="p-3 text-xs rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>{settingsErrorNotice}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettingsErrorNotice(null)}
+                    className="text-zinc-400 hover:text-white text-xs ml-2 cursor-pointer"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-zinc-400">Temperature</span>
-                  <span className="text-zinc-200 font-mono">{chatbot.temperature ?? 0.7}</span>
+              )}
+
+              <form onSubmit={handleSaveEngineSettings} className="flex flex-col gap-5">
+                {/* Provider and Model selectors */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="inplace-provider" className="text-xs text-zinc-300 font-medium">
+                      LLM Provider
+                    </Label>
+                    <CustomSelect
+                      id="inplace-provider"
+                      value={editProvider}
+                      onChange={handleEditProviderChange}
+                      disabled={isSavingSettings}
+                      options={LLM_PROVIDERS.map((p) => ({
+                        value: p.value,
+                        label: p.label,
+                      }))}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="inplace-model" className="text-xs text-zinc-300 font-medium">
+                      Model Endpoint
+                    </Label>
+                    <CustomSelect
+                      id="inplace-model"
+                      value={editModel}
+                      onChange={(val) => setEditModel(val)}
+                      disabled={isSavingSettings}
+                      options={LLM_MODELS_BY_PROVIDER[editProvider] || []}
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-zinc-400">Max Tokens</span>
-                  <span className="text-zinc-200 font-mono">{chatbot.maxTokens ?? 2048}</span>
+
+                {/* API Key field */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="inplace-api-key" className="text-xs text-zinc-300 font-medium">
+                      Custom Provider API Key (BYOK)
+                    </Label>
+                    {chatbot.hasApiKey && (
+                      <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        Key configured &amp; active
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="inplace-api-key"
+                      type={showEditApiKey ? "text" : "password"}
+                      value={editApiKey}
+                      onChange={(e) => setEditApiKey(e.target.value)}
+                      disabled={isSavingSettings}
+                      placeholder={
+                        chatbot.hasApiKey
+                          ? "Enter new key to replace existing key..."
+                          : "Paste your provider API key (sk-...)"
+                      }
+                      className="pr-20 font-mono text-xs bg-zinc-900/80 border-zinc-800"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowEditApiKey(!showEditApiKey)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-200 px-1 py-0.5 rounded cursor-pointer"
+                    >
+                      {showEditApiKey ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                  <span className="text-[11px] text-zinc-500">
+                    Stored securely via AES-256-GCM encryption. Leave blank to keep existing key.
+                  </span>
                 </div>
-              </div>
+
+                {/* Session Message Limit */}
+                <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/40 p-3.5 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-xs font-semibold text-zinc-200">Session Message Rate Limit</Label>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Cap maximum consecutive queries a visitor can ask per session to prevent API credit exhaustion.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 max-w-sm">
+                    <button
+                      type="button"
+                      onClick={() => setEditSessionLimitType("unlimited")}
+                      className={`px-3 py-2 text-xs font-medium rounded-md border transition-all text-left flex items-center justify-between cursor-pointer ${
+                        editSessionLimitType === "unlimited"
+                          ? "bg-zinc-800 border-zinc-600 text-white shadow-sm"
+                          : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                      }`}
+                    >
+                      <span>Unlimited (No Cap)</span>
+                      {editSessionLimitType === "unlimited" && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditSessionLimitType("custom")}
+                      className={`px-3 py-2 text-xs font-medium rounded-md border transition-all text-left flex items-center justify-between cursor-pointer ${
+                        editSessionLimitType === "custom"
+                          ? "bg-zinc-800 border-zinc-600 text-white shadow-sm"
+                          : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                      }`}
+                    >
+                      <span>Custom Limit</span>
+                      {editSessionLimitType === "custom" && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                      )}
+                    </button>
+                  </div>
+
+                  {editSessionLimitType === "custom" && (
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={1000}
+                          value={editSessionCustomLimit}
+                          onChange={(e) => setEditSessionCustomLimit(e.target.value)}
+                          disabled={isSavingSettings}
+                          className="w-24 text-xs font-mono bg-zinc-900 border-zinc-800 text-center"
+                        />
+                        <span className="text-xs text-zinc-400">messages / session</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[11px] text-zinc-500 mr-1">Presets:</span>
+                        {[5, 10, 20, 50].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setEditSessionCustomLimit(String(preset))}
+                            className={`px-2 py-0.5 rounded text-[11px] border font-medium transition-colors cursor-pointer ${
+                              editSessionCustomLimit === String(preset)
+                                ? "bg-violet-500/20 text-violet-300 border-violet-500/40"
+                                : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-200"
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Temperature and Max Tokens */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-1 border-t border-zinc-800/60">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="inplace-temp" className="text-xs text-zinc-300 font-medium">
+                        Temperature
+                      </Label>
+                      <span className="text-xs text-zinc-400 font-mono">{editTemperature}</span>
+                    </div>
+                    <Input
+                      id="inplace-temp"
+                      type="number"
+                      step={0.1}
+                      min={0}
+                      max={2}
+                      value={editTemperature}
+                      onChange={(e) => setEditTemperature(e.target.value)}
+                      disabled={isSavingSettings}
+                      className="text-xs font-mono bg-zinc-900/80 border-zinc-800"
+                    />
+                    <span className="text-[11px] text-zinc-500">0.0 = strict factuality, 1.0 = creative.</span>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="inplace-tokens" className="text-xs text-zinc-300 font-medium">
+                        Max Tokens
+                      </Label>
+                      <span className="text-xs text-zinc-400 font-mono">{editMaxTokens}</span>
+                    </div>
+                    <Input
+                      id="inplace-tokens"
+                      type="number"
+                      step={128}
+                      min={1}
+                      max={32000}
+                      value={editMaxTokens}
+                      onChange={(e) => setEditMaxTokens(e.target.value)}
+                      disabled={isSavingSettings}
+                      className="text-xs font-mono bg-zinc-900/80 border-zinc-800"
+                    />
+                    <span className="text-[11px] text-zinc-500">Upper limit on length of generated responses.</span>
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80">
+                  <span className="text-xs text-zinc-500">
+                    Changes take effect immediately for playground and live widgets.
+                  </span>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={isSavingSettings}
+                    className="h-8 px-4 text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {isSavingSettings ? (
+                      <>
+                        <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Save Parameters</span>
+                    )}
+                  </Button>
+                </div>
+              </form>
             </Card>
 
             {/* Danger Zone: Delete Bot */}
