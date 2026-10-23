@@ -84,6 +84,7 @@ export class InstantBotService {
     provider,
     model,
     apiKey,
+    sessionMessageLimit,
     existingChatbot,
     onChatbotCreated,
     onStatusChange,
@@ -93,6 +94,7 @@ export class InstantBotService {
     provider?: string;
     model?: string;
     apiKey?: string;
+    sessionMessageLimit?: number | null;
     existingChatbot?: { id: string; publicId: string; name: string };
     onChatbotCreated?: (chatbot: { id: string; publicId: string; name: string }) => void;
     onStatusChange: (status: InstantBotStatus) => void;
@@ -123,6 +125,7 @@ export class InstantBotService {
           provider: provider || "openai",
           model: model || "gpt-4o-mini",
           apiKey: apiKey || undefined,
+          sessionMessageLimit: sessionMessageLimit ?? null,
         });
         createdChatbot = response.chatbot;
         onChatbotCreated?.(createdChatbot);

@@ -17,6 +17,7 @@ export interface Chatbot {
   hasApiKey?: boolean;
   temperature: number | null;
   maxTokens: number | null;
+  sessionMessageLimit?: number | null;
   ragEnabled: boolean;
   ragTopK: number | null;
   ragSimilarityThreshold: number | null;
