@@ -27,7 +27,7 @@
       return null;
     })();
 
-  const publicId =
+  let publicId =
     (currentScript &&
       (currentScript.getAttribute("data-chatbot-id") ||
         currentScript.getAttribute("data-public-id"))) ||
@@ -883,7 +883,15 @@
     open: () => toggleWidget(true),
     close: () => toggleWidget(false),
     toggle: () => toggleWidget(),
-    init: (newPublicId) => {
+    destroy: () => {
+      try {
+        host.remove();
+      } catch {}
+      window.__CHATBOT_BUILDER_WIDGET_LOADED__ = false;
+    },
+    init: (newPublicId, newApiHost) => {
+      if (newPublicId) publicId = newPublicId;
+      if (newApiHost) apiHost = newApiHost;
       loadConfig();
     },
   };

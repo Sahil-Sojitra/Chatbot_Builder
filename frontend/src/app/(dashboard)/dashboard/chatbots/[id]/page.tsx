@@ -65,6 +65,7 @@ export default function ChatbotOverviewPage() {
   const [activeCodeTab, setActiveCodeTab] = useState<"script" | "curl" | "json">("script");
   const [instantIntegrationTab, setInstantIntegrationTab] = useState<"html" | "react" | "curl">("html");
   const [copiedIntegration, setCopiedIntegration] = useState(false);
+  const [isFloatingWidgetActive, setIsFloatingWidgetActive] = useState(false);
 
   const brandName = chatbot?.name
     ? chatbot.name.replace(/\s+(?:AI\s+)?(?:Assistant|Bot|Chatbot|Agent)$/i, "").trim() || chatbot.name
@@ -130,11 +131,16 @@ export default function ChatbotOverviewPage() {
     return () => clearInterval(timer);
   }, [isLoadingResponse]);
 
-  // Clean up any streaming intervals on unmount
+  // Clean up any streaming intervals and live widget simulator on unmount
   useEffect(() => {
     return () => {
       if (streamIntervalRef.current) {
         clearInterval(streamIntervalRef.current);
+      }
+      if (typeof window !== "undefined" && (window as any).ChatbotWidget) {
+        try {
+          (window as any).ChatbotWidget.destroy();
+        } catch {}
       }
     };
   }, []);
@@ -278,6 +284,50 @@ export default function ChatbotOverviewPage() {
       setTimeout(() => setCopiedIntegration(false), 2000);
     } catch {
       // Fallback
+    }
+  };
+
+  const handleToggleFloatingWidget = () => {
+    if (isFloatingWidgetActive) {
+      setIsFloatingWidgetActive(false);
+      if (typeof window !== "undefined" && (window as any).ChatbotWidget) {
+        (window as any).ChatbotWidget.destroy();
+      }
+      return;
+    }
+
+    setIsFloatingWidgetActive(true);
+
+    if (typeof window !== "undefined") {
+      const apiHost =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+      let script = document.getElementById(
+        "cb-live-preview-script",
+      ) as HTMLScriptElement | null;
+
+      if (!script) {
+        script = document.createElement("script");
+        script.id = "cb-live-preview-script";
+        script.src = "/widget.js";
+        script.setAttribute("data-chatbot-id", chatbot.publicId);
+        script.setAttribute("data-api-host", apiHost);
+        script.defer = true;
+        document.body.appendChild(script);
+
+        script.onload = () => {
+          setTimeout(() => {
+            if ((window as any).ChatbotWidget) {
+              (window as any).ChatbotWidget.open();
+            }
+          }, 250);
+        };
+      } else {
+        if ((window as any).ChatbotWidget) {
+          (window as any).ChatbotWidget.init(chatbot.publicId, apiHost);
+          (window as any).ChatbotWidget.open();
+        }
+      }
     }
   };
 
@@ -604,6 +654,35 @@ export default function ChatbotOverviewPage() {
                     <span>Publish Assistant</span>
                   </>
                 )}
+              </Button>
+
+              {/* Test Floating Widget on Screen Button */}
+              <Button
+                size="sm"
+                variant={isFloatingWidgetActive ? "default" : "outline"}
+                onClick={handleToggleFloatingWidget}
+                className={`h-8 text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                  isFloatingWidgetActive
+                    ? "bg-violet-600 hover:bg-violet-700 text-white font-medium shadow-md shadow-violet-900/40"
+                    : "border-violet-500/40 bg-violet-950/20 hover:bg-violet-950/40 text-violet-300 hover:text-white"
+                }`}
+                title="Launch the real floating chat launcher in the corner of your screen"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span
+                    className={`animate-ping absolute inline-flex h-full w-full rounded-full ${
+                      isFloatingWidgetActive ? "bg-emerald-400" : "bg-violet-400"
+                    } opacity-75`}
+                  />
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${
+                      isFloatingWidgetActive ? "bg-emerald-500" : "bg-violet-500"
+                    }`}
+                  />
+                </span>
+                <span>
+                  {isFloatingWidgetActive ? "Close Widget Preview" : "Preview Floating Widget"}
+                </span>
               </Button>
 
               {/* Sync Latest Website Button (Available even when READY so users can pull updated website data) */}
@@ -1183,18 +1262,66 @@ export default function ChatbotOverviewPage() {
                       ? "Drop into your RootLayout or main page component."
                       : "Direct HTTP POST endpoint for custom mobile apps or headless SDKs."}
                 </span>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="h-8 text-xs font-medium cursor-pointer"
-                  onClick={() => void handleCopyIntegrationSnippet()}
-                >
-                  {copiedIntegration ? "✓ Copied to Clipboard" : "Copy Code Snippet"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs font-medium border-violet-500/40 text-violet-300 hover:bg-violet-950/40 cursor-pointer"
+                    onClick={handleToggleFloatingWidget}
+                  >
+                    {isFloatingWidgetActive ? "✕ Close Widget Preview" : "🚀 Test Floating Widget on Screen"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-8 text-xs font-medium cursor-pointer"
+                    onClick={() => void handleCopyIntegrationSnippet()}
+                  >
+                    {copiedIntegration ? "✓ Copied to Clipboard" : "Copy Code Snippet"}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </Card>
+
+        {/* In-App Floating Widget Simulator Controller Banner */}
+        {isFloatingWidgetActive && (
+          <div className="fixed bottom-6 left-6 z-50 flex items-center gap-3.5 rounded-xl border border-violet-500/40 bg-[#09090d]/95 px-4 py-3 shadow-2xl backdrop-blur-md text-xs animate-in slide-in-from-bottom-4">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+            </span>
+            <div className="flex flex-col">
+              <span className="font-semibold text-white">Live Floating Widget Active</span>
+              <span className="text-zinc-400">
+                Testing launcher bubble in bottom-right corner as a website visitor
+              </span>
+            </div>
+            <div className="flex items-center gap-2 ml-2 pl-3 border-l border-zinc-800">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs border-violet-500/40 text-violet-300 hover:bg-violet-950/50 cursor-pointer"
+                onClick={() => {
+                  if (typeof window !== "undefined" && (window as any).ChatbotWidget) {
+                    (window as any).ChatbotWidget.toggle();
+                  }
+                }}
+              >
+                Toggle Widget Window
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs text-zinc-400 hover:text-white cursor-pointer"
+                onClick={handleToggleFloatingWidget}
+              >
+                ✕ Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
