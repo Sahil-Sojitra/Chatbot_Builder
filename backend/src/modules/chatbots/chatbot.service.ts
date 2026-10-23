@@ -446,4 +446,162 @@ export const chatbotService = {
     // 3. Delete the chatbot document
     await chatbotRepository.deleteByIdForOrganization(chatbotId, organization._id);
   },
+
+  /**
+   * Retrieves public branding, configuration, and starter questions for an
+   * embedded widget by publicId. Open to the public.
+   */
+  async getPublicConfig(publicId: string) {
+    const chatbot = await chatbotRepository.findByPublicId(publicId);
+    if (!chatbot) {
+      throw chatbotNotFound();
+    }
+
+    const sources = await knowledgeSourceRepository.findAllForChatbot(chatbot._id);
+    const websiteSource =
+      sources.find((s) => (s.type === "URL" || s.type === "WEBPAGE") && s.sourceUrl) ||
+      sources.find((s) => s.sourceUrl) ||
+      sources[0];
+
+    // Compute clean brand name if chatbot.name is raw ObjectId or hex
+    let displayName = chatbot.name;
+    const rawName = chatbot.name || "";
+    if (
+      /^[0-9a-fA-F]{24}(\s+AI\s+Assistant)?$/i.test(rawName.trim()) ||
+      /^[0-9a-fA-F-]{32,36}/i.test(rawName.trim())
+    ) {
+      if (websiteSource?.sourceUrl) {
+        try {
+          const parsed = new URL(websiteSource.sourceUrl);
+          const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+          const brand = host.split(".")[0];
+          displayName = brand ? `${brand.charAt(0).toUpperCase() + brand.slice(1)} Assistant` : "Website Assistant";
+        } catch {
+          displayName = "Website Assistant";
+        }
+      } else {
+        displayName = "AI Assistant";
+      }
+    }
+
+    return {
+      publicId: chatbot.publicId,
+      name: displayName,
+      rawName: chatbot.name,
+      description: chatbot.description || `AI Assistant for ${displayName}`,
+      status: chatbot.status,
+      isPublished: chatbot.status === "ACTIVE",
+      creationMode: chatbot.creationMode,
+      starterQuestions:
+        chatbot.starterQuestions && chatbot.starterQuestions.length > 0
+          ? chatbot.starterQuestions
+          : [
+              "What services do you offer?",
+              "How can I get started?",
+              "Where can I find pricing information?",
+            ],
+      websiteUrl: websiteSource?.sourceUrl || null,
+      uiConfig: chatbot.uiConfig || {
+        primaryColor: "#7c3aed",
+        botAvatarUrl: null,
+        launcherIcon: "chat",
+        position: "bottom-right",
+      },
+    };
+  },
+
+  /**
+   * Handles visitor chat from an embedded widget by publicId.
+   * Enforces that the chatbot is ACTIVE (published).
+   */
+  async publicChat(
+    publicId: string,
+    input: ChatMessageInput,
+  ): Promise<ChatResponseData> {
+    const chatbot = await chatbotRepository.findByPublicId(publicId);
+    if (!chatbot) {
+      throw chatbotNotFound();
+    }
+
+    if (chatbot.status !== "ACTIVE") {
+      return {
+        answer:
+          "This assistant is currently paused or undergoing maintenance. Please try again later.",
+        sources: [],
+        hasGroundedEvidence: false,
+        stats: {
+          retrieval_duration_ms: 0,
+          generation_duration_ms: 0,
+          total_duration_ms: 0,
+          model_used: "offline-notice",
+          chunks_retrieved: 0,
+        },
+      };
+    }
+
+    const sources = await knowledgeSourceRepository.findAllForChatbot(chatbot._id);
+    const websiteSource =
+      sources.find((s) => (s.type === "URL" || s.type === "WEBPAGE") && s.sourceUrl) ||
+      sources.find((s) => s.sourceUrl) ||
+      sources[0];
+
+    // Ingestion check for Instant Bots
+    if (chatbot.creationMode === "INSTANT") {
+      if (websiteSource && websiteSource.status === "FAILED") {
+        return {
+          answer:
+            "This assistant is currently updating its knowledge index. Please check back shortly.",
+          sources: [],
+          hasGroundedEvidence: false,
+          stats: {
+            retrieval_duration_ms: 0,
+            generation_duration_ms: 0,
+            total_duration_ms: 0,
+            model_used: "indexing-notice",
+            chunks_retrieved: 0,
+          },
+        };
+      }
+    }
+
+    const question = (input.message || input.question || "").trim();
+    const websiteUrl = websiteSource?.sourceUrl || undefined;
+
+    try {
+      const qaResponse = await aiServiceClient.askQuestion({
+        chatbotId: chatbot._id.toString(),
+        question,
+        botName: chatbot.name,
+        websiteUrl,
+        systemPrompt: chatbot.systemPrompt || undefined,
+        topK: input.topK ?? chatbot.ragTopK ?? 8,
+      });
+
+      return {
+        answer: qaResponse.answer,
+        sources: qaResponse.sources,
+        hasGroundedEvidence: qaResponse.has_grounded_evidence,
+        stats: qaResponse.stats,
+      };
+    } catch (err: unknown) {
+      console.warn("Public chat communication error, returning soft fallback", {
+        publicId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+
+      return {
+        answer:
+          "We are currently experiencing a brief delay connecting to our service. Please try asking your question again in a moment, or feel free to explore our website directly.",
+        sources: [],
+        hasGroundedEvidence: false,
+        stats: {
+          retrieval_duration_ms: 0,
+          generation_duration_ms: 0,
+          total_duration_ms: 0,
+          model_used: "fallback-graceful",
+          chunks_retrieved: 0,
+        },
+      };
+    }
+  },
 };

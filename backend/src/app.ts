@@ -14,19 +14,26 @@ import {
   updateMeSchema,
 } from "./modules/auth/auth.validation.js";
 import chatbotRoutes from "./modules/chatbots/chatbot.routes.js";
+import publicChatbotRoutes from "./modules/chatbots/publicChatbot.routes.js";
 import knowledgeSourceRoutes from "./modules/knowledge-sources/knowledgeSource.routes.js";
 import organizationRoutes from "./modules/organizations/organization.routes.js";
 import { asyncHandler } from "./shared/asyncHandler.js";
 
 const app = express();
 
-// A single explicit allowed origin (never `*`) so the browser will accept
-// `Access-Control-Allow-Credentials: true` — required for the frontend to
-// send/receive the HttpOnly refresh-token cookie cross-origin.
+// Public widget endpoints allow requests from any origin (*).
+// Dashboard & auth endpoints require explicit FRONTEND_ORIGIN with credentials
+// for HttpOnly refresh-token cookies.
 app.use(
-  cors({
-    origin: env.FRONTEND_ORIGIN,
-    credentials: true,
+  cors((req, callback) => {
+    const isPublic = req.url && (req.url.startsWith("/api/v1/public") || req.url === "/");
+    if (isPublic) {
+      return callback(null, { origin: true, credentials: false });
+    }
+    return callback(null, {
+      origin: env.FRONTEND_ORIGIN,
+      credentials: true,
+    });
   }),
 );
 app.use(requestLogger);
@@ -38,6 +45,9 @@ app.get("/", (_req, res) => {
     message: "Chatbot Builder API is running",
   });
 });
+
+// Public endpoints (embedded widgets, no cookies/auth required)
+app.use("/api/v1/public/chatbots", publicChatbotRoutes);
 
 // Auth endpoints
 app.use("/api/v1/auth", authRoutes);

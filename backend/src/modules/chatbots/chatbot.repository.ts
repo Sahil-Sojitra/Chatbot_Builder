@@ -52,6 +52,10 @@ export const chatbotRepository = {
     return existing !== null;
   },
 
+  async findByPublicId(publicId: string): Promise<HydratedDocument<IChatbot> | null> {
+    return ChatbotModel.findOne({ publicId, deletedAt: null });
+  },
+
   async findByOrganizationId(
     organizationId: Types.ObjectId,
   ): Promise<HydratedDocument<IChatbot>[]> {
