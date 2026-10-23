@@ -64,6 +64,7 @@ const toPublicChatbot = (
     hasApiKey: hasKey,
     temperature: chatbot.temperature,
     maxTokens: chatbot.maxTokens,
+    sessionMessageLimit: chatbot.sessionMessageLimit ?? null,
     ragEnabled: chatbot.ragEnabled,
     ragTopK: chatbot.ragTopK,
     ragSimilarityThreshold: chatbot.ragSimilarityThreshold,
@@ -127,6 +128,9 @@ export const chatbotService = {
     }
     if (input.maxTokens !== undefined) {
       creationInput.maxTokens = input.maxTokens;
+    }
+    if (input.sessionMessageLimit !== undefined) {
+      creationInput.sessionMessageLimit = input.sessionMessageLimit;
     }
     if (input.ragTopK !== undefined) {
       creationInput.ragTopK = input.ragTopK;
@@ -229,6 +233,9 @@ export const chatbotService = {
     }
     if (input.maxTokens !== undefined) {
       fields.maxTokens = input.maxTokens;
+    }
+    if (input.sessionMessageLimit !== undefined) {
+      fields.sessionMessageLimit = input.sessionMessageLimit;
     }
     if (input.ragEnabled !== undefined) {
       fields.ragEnabled = input.ragEnabled;
@@ -518,6 +525,7 @@ export const chatbotService = {
               "Where can I find pricing information?",
             ],
       websiteUrl: websiteSource?.sourceUrl || null,
+      sessionMessageLimit: chatbot.sessionMessageLimit ?? null,
       uiConfig: chatbot.uiConfig || {
         primaryColor: "#7c3aed",
         botAvatarUrl: null,

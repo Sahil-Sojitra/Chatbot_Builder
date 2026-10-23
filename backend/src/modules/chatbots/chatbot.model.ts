@@ -17,6 +17,7 @@ export interface IChatbot {
   apiKey: string | null;
   temperature: number | null;
   maxTokens: number | null;
+  sessionMessageLimit: number | null;
   ragEnabled: boolean;
   ragTopK: number | null;
   ragSimilarityThreshold: number | null;
@@ -103,6 +104,11 @@ const chatbotSchema = new Schema<IChatbot>(
     },
 
     maxTokens: {
+      type: Number,
+      default: null,
+    },
+
+    sessionMessageLimit: {
       type: Number,
       default: null,
     },
