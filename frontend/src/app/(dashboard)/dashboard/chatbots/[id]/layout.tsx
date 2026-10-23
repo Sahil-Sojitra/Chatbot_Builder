@@ -56,6 +56,11 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
     return rawName;
   })();
 
+  // Instant Bots manage their own dedicated, streamlined layout without redundant outer headers
+  if (isInstant) {
+    return <div className="w-full">{children}</div>;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       {/* Dynamic Header: Instant Bot (Managed Playground) vs Custom Bot (Studio) */}

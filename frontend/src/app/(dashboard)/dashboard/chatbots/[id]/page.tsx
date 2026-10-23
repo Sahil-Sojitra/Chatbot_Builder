@@ -563,197 +563,87 @@ export default function ChatbotOverviewPage() {
           </div>
         ) : null}
 
-        {/* Instant Bot Header & Ingestion Status Banner */}
-        <div className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-[#0a0a0a] p-5 shadow-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
-                  Instant Bot Playground
-                </span>
-                <span className="text-xs text-zinc-500 font-mono">ID: {chatbot.publicId}</span>
-              </div>
-              <h1 className="text-xl font-bold tracking-tight text-white">{botDisplayName}</h1>
-              {websiteUrl ? (
-                <p className="text-xs text-zinc-400 font-mono mt-1">
-                  Target Website:{" "}
-                  <a
-                    href={websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-violet-400 hover:underline"
-                  >
-                    {websiteUrl}
-                  </a>
-                </p>
-              ) : null}
+        {/* Unified Clean Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-5">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+              <span className="text-zinc-500">Workspace</span>
+              <span className="text-zinc-600">/</span>
+              <span className="text-zinc-300 font-medium">Instant Bot</span>
+              <span className="text-zinc-600">•</span>
+              <span className="text-zinc-500 font-mono">ID: {chatbot.publicId}</span>
             </div>
 
-            {/* Ingestion Status Indicator & Delete Bot Action */}
-            <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
-              {isReady ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-800/60 bg-emerald-950/40 text-xs font-medium text-emerald-400">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Knowledge Base Ready</span>
-                </div>
-              ) : isProcessing ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-amber-800/60 bg-amber-950/40 text-xs font-medium text-amber-300">
-                  <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                  <span>Indexing Website…</span>
-                </div>
-              ) : isFailed ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-800/60 bg-rose-950/40 text-xs font-medium text-rose-300">
-                  <span className="h-2 w-2 rounded-full bg-rose-400" />
-                  <span>Ingestion Failed</span>
-                </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight text-white">{botDisplayName}</h1>
+              {chatbot.status === "ACTIVE" ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live &amp; Ready
+                </span>
               ) : (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900 text-xs font-medium text-zinc-400">
-                  <span>Checking status…</span>
-                </div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
+                  {chatbot.status === "PAUSED" ? "Paused" : "Draft"}
+                </span>
               )}
-
-              {/* Publish / Pause Deployment Button for Instant Bot */}
-              <Button
-                size="sm"
-                variant={chatbot.status === "ACTIVE" ? "secondary" : "default"}
-                disabled={isPublishing || isProcessing}
-                onClick={() => void handleTogglePublish()}
-                className={`h-8 text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                  chatbot.status === "ACTIVE"
-                    ? "border-zinc-700 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200"
-                    : "bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
-                }`}
-                title={
-                  chatbot.status === "ACTIVE"
-                    ? "Pause public widget deployment"
-                    : "Deploy and publish chatbot widget for website visitors"
-                }
-              >
-                {isPublishing ? (
-                  "Updating…"
-                ) : chatbot.status === "ACTIVE" ? (
-                  <>
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Pause (Published)</span>
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-3.5 h-3.5 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    <span>Publish Assistant</span>
-                  </>
-                )}
-              </Button>
-
-              {/* Test Floating Widget on Screen Button */}
-              <Button
-                size="sm"
-                variant={isFloatingWidgetActive ? "default" : "outline"}
-                onClick={handleToggleFloatingWidget}
-                className={`h-8 text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                  isFloatingWidgetActive
-                    ? "bg-violet-600 hover:bg-violet-700 text-white font-medium shadow-md shadow-violet-900/40"
-                    : "border-violet-500/40 bg-violet-950/20 hover:bg-violet-950/40 text-violet-300 hover:text-white"
-                }`}
-                title="Launch the real floating chat launcher in the corner of your screen"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span
-                    className={`animate-ping absolute inline-flex h-full w-full rounded-full ${
-                      isFloatingWidgetActive ? "bg-emerald-400" : "bg-violet-400"
-                    } opacity-75`}
-                  />
-                  <span
-                    className={`relative inline-flex rounded-full h-2 w-2 ${
-                      isFloatingWidgetActive ? "bg-emerald-500" : "bg-violet-500"
-                    }`}
-                  />
+              {isProcessing && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  Indexing Website…
                 </span>
-                <span>
-                  {isFloatingWidgetActive ? "Close Widget Preview" : "Preview Floating Widget"}
-                </span>
-              </Button>
+              )}
+            </div>
 
-              {/* Sync Latest Website Button (Available even when READY so users can pull updated website data) */}
-              {websiteUrl ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={isProcessing || isRetryingIngestion}
-                  onClick={() => void handleRetryIngestion()}
-                  className="h-8 text-xs border-zinc-700 bg-zinc-900/90 hover:bg-violet-950/40 hover:border-violet-500/50 text-zinc-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                  title="Re-crawl and update knowledge base with the latest changes from your website"
+            {websiteUrl ? (
+              <p className="text-xs text-zinc-400 flex items-center gap-1.5">
+                <span>Target:</span>
+                <a
+                  href={websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-violet-400 hover:text-violet-300 hover:underline flex items-center gap-1 font-mono"
                 >
-                  <svg
-                    className={`w-3.5 h-3.5 text-violet-400 ${
-                      isRetryingIngestion || isProcessing ? "animate-spin" : ""
-                    }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
-                    />
+                  {websiteUrl}
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
-                  <span>
-                    {isRetryingIngestion || isProcessing
-                      ? "Syncing Pipeline…"
-                      : "Sync Latest Website"}
-                  </span>
-                </Button>
-              ) : null}
-
-              {isConfirmingDelete ? (
-                <div className="flex items-center gap-1.5 rounded-md border border-red-900/60 bg-red-950/40 px-2 py-1">
-                  <span className="text-xs text-red-300 font-mono">Delete?</span>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="h-6 text-[11px] px-2 font-mono"
-                    disabled={isDeletingChatbot}
-                    onClick={() => void handleDeleteChatbot()}
-                  >
-                    {isDeletingChatbot ? "Deleting…" : "Confirm"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 text-[11px] px-1.5 text-zinc-400 hover:text-white font-mono"
-                    disabled={isDeletingChatbot}
-                    onClick={() => setIsConfirmingDelete(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 text-xs text-zinc-400 hover:text-red-400 font-mono"
-                  disabled={isDeletingChatbot}
-                  onClick={() => setIsConfirmingDelete(true)}
-                  title="Delete this Instant Bot"
-                >
-                  Delete Bot
-                </Button>
-              )}
-            </div>
+                </a>
+              </p>
+            ) : null}
           </div>
+
+          {/* Primary Action Button */}
+          <div className="flex items-center gap-2.5 self-start sm:self-center">
+            <Button
+              size="default"
+              variant={chatbot.status === "ACTIVE" ? "secondary" : "default"}
+              disabled={isPublishing || isProcessing}
+              onClick={() => void handleTogglePublish()}
+              className={`h-9 px-4 text-xs font-medium transition-all cursor-pointer ${
+                chatbot.status === "ACTIVE"
+                  ? "border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md shadow-emerald-950/50"
+              }`}
+            >
+              {isPublishing ? (
+                "Updating…"
+              ) : chatbot.status === "ACTIVE" ? (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 mr-1.5 animate-pulse" />
+                  Pause Deployment
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5 mr-1.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Publish Assistant
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
 
           {/* Ingestion Failure Banner & Retry Button */}
           {isFailed ? (
@@ -855,7 +745,6 @@ export default function ChatbotOverviewPage() {
               </button>
             </div>
           )}
-        </div>
 
         {/* Focused Full-Width Playground Card */}
         <Card className="flex flex-col h-[650px] overflow-hidden p-0 rounded-md border border-zinc-800 bg-[#000000] shadow-xl">
