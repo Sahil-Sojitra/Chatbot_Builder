@@ -883,15 +883,34 @@
     open: () => toggleWidget(true),
     close: () => toggleWidget(false),
     toggle: () => toggleWidget(),
+    show: () => {
+      if (!document.body.contains(host)) {
+        document.body.appendChild(host);
+      }
+      host.style.display = "block";
+    },
+    hide: () => {
+      toggleWidget(false);
+      host.style.display = "none";
+    },
     destroy: () => {
       try {
         host.remove();
       } catch {}
       window.__CHATBOT_BUILDER_WIDGET_LOADED__ = false;
+      try {
+        delete window.ChatbotWidget;
+      } catch {}
+      const script = document.getElementById("cb-live-preview-script");
+      if (script) script.remove();
     },
     init: (newPublicId, newApiHost) => {
       if (newPublicId) publicId = newPublicId;
       if (newApiHost) apiHost = newApiHost;
+      if (!document.body.contains(host)) {
+        document.body.appendChild(host);
+      }
+      host.style.display = "block";
       loadConfig();
     },
   };

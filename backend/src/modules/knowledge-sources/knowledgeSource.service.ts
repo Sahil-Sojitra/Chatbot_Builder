@@ -143,9 +143,23 @@ export const knowledgeSourceService = {
         return toPublicKnowledgeSource(inProgressSource);
       }
 
-      // 2. Prevent silently attaching a different website URL to an existing Instant Bot chatbot
+      const normalizeUrl = (u: string) => {
+        try {
+          const parsed = new URL(u.trim());
+          const cleanPath = parsed.pathname.replace(/\/+$/, "");
+          return `${parsed.protocol}//${parsed.hostname.toLowerCase()}${cleanPath}${parsed.search}`;
+        } catch {
+          return u.trim().replace(/\/+$/, "").toLowerCase();
+        }
+      };
+
+      // 2. Prevent silently attaching a different website domain to an existing Instant Bot chatbot
       const existingWithUrl = existingSources.find((s) => s.sourceUrl);
-      if (existingWithUrl && existingWithUrl.sourceUrl !== input.sourceUrl) {
+      if (
+        existingWithUrl &&
+        existingWithUrl.sourceUrl &&
+        normalizeUrl(existingWithUrl.sourceUrl) !== normalizeUrl(input.sourceUrl)
+      ) {
         throw new AppError(
           400,
           "VALIDATION_ERROR",
@@ -153,34 +167,20 @@ export const knowledgeSourceService = {
         );
       }
 
-      // 3. If an existing source is already READY for this URL, return it
-      const readySource = existingSources.find(
-        (s) => s.status === "READY" && s.sourceUrl === input.sourceUrl,
-      );
-      if (readySource) {
-        return toPublicKnowledgeSource(readySource);
-      }
-
-      // 4. Handle retry vs initial creation
-      // existingSources are sorted newest first ({ createdAt: -1 }).
-      const failedSources = existingSources.filter((s) => s.status === "FAILED");
-
+      // 3. Handle re-sync vs initial creation:
+      // If an existing source already exists for this chatbot (READY or FAILED), reset it to PROCESSING
+      // to re-crawl and re-index the latest website content!
       let sourceToProcess: HydratedDocument<IKnowledgeSource>;
 
-      const firstFailedSource = failedSources[0];
-      if (failedSources.length >= 2 && firstFailedSource) {
-        // A second retry: We already have the initial failed record (preserved for diagnosis)
-        // and a subsequent failed retry record. Reuse the latest retry record rather than
-        // creating duplicate knowledge sources.
-        const resetSource = await knowledgeSourceRepository.resetForRetry(
-          firstFailedSource._id.toString(),
+      const existingSource = existingSources.find((s) => s.sourceUrl);
+      if (existingSource) {
+        const resetSource = await knowledgeSourceRepository.resetForProcessing(
+          existingSource._id.toString(),
           input.name,
           input.sourceUrl,
         );
-        sourceToProcess = resetSource ?? firstFailedSource;
+        sourceToProcess = resetSource ?? existingSource;
       } else {
-        // Initial setup (0 failed sources) OR First retry (1 failed source):
-        // Create a new knowledge source record. If 1 failed source exists, it is preserved.
         const creationInput: RepositoryCreateKnowledgeSourceInput = {
           chatbotId: chatbot._id,
           type: input.type,

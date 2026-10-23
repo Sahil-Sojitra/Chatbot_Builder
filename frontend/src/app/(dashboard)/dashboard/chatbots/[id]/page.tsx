@@ -218,9 +218,9 @@ export default function ChatbotOverviewPage() {
 
   const isReady = websiteSource?.status === "READY";
   const isProcessing =
-    ksStatus === "loading" ||
     websiteSource?.status === "PENDING" ||
-    websiteSource?.status === "PROCESSING";
+    websiteSource?.status === "PROCESSING" ||
+    isRetryingIngestion;
   const isFailed = websiteSource?.status === "FAILED";
 
   // Auto-refresh chatbot details once when ingestion transitions to READY to sync newly synthesized persona & starter questions
@@ -292,7 +292,11 @@ export default function ChatbotOverviewPage() {
     if (isFloatingWidgetActive) {
       setIsFloatingWidgetActive(false);
       if (typeof window !== "undefined" && (window as any).ChatbotWidget) {
-        (window as any).ChatbotWidget.destroy();
+        if (typeof (window as any).ChatbotWidget.hide === "function") {
+          (window as any).ChatbotWidget.hide();
+        } else {
+          (window as any).ChatbotWidget.close();
+        }
       }
       return;
     }
@@ -303,32 +307,40 @@ export default function ChatbotOverviewPage() {
       const apiHost =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-      let script = document.getElementById(
-        "cb-live-preview-script",
-      ) as HTMLScriptElement | null;
-
-      if (!script) {
-        script = document.createElement("script");
-        script.id = "cb-live-preview-script";
-        script.src = "/widget.js";
-        script.setAttribute("data-chatbot-id", chatbot.publicId);
-        script.setAttribute("data-api-host", apiHost);
-        script.defer = true;
-        document.body.appendChild(script);
-
-        script.onload = () => {
-          setTimeout(() => {
-            if ((window as any).ChatbotWidget) {
-              (window as any).ChatbotWidget.open();
-            }
-          }, 250);
-        };
-      } else {
-        if ((window as any).ChatbotWidget) {
-          (window as any).ChatbotWidget.init(chatbot.publicId, apiHost);
-          (window as any).ChatbotWidget.open();
+      if ((window as any).ChatbotWidget) {
+        if (typeof (window as any).ChatbotWidget.show === "function") {
+          (window as any).ChatbotWidget.show();
         }
+        (window as any).ChatbotWidget.init(chatbot.publicId, apiHost);
+        setTimeout(() => {
+          if ((window as any).ChatbotWidget) {
+            (window as any).ChatbotWidget.open();
+          }
+        }, 100);
+        return;
       }
+
+      const existingScript = document.getElementById("cb-live-preview-script");
+      if (existingScript) existingScript.remove();
+
+      const script = document.createElement("script");
+      script.id = "cb-live-preview-script";
+      script.src = "/widget.js";
+      script.setAttribute("data-chatbot-id", chatbot.publicId);
+      script.setAttribute("data-api-host", apiHost);
+      script.defer = true;
+      document.body.appendChild(script);
+
+      script.onload = () => {
+        setTimeout(() => {
+          if ((window as any).ChatbotWidget) {
+            if (typeof (window as any).ChatbotWidget.show === "function") {
+              (window as any).ChatbotWidget.show();
+            }
+            (window as any).ChatbotWidget.open();
+          }
+        }, 200);
+      };
     }
   };
 
@@ -1316,6 +1328,35 @@ export default function ChatbotOverviewPage() {
                   </Button>
                 )}
               </div>
+
+              {/* Sync Error / Success Alerts in Settings */}
+              {retryError && (
+                <div className="rounded-md border border-rose-800/50 bg-rose-950/30 p-3 text-xs text-rose-200 flex items-center justify-between gap-2">
+                  <span>{retryError}</span>
+                  <button
+                    type="button"
+                    onClick={() => setRetryError(null)}
+                    className="text-rose-400 hover:text-white cursor-pointer font-bold"
+                  >
+                    &times;
+                  </button>
+                </div>
+              )}
+              {syncNotice && (
+                <div className="rounded-md border border-violet-500/30 bg-violet-950/20 px-3 py-2 text-xs text-violet-200 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+                    <span>{syncNotice}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSyncNotice(null)}
+                    className="text-violet-400 hover:text-white cursor-pointer font-bold"
+                  >
+                    &times;
+                  </button>
+                </div>
+              )}
 
               <div className="flex flex-col divide-y divide-zinc-800/80 text-xs">
                 <div className="flex items-center justify-between py-2.5">

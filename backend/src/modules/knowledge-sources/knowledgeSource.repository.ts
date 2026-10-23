@@ -123,6 +123,32 @@ export const knowledgeSourceRepository = {
   },
 
   /**
+   * Resets any existing knowledge source (READY or FAILED) back to PROCESSING for re-sync.
+   */
+  async resetForProcessing(
+    id: string,
+    name?: string,
+    sourceUrl?: string,
+  ): Promise<HydratedDocument<IKnowledgeSource> | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return KnowledgeSourceModel.findOneAndUpdate(
+      { _id: id },
+      {
+        $set: {
+          status: "PROCESSING",
+          error: null,
+          lastProcessedAt: new Date(),
+          ...(name ? { name } : {}),
+          ...(sourceUrl ? { sourceUrl } : {}),
+        },
+      },
+      { returnDocument: "after" },
+    );
+  },
+
+  /**
    * Resets a previously failed knowledge source back to PROCESSING for retry.
    * Atomically flips status from FAILED to PROCESSING.
    */
