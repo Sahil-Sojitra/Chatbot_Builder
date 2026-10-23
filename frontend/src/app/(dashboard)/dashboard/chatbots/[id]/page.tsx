@@ -63,6 +63,8 @@ export default function ChatbotOverviewPage() {
   // Playground chat state
   const [deviceMode, setDeviceMode] = useState<"widget" | "mobile">("widget");
   const [activeCodeTab, setActiveCodeTab] = useState<"script" | "curl" | "json">("script");
+  const [instantIntegrationTab, setInstantIntegrationTab] = useState<"html" | "react" | "curl">("html");
+  const [copiedIntegration, setCopiedIntegration] = useState(false);
 
   const brandName = chatbot?.name
     ? chatbot.name.replace(/\s+(?:AI\s+)?(?:Assistant|Bot|Chatbot|Agent)$/i, "").trim() || chatbot.name
@@ -247,9 +249,37 @@ export default function ChatbotOverviewPage() {
     }
   };
 
-  const embedScriptCode = `<script\n  src="https://chatbot-builder-pearl-sigma.vercel.app/widget.js"\n  data-chatbot-id="${chatbot.publicId}"\n  defer\n></script>`;
+  const appOrigin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://chatbot-builder-pearl-sigma.vercel.app";
 
-  const curlCode = `curl -X POST https://api.chatbotstudio.io/v1/chatbots/${chatbot.publicId}/query \\\n  -H "Content-Type: application/json" \\\n  -d '{"message": "Hello from API"}'`;
+  const embedScriptCode = `<script\n  src="${appOrigin}/widget.js"\n  data-chatbot-id="${chatbot.publicId}"\n  defer\n></script>`;
+
+  const reactScriptCode = `import Script from "next/script";\n\nexport function ChatWidget() {\n  return (\n    <Script\n      src="${appOrigin}/widget.js"\n      data-chatbot-id="${chatbot.publicId}"\n      strategy="lazyOnload"\n    />\n  );\n}`;
+
+  const curlCode = `curl -X POST "${appOrigin}/api/v1/public/chatbots/${chatbot.publicId}/chat" \\\n  -H "Content-Type: application/json" \\\n  -d '{"message": "Hello from website"}'`;
+
+  const getActiveIntegrationCode = () => {
+    switch (instantIntegrationTab) {
+      case "html":
+        return embedScriptCode;
+      case "react":
+        return reactScriptCode;
+      case "curl":
+        return curlCode;
+    }
+  };
+
+  const handleCopyIntegrationSnippet = async () => {
+    try {
+      await navigator.clipboard.writeText(getActiveIntegrationCode());
+      setCopiedIntegration(true);
+      setTimeout(() => setCopiedIntegration(false), 2000);
+    } catch {
+      // Fallback
+    }
+  };
 
   const jsonConfigCode = JSON.stringify(
     {
@@ -531,6 +561,50 @@ export default function ChatbotOverviewPage() {
                   <span>Checking status…</span>
                 </div>
               )}
+
+              {/* Publish / Pause Deployment Button for Instant Bot */}
+              <Button
+                size="sm"
+                variant={chatbot.status === "ACTIVE" ? "secondary" : "default"}
+                disabled={isPublishing || isProcessing}
+                onClick={() => void handleTogglePublish()}
+                className={`h-8 text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                  chatbot.status === "ACTIVE"
+                    ? "border-zinc-700 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200"
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
+                }`}
+                title={
+                  chatbot.status === "ACTIVE"
+                    ? "Pause public widget deployment"
+                    : "Deploy and publish chatbot widget for website visitors"
+                }
+              >
+                {isPublishing ? (
+                  "Updating…"
+                ) : chatbot.status === "ACTIVE" ? (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Pause (Published)</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-3.5 h-3.5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    <span>Publish Assistant</span>
+                  </>
+                )}
+              </Button>
 
               {/* Sync Latest Website Button (Available even when READY so users can pull updated website data) */}
               {websiteUrl ? (
@@ -983,6 +1057,141 @@ export default function ChatbotOverviewPage() {
                   </Button>
                 )}
               </form>
+            </div>
+          </div>
+        </Card>
+
+        {/* Instant Bot Integration & Embed Hub Card */}
+        <Card className="rounded-lg border border-zinc-800 bg-[#0a0a0a] p-5 shadow-lg flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-800/80 pb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-semibold text-white">
+                  Website Integration &amp; Floating Widget
+                </span>
+                <Badge
+                  variant={chatbot.status === "ACTIVE" ? "success" : "default"}
+                  className="text-[11px]"
+                >
+                  {chatbot.status === "ACTIVE" ? "Ready to Embed" : "Draft (Unpublished)"}
+                </Badge>
+              </div>
+              <p className="text-xs text-zinc-400">
+                Copy and paste this snippet into Shopify, WordPress, Webflow, React, or standard HTML to embed the floating chat widget.
+              </p>
+            </div>
+
+            {/* Public ID Token Box */}
+            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-md">
+              <span className="text-xs text-zinc-400 font-mono">ID: {chatbot.publicId}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 text-[11px] px-2 text-violet-400 hover:text-violet-300 font-mono"
+                onClick={() => void handleCopyPublicId()}
+              >
+                {copiedId ? "Copied!" : "Copy"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Publication notice banner */}
+          {chatbot.status !== "ACTIVE" ? (
+            <div className="rounded-md border border-amber-800/50 bg-amber-950/20 px-3.5 py-2.5 flex items-center justify-between text-xs text-amber-200">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>
+                  This assistant is currently <strong>{chatbot.status}</strong>. Click &ldquo;Publish Assistant&rdquo; above so visitors on your website can receive answers.
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="default"
+                disabled={isPublishing || isProcessing}
+                onClick={() => void handleTogglePublish()}
+                className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-black font-semibold shrink-0"
+              >
+                {isPublishing ? "Publishing…" : "Publish Now"}
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-md border border-emerald-800/40 bg-emerald-950/15 px-3.5 py-2 flex items-center gap-2 text-xs text-emerald-300">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>
+                <strong>Assistant is Live!</strong> Visitors on any website with this widget script can chat with your assistant in real time.
+              </span>
+            </div>
+          )}
+
+          {/* Snippet Code Tabs */}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-md border border-zinc-800 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setInstantIntegrationTab("html")}
+                  className={`px-3 py-1 rounded transition-colors cursor-pointer ${
+                    instantIntegrationTab === "html"
+                      ? "bg-violet-600 text-white font-medium"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  HTML / Shopify / WordPress
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInstantIntegrationTab("react")}
+                  className={`px-3 py-1 rounded transition-colors cursor-pointer ${
+                    instantIntegrationTab === "react"
+                      ? "bg-violet-600 text-white font-medium"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  Next.js / React
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInstantIntegrationTab("curl")}
+                  className={`px-3 py-1 rounded transition-colors cursor-pointer ${
+                    instantIntegrationTab === "curl"
+                      ? "bg-violet-600 text-white font-medium"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  cURL / API
+                </button>
+              </div>
+
+              <span className="text-[11px] text-zinc-500 font-mono">
+                {instantIntegrationTab === "html"
+                  ? "Standard Script Tag"
+                  : instantIntegrationTab === "react"
+                    ? "React Script Component"
+                    : "Public JSON API"}
+              </span>
+            </div>
+
+            <div className="relative rounded-md border border-zinc-800 bg-[#050507] p-3.5">
+              <pre className="font-mono text-xs text-violet-200/90 overflow-x-auto leading-relaxed max-h-40">
+                {getActiveIntegrationCode()}
+              </pre>
+              <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-zinc-800/60">
+                <span className="text-[11px] text-zinc-400">
+                  {instantIntegrationTab === "html"
+                    ? "Paste just before the closing </body> tag of your website."
+                    : instantIntegrationTab === "react"
+                      ? "Drop into your RootLayout or main page component."
+                      : "Direct HTTP POST endpoint for custom mobile apps or headless SDKs."}
+                </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 text-xs font-medium cursor-pointer"
+                  onClick={() => void handleCopyIntegrationSnippet()}
+                >
+                  {copiedIntegration ? "✓ Copied to Clipboard" : "Copy Code Snippet"}
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
