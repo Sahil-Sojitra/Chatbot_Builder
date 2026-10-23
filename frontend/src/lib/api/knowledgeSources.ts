@@ -54,23 +54,33 @@ export const knowledgeSourcesApi = {
   create: (
     chatbotId: string,
     input: CreateKnowledgeSourceInput,
-  ): Promise<KnowledgeSourceResponse> =>
-    apiRequest<KnowledgeSourceResponse>(`/api/v1/knowledge-sources/${chatbotId}`, {
+  ): Promise<KnowledgeSourceResponse> => {
+    const trimmedId = chatbotId?.trim();
+    if (!trimmedId) {
+      return Promise.reject(new Error("Chatbot ID is required to create a knowledge source."));
+    }
+    return apiRequest<KnowledgeSourceResponse>(`/api/v1/knowledge-sources/${trimmedId}`, {
       method: "POST",
       body: input,
-    }),
+    });
+  },
 
   initiateUpload: (
     chatbotId: string,
     input: InitiateFileUploadInput,
-  ): Promise<InitiateFileUploadResponse> =>
-    apiRequest<InitiateFileUploadResponse>(
-      `/api/v1/knowledge-sources/${chatbotId}/upload`,
+  ): Promise<InitiateFileUploadResponse> => {
+    const trimmedId = chatbotId?.trim();
+    if (!trimmedId) {
+      return Promise.reject(new Error("Chatbot ID is required to initiate upload."));
+    }
+    return apiRequest<InitiateFileUploadResponse>(
+      `/api/v1/knowledge-sources/${trimmedId}/upload`,
       {
         method: "POST",
         body: input,
       },
-    ),
+    );
+  },
 
   uploadToStorage: async (
     uploadUrl: string,
@@ -93,42 +103,67 @@ export const knowledgeSourcesApi = {
   completeUpload: (
     chatbotId: string,
     input: CompleteFileUploadInput,
-  ): Promise<KnowledgeSourceResponse> =>
-    apiRequest<KnowledgeSourceResponse>(
-      `/api/v1/knowledge-sources/${chatbotId}/upload/complete`,
+  ): Promise<KnowledgeSourceResponse> => {
+    const trimmedId = chatbotId?.trim();
+    if (!trimmedId) {
+      return Promise.reject(new Error("Chatbot ID is required to complete upload."));
+    }
+    return apiRequest<KnowledgeSourceResponse>(
+      `/api/v1/knowledge-sources/${trimmedId}/upload/complete`,
       {
         method: "POST",
         body: input,
       },
-    ),
+    );
+  },
 
-  list: (chatbotId: string): Promise<KnowledgeSourceListResponse> =>
-    apiRequest<KnowledgeSourceListResponse>(`/api/v1/knowledge-sources/${chatbotId}`),
+  list: (chatbotId?: string | null): Promise<KnowledgeSourceListResponse> => {
+    const trimmedId = chatbotId?.trim();
+    if (!trimmedId) {
+      return Promise.resolve({ knowledgeSources: [] });
+    }
+    return apiRequest<KnowledgeSourceListResponse>(`/api/v1/knowledge-sources/${trimmedId}`);
+  },
 
-  get: (chatbotId: string, sourceId: string): Promise<KnowledgeSourceResponse> =>
-    apiRequest<KnowledgeSourceResponse>(`/api/v1/knowledge-sources/${chatbotId}/${sourceId}`),
+  get: (chatbotId: string, sourceId: string): Promise<KnowledgeSourceResponse> => {
+    const trimmedId = chatbotId?.trim();
+    if (!trimmedId || !sourceId?.trim()) {
+      return Promise.reject(new Error("Chatbot ID and Source ID are required."));
+    }
+    return apiRequest<KnowledgeSourceResponse>(`/api/v1/knowledge-sources/${trimmedId}/${sourceId.trim()}`);
+  },
 
   update: (
     chatbotId: string,
     sourceId: string,
     input: UpdateKnowledgeSourceInput,
-  ): Promise<KnowledgeSourceResponse> =>
-    apiRequest<KnowledgeSourceResponse>(
-      `/api/v1/knowledge-sources/${chatbotId}/${sourceId}`,
+  ): Promise<KnowledgeSourceResponse> => {
+    const trimmedId = chatbotId?.trim();
+    if (!trimmedId || !sourceId?.trim()) {
+      return Promise.reject(new Error("Chatbot ID and Source ID are required."));
+    }
+    return apiRequest<KnowledgeSourceResponse>(
+      `/api/v1/knowledge-sources/${trimmedId}/${sourceId.trim()}`,
       {
         method: "PATCH",
         body: input,
       },
-    ),
+    );
+  },
 
   delete: (
     chatbotId: string,
     sourceId: string,
-  ): Promise<{ deleted: boolean }> =>
-    apiRequest<{ deleted: boolean }>(
-      `/api/v1/knowledge-sources/${chatbotId}/${sourceId}`,
+  ): Promise<{ deleted: boolean }> => {
+    const trimmedId = chatbotId?.trim();
+    if (!trimmedId || !sourceId?.trim()) {
+      return Promise.reject(new Error("Chatbot ID and Source ID are required."));
+    }
+    return apiRequest<{ deleted: boolean }>(
+      `/api/v1/knowledge-sources/${trimmedId}/${sourceId.trim()}`,
       {
         method: "DELETE",
       },
-    ),
+    );
+  },
 };

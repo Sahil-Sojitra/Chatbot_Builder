@@ -30,9 +30,19 @@ export const knowledgeSourceController = {
       throw unauthorized();
     }
 
+    const rawChatbotId =
+      (req.params.chatbotId as string | undefined) ||
+      (req.query.chatbotId as string | undefined);
+    const chatbotId = rawChatbotId?.trim();
+
+    if (!chatbotId) {
+      sendSuccess(res, { knowledgeSources: [] }, 200);
+      return;
+    }
+
     const knowledgeSources = await knowledgeSourceService.listForOwner(
       req.auth.userId,
-      req.params.chatbotId as string,
+      chatbotId,
     );
 
     sendSuccess(res, { knowledgeSources }, 200);

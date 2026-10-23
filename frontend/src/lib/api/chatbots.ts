@@ -64,33 +64,63 @@ export const chatbotsApi = {
 
   list: (): Promise<ChatbotListResponse> => apiRequest<ChatbotListResponse>("/api/v1/chatbots"),
 
-  get: (id: string): Promise<ChatbotResponse> =>
-    apiRequest<ChatbotResponse>(`/api/v1/chatbots/${id}`),
+  get: (id?: string | null): Promise<ChatbotResponse> => {
+    const trimmedId = id?.trim();
+    if (!trimmedId) {
+      return Promise.reject(new Error("Chatbot ID is required."));
+    }
+    return apiRequest<ChatbotResponse>(`/api/v1/chatbots/${trimmedId}`);
+  },
 
-  update: (id: string, input: UpdateChatbotInput): Promise<ChatbotResponse> =>
-    apiRequest<ChatbotResponse>(`/api/v1/chatbots/${id}`, {
+  update: (id: string, input: UpdateChatbotInput): Promise<ChatbotResponse> => {
+    const trimmedId = id?.trim();
+    if (!trimmedId) {
+      return Promise.reject(new Error("Chatbot ID is required."));
+    }
+    return apiRequest<ChatbotResponse>(`/api/v1/chatbots/${trimmedId}`, {
       method: "PATCH",
       body: input,
-    }),
+    });
+  },
 
-  publish: (id: string): Promise<ChatbotResponse> =>
-    apiRequest<ChatbotResponse>(`/api/v1/chatbots/${id}/publish`, {
+  publish: (id: string): Promise<ChatbotResponse> => {
+    const trimmedId = id?.trim();
+    if (!trimmedId) {
+      return Promise.reject(new Error("Chatbot ID is required."));
+    }
+    return apiRequest<ChatbotResponse>(`/api/v1/chatbots/${trimmedId}/publish`, {
       method: "POST",
-    }),
+    });
+  },
 
-  unpublish: (id: string): Promise<ChatbotResponse> =>
-    apiRequest<ChatbotResponse>(`/api/v1/chatbots/${id}/unpublish`, {
+  unpublish: (id: string): Promise<ChatbotResponse> => {
+    const trimmedId = id?.trim();
+    if (!trimmedId) {
+      return Promise.reject(new Error("Chatbot ID is required."));
+    }
+    return apiRequest<ChatbotResponse>(`/api/v1/chatbots/${trimmedId}/unpublish`, {
       method: "POST",
-    }),
+    });
+  },
 
-  chat: (id: string, message: string): Promise<ChatResponse> =>
-    apiRequest<ChatResponse>(`/api/v1/chatbots/${id}/chat`, {
+  chat: (id: string, message: string): Promise<ChatResponse> => {
+    const trimmedId = id?.trim();
+    if (!trimmedId) {
+      return Promise.reject(new Error("Chatbot ID is required."));
+    }
+    return apiRequest<ChatResponse>(`/api/v1/chatbots/${trimmedId}/chat`, {
       method: "POST",
       body: { message },
-    }),
+    });
+  },
 
-  delete: (id: string): Promise<{ deleted: boolean }> =>
-    apiRequest<{ deleted: boolean }>(`/api/v1/chatbots/${id}`, {
+  delete: (id: string): Promise<{ deleted: boolean }> => {
+    const trimmedId = id?.trim();
+    if (!trimmedId) {
+      return Promise.reject(new Error("Chatbot ID is required."));
+    }
+    return apiRequest<{ deleted: boolean }>(`/api/v1/chatbots/${trimmedId}`, {
       method: "DELETE",
-    }),
+    });
+  },
 };

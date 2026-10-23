@@ -16,13 +16,24 @@ const isProcessing = (status: KnowledgeSourceStatus): boolean =>
 const hasPendingOrProcessing = (sources: KnowledgeSource[]): boolean =>
   sources.some((source) => isProcessing(source.status));
 
-export function useKnowledgeSources(chatbotId: string) {
-  const [status, setStatus] = useState<KnowledgeSourcesStatus>("loading");
+export function useKnowledgeSources(chatbotId?: string | null) {
+  const trimmedId = chatbotId?.trim() || "";
+  const [status, setStatus] = useState<KnowledgeSourcesStatus>(() =>
+    trimmedId ? "loading" : "loaded",
+  );
   const [knowledgeSources, setKnowledgeSources] = useState<KnowledgeSource[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
+    if (!trimmedId) {
+      setStatus("loaded");
+      setKnowledgeSources([]);
+      setError(null);
+      return;
+    }
+
+    setStatus("loading");
     let cancelled = false;
     let pollTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -41,7 +52,7 @@ export function useKnowledgeSources(chatbotId: string) {
         if (cancelled) return;
 
         try {
-          const result = await knowledgeSourcesApi.list(chatbotId);
+          const result = await knowledgeSourcesApi.list(trimmedId);
           if (cancelled) return;
 
           setKnowledgeSources(result.knowledgeSources);
@@ -59,7 +70,7 @@ export function useKnowledgeSources(chatbotId: string) {
     };
 
     // Initial load
-    knowledgeSourcesApi.list(chatbotId).then(
+    knowledgeSourcesApi.list(trimmedId).then(
       (result) => {
         if (!cancelled) {
           setKnowledgeSources(result.knowledgeSources);
@@ -84,13 +95,15 @@ export function useKnowledgeSources(chatbotId: string) {
       cancelled = true;
       clearActiveTimer();
     };
-  }, [chatbotId, reloadToken]);
+  }, [trimmedId, reloadToken]);
 
   const refetch = useCallback(() => {
-    setStatus("loading");
+    if (trimmedId) {
+      setStatus("loading");
+    }
     setError(null);
     setReloadToken((token) => token + 1);
-  }, []);
+  }, [trimmedId]);
 
   return { status, knowledgeSources, error, refetch };
 }

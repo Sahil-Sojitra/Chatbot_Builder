@@ -9,16 +9,27 @@ import type { Chatbot } from "@/types/chatbot";
 export type ChatbotDetailStatus = "loading" | "loaded" | "error";
 
 /** Fetches a single chatbot by id via the existing GET /api/v1/chatbots/:id. */
-export function useChatbot(chatbotId: string) {
-  const [status, setStatus] = useState<ChatbotDetailStatus>("loading");
+export function useChatbot(chatbotId?: string | null) {
+  const trimmedId = chatbotId?.trim() || "";
+  const [status, setStatus] = useState<ChatbotDetailStatus>(() =>
+    trimmedId ? "loading" : "loaded",
+  );
   const [chatbot, setChatbot] = useState<Chatbot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
+    if (!trimmedId) {
+      setStatus("loaded");
+      setChatbot(null);
+      setError(null);
+      return;
+    }
+
+    setStatus("loading");
     let cancelled = false;
 
-    chatbotsApi.get(chatbotId).then(
+    chatbotsApi.get(trimmedId).then(
       (result) => {
         if (!cancelled) {
           setChatbot(result.chatbot);
@@ -36,12 +47,15 @@ export function useChatbot(chatbotId: string) {
     return () => {
       cancelled = true;
     };
-  }, [chatbotId, reloadToken]);
+  }, [trimmedId, reloadToken]);
 
   const refetch = useCallback(() => {
+    if (trimmedId) {
+      setStatus("loading");
+    }
     setError(null);
     setReloadToken((token) => token + 1);
-  }, []);
+  }, [trimmedId]);
 
   return { status, chatbot, error, refetch, setChatbot };
 }

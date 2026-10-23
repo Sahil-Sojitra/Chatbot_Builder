@@ -35,6 +35,12 @@ router.post(
 );
 
 router.get(
+  "/",
+  requireAuth,
+  asyncHandler(knowledgeSourceController.list),
+);
+
+router.get(
   "/:chatbotId",
   requireAuth,
   asyncHandler(knowledgeSourceController.list),
