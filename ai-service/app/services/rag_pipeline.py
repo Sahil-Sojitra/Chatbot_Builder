@@ -126,6 +126,7 @@ class RAGQuestionAnsweringService:
             bot_name=request.bot_name,
             website_url=request.website_url,
             system_prompt=request.system_prompt,
+            chat_history=request.chat_history,
         )
         generation_ms = round((time.perf_counter() - gen_start) * 1000, 2)
         total_ms = round((time.perf_counter() - total_start) * 1000, 2)
@@ -182,6 +183,7 @@ class RAGQuestionAnsweringService:
             bot_name=request.bot_name,
             website_url=request.website_url,
             system_prompt=request.system_prompt,
+            chat_history=request.chat_history,
         )
         generation_ms = round((time.perf_counter() - gen_start) * 1000, 2)
         total_ms = round((time.perf_counter() - total_start) * 1000, 2)

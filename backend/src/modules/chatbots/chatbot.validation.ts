@@ -129,6 +129,24 @@ export const chatMessageSchema = z
       .min(1, "topK must be at least 1")
       .max(20, "topK cannot exceed 20")
       .optional(),
+    chatHistory: z
+      .array(
+        z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string().trim().min(1).max(4000),
+        }),
+      )
+      .max(10)
+      .optional(),
+    chat_history: z
+      .array(
+        z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string().trim().min(1).max(4000),
+        }),
+      )
+      .max(10)
+      .optional(),
   })
   .strict()
   .refine(

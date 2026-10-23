@@ -405,6 +405,7 @@ export const chatbotService = {
         llmProvider: chatbot.provider || undefined,
         llmModel: chatbot.model || undefined,
         llmApiKey: rawApiKey || undefined,
+        chatHistory: input.chatHistory || input.chat_history,
       });
 
       return {
@@ -605,6 +606,7 @@ export const chatbotService = {
         llmProvider: chatbot.provider || undefined,
         llmModel: chatbot.model || undefined,
         llmApiKey: rawApiKey || undefined,
+        chatHistory: input.chatHistory || input.chat_history,
       });
 
       return {
