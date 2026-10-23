@@ -16,6 +16,7 @@ export interface CreateChatbotInput {
   apiKey?: string | null;
   temperature?: number;
   maxTokens?: number;
+  sessionMessageLimit?: number | null;
   ragEnabled: boolean;
   ragTopK?: number;
   ragSimilarityThreshold?: number;
@@ -34,6 +35,7 @@ export interface UpdateChatbotFields {
   apiKey?: string | null;
   temperature?: number;
   maxTokens?: number;
+  sessionMessageLimit?: number | null;
   ragEnabled?: boolean;
   ragTopK?: number;
   ragSimilarityThreshold?: number;

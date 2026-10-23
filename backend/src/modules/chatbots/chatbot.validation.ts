@@ -55,6 +55,13 @@ export const createChatbotSchema = z
       .positive("maxTokens must be positive")
       .max(32000, "maxTokens must be at most 32000")
       .optional(),
+    sessionMessageLimit: z
+      .number({ message: "sessionMessageLimit must be a number" })
+      .int("sessionMessageLimit must be an integer")
+      .min(1, "sessionMessageLimit must be at least 1")
+      .max(1000, "sessionMessageLimit must be at most 1000")
+      .nullable()
+      .optional(),
     ragEnabled: z.boolean({ message: "ragEnabled must be a boolean" }).optional(),
     ragTopK: z
       .number({ message: "ragTopK must be a number" })
