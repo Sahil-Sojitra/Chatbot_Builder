@@ -1,6 +1,7 @@
 export * from "./badge";
 export * from "./button";
 export * from "./card";
+export * from "./CustomSelect";
 export * from "./EmptyState";
 export * from "./input";
 export * from "./label";

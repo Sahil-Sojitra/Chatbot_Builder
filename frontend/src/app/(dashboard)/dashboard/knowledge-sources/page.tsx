@@ -10,8 +10,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CustomSelect,
   EmptyState,
-  Select,
   Spinner,
   buttonVariants,
 } from "@/components/ui";
@@ -144,18 +144,19 @@ export default function GlobalKnowledgeSourcesPage() {
           <label htmlFor="chatbot-selector" className="text-sm font-medium text-zinc-300 whitespace-nowrap">
             Target Assistant:
           </label>
-          <Select
+          <CustomSelect
             id="chatbot-selector"
             value={currentChatbotId}
-            onChange={(e) => setSelectedChatbotId(e.target.value)}
-            className="w-56 text-sm"
+            onChange={(val) => setSelectedChatbotId(val)}
+            className="w-64 sm:w-72 text-sm"
+            dropdownClassName="w-auto min-w-[280px] sm:min-w-[320px] right-0"
           >
             {chatbots.map((bot) => (
               <option key={bot.id} value={bot.id}>
-                {bot.name} {bot.creationMode === "INSTANT" ? "(Instant Bot · Managed)" : `(${bot.status})`}
+                {bot.name}
               </option>
             ))}
-          </Select>
+          </CustomSelect>
         </div>
       </div>
 
@@ -208,7 +209,7 @@ export default function GlobalKnowledgeSourcesPage() {
               <div className="pt-2">
                 <Link
                   href={`/dashboard/chatbots/${currentChatbot.id}`}
-                  className={buttonVariants({ variant: "default", size: "sm" }) + " bg-violet-600 hover:bg-violet-700 text-white"}
+                  className={buttonVariants({ variant: "primary", size: "sm" })}
                 >
                   Test Chatbot in Playground &rarr;
                 </Link>

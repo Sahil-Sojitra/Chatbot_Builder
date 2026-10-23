@@ -1,21 +1,68 @@
+"use client";
+
 import * as React from "react";
+import { CustomSelect, CustomSelectOption } from "./CustomSelect";
 
-import { cn } from "@/lib/utils";
+export interface SelectProps {
+  id?: string;
+  name?: string;
+  value?: string | number | readonly string[];
+  onChange?: (e: any) => void;
+  onValueChange?: (value: string) => void;
+  children?: React.ReactNode;
+  options?: CustomSelectOption[];
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  dropdownClassName?: string;
+  "aria-invalid"?: boolean | "true" | "false";
+}
 
-function Select({ className, ...props }: React.ComponentProps<"select">) {
+function Select({
+  id,
+  name,
+  value = "",
+  onChange,
+  onValueChange,
+  children,
+  options,
+  placeholder,
+  disabled,
+  className,
+  dropdownClassName,
+}: SelectProps) {
+  const strValue = String(value ?? "");
+
+  const handleChange = (newVal: string) => {
+    if (onValueChange) {
+      onValueChange(newVal);
+    }
+    if (onChange) {
+      // Create synthetic event for compatibility with standard React event handlers (e.target.value)
+      const syntheticEvent = {
+        target: { value: newVal, name: name || id || "" },
+        currentTarget: { value: newVal, name: name || id || "" },
+        preventDefault: () => {},
+        stopPropagation: () => {},
+      };
+      (onChange as any)(syntheticEvent);
+    }
+  };
+
   return (
-    <select
-      data-slot="select"
-      className={cn(
-        "flex h-9 w-full rounded-md border border-zinc-800 bg-[#0a0a0a] px-3 py-1.5 text-sm text-foreground transition-colors outline-none cursor-pointer",
-        "hover:border-zinc-700",
-        "focus-visible:border-zinc-400 focus-visible:ring-1 focus-visible:ring-zinc-400",
-        "disabled:cursor-not-allowed disabled:opacity-40 disabled:bg-zinc-900",
-        "aria-invalid:border-rose-500/80 aria-invalid:ring-rose-500/20",
-        className,
-      )}
-      {...props}
-    />
+    <CustomSelect
+      id={id}
+      name={name}
+      value={strValue}
+      onChange={handleChange}
+      options={options}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={className}
+      dropdownClassName={dropdownClassName}
+    >
+      {children}
+    </CustomSelect>
   );
 }
 

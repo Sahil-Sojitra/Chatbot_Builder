@@ -1455,46 +1455,6 @@ export default function ChatbotOverviewPage() {
             </Card>
           </div>
         )}
-
-        {/* In-App Floating Widget Simulator Controller Banner */}
-        {isFloatingWidgetActive && (
-          <div className="fixed bottom-20 sm:bottom-6 left-3 right-3 sm:left-6 sm:right-auto z-50 flex items-center justify-between sm:justify-start gap-3 rounded-xl border border-violet-500/40 bg-[#09090d]/95 px-3.5 sm:px-4 py-2.5 sm:py-3 shadow-2xl backdrop-blur-md text-xs animate-in slide-in-from-bottom-4">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              <div className="flex flex-col min-w-0">
-                <span className="font-semibold text-white truncate">Live Widget Active</span>
-                <span className="text-[11px] text-zinc-400 hidden sm:inline">
-                  Testing launcher bubble in bottom-right corner as a website visitor
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0 pl-2 sm:pl-3 border-l border-zinc-800">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs border-violet-500/40 text-violet-300 hover:bg-violet-950/50 cursor-pointer"
-                onClick={() => {
-                  if (typeof window !== "undefined" && (window as any).ChatbotWidget) {
-                    (window as any).ChatbotWidget.toggle();
-                  }
-                }}
-              >
-                Toggle
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 text-xs text-zinc-400 hover:text-white cursor-pointer px-2"
-                onClick={handleToggleFloatingWidget}
-              >
-                ✕
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     );
   }

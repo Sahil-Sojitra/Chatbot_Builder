@@ -123,7 +123,7 @@ export function InstantBotSuccess({ result, onReset }: InstantBotSuccessProps) {
             </button>
             <Link
               href={`/dashboard/chatbots/${result.botId}`}
-              className={buttonVariants({ variant: "default", size: "default" }) + " bg-violet-600 hover:bg-violet-700 text-white font-medium"}
+              className={buttonVariants({ variant: "primary", size: "default" })}
             >
               Test Chatbot in Playground &rarr;
             </Link>
