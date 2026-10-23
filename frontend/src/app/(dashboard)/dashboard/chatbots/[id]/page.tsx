@@ -61,6 +61,7 @@ export default function ChatbotOverviewPage() {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   // Playground chat state
+  const [instantActiveTab, setInstantActiveTab] = useState<"playground" | "integration" | "settings">("playground");
   const [deviceMode, setDeviceMode] = useState<"widget" | "mobile">("widget");
   const [activeCodeTab, setActiveCodeTab] = useState<"script" | "curl" | "json">("script");
   const [instantIntegrationTab, setInstantIntegrationTab] = useState<"html" | "react" | "curl">("html");
@@ -645,8 +646,65 @@ export default function ChatbotOverviewPage() {
           </div>
         </div>
 
-          {/* Ingestion Failure Banner & Retry Button */}
-          {isFailed ? (
+        {/* 3-Tab Navigation Bar */}
+        <div className="flex items-center gap-1.5 p-1 bg-zinc-950/70 border border-zinc-800/80 rounded-xl w-fit">
+          <button
+            type="button"
+            onClick={() => setInstantActiveTab("playground")}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              instantActiveTab === "playground"
+                ? "bg-zinc-800 text-white shadow-sm font-semibold"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span>Playground</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setInstantActiveTab("integration")}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              instantActiveTab === "integration"
+                ? "bg-zinc-800 text-white shadow-sm font-semibold"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+            <span>Embed &amp; Integration</span>
+            {chatbot.status === "ACTIVE" ? (
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            ) : null}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setInstantActiveTab("settings")}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              instantActiveTab === "settings"
+                ? "bg-zinc-800 text-white shadow-sm font-semibold"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Settings &amp; Manage</span>
+          </button>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* TAB 1: PLAYGROUND                                                         */}
+        {/* ========================================================================= */}
+        {instantActiveTab === "playground" && (
+          <div className="flex flex-col gap-4">
+            {/* Ingestion Failure Banner & Retry Button */}
+            {isFailed ? (
             <div className="mt-2 rounded-md border border-rose-800/50 bg-rose-950/30 p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-rose-200">
               <div className="flex items-center gap-2">
                 <svg
@@ -761,34 +819,20 @@ export default function ChatbotOverviewPage() {
               </span>
             </div>
 
-            {/* Viewport switchers & Quick Sync */}
+            {/* Viewport switchers & Quick Action buttons */}
             <div className="flex items-center gap-1.5">
-              {websiteUrl && (
-                <button
-                  type="button"
-                  disabled={isProcessing || isRetryingIngestion}
-                  onClick={() => void handleRetryIngestion()}
-                  className="rounded px-2 py-1 text-xs font-medium text-zinc-400 hover:text-violet-300 hover:bg-violet-950/30 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                  title="Website content changed? Re-run the ingestion pipeline to refresh knowledge base"
-                >
-                  <svg
-                    className={`w-3 h-3 text-violet-400 ${
-                      isRetryingIngestion || isProcessing ? "animate-spin" : ""
-                    }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
-                    />
-                  </svg>
-                  <span className="hidden sm:inline">Sync Changes</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleToggleFloatingWidget}
+                className="rounded px-2.5 py-1 text-xs font-medium border border-violet-500/30 text-violet-300 hover:bg-violet-950/30 transition-colors cursor-pointer flex items-center gap-1.5"
+                title="Launch the floating bubble widget directly on this screen to preview it"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="hidden sm:inline">
+                  {isFloatingWidgetActive ? "Close Widget" : "Test Floating Widget"}
+                </span>
+              </button>
+
               {messages.length > 0 && (
                 <button
                   type="button"
@@ -804,12 +848,12 @@ export default function ChatbotOverviewPage() {
                     setChatError(null);
                   }}
                   className="rounded px-2 py-1 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer flex items-center gap-1"
-                  title="Reset conversation and show persona starter prompts"
+                  title="Reset conversation"
                 >
                   <svg className="w-3 h-3 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  <span className="hidden sm:inline">New Chat</span>
+                  <span className="hidden sm:inline">Clear Chat</span>
                 </button>
               )}
               <div className="h-3 w-px bg-zinc-800 hidden sm:block" />
@@ -1028,151 +1072,341 @@ export default function ChatbotOverviewPage() {
             </div>
           </div>
         </Card>
-
-        {/* Instant Bot Integration & Embed Hub Card */}
-        <Card className="rounded-lg border border-zinc-800 bg-[#0a0a0a] p-5 shadow-lg flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-800/80 pb-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-semibold text-white">
-                  Website Integration &amp; Floating Widget
-                </span>
-                <Badge
-                  variant={chatbot.status === "ACTIVE" ? "success" : "default"}
-                  className="text-[11px]"
-                >
-                  {chatbot.status === "ACTIVE" ? "Ready to Embed" : "Draft (Unpublished)"}
-                </Badge>
-              </div>
-              <p className="text-xs text-zinc-400">
-                Copy and paste this snippet into Shopify, WordPress, Webflow, React, or standard HTML to embed the floating chat widget.
-              </p>
-            </div>
-
-            {/* Public ID Token Box */}
-            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-md">
-              <span className="text-xs text-zinc-400 font-mono">ID: {chatbot.publicId}</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 text-[11px] px-2 text-violet-400 hover:text-violet-300 font-mono"
-                onClick={() => void handleCopyPublicId()}
-              >
-                {copiedId ? "Copied!" : "Copy"}
-              </Button>
-            </div>
           </div>
+        )}
 
-          {/* Publication notice banner */}
-          {chatbot.status !== "ACTIVE" ? (
-            <div className="rounded-md border border-amber-800/50 bg-amber-950/20 px-3.5 py-2.5 flex items-center justify-between text-xs text-amber-200">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                <span>
-                  This assistant is currently <strong>{chatbot.status}</strong>. Click &ldquo;Publish Assistant&rdquo; above so visitors on your website can receive answers.
-                </span>
-              </div>
-              <Button
-                size="sm"
-                variant="default"
-                disabled={isPublishing || isProcessing}
-                onClick={() => void handleTogglePublish()}
-                className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-black font-semibold shrink-0"
-              >
-                {isPublishing ? "Publishing…" : "Publish Now"}
-              </Button>
-            </div>
-          ) : (
-            <div className="rounded-md border border-emerald-800/40 bg-emerald-950/15 px-3.5 py-2 flex items-center gap-2 text-xs text-emerald-300">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>
-                <strong>Assistant is Live!</strong> Visitors on any website with this widget script can chat with your assistant in real time.
-              </span>
-            </div>
-          )}
+        {/* ========================================================================= */}
+        {/* TAB 2: EMBED & INTEGRATION                                                */}
+        {/* ========================================================================= */}
+        {instantActiveTab === "integration" && (
+          <div className="flex flex-col gap-5">
+            {/* Instant Bot Integration & Embed Hub Card */}
+            <Card className="rounded-xl border border-zinc-800 bg-[#0a0a0a] p-6 shadow-xl flex flex-col gap-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-800/80 pb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base font-semibold text-white">
+                      Website Integration &amp; Floating Widget
+                    </span>
+                    <Badge
+                      variant={chatbot.status === "ACTIVE" ? "success" : "default"}
+                      className="text-[11px]"
+                    >
+                      {chatbot.status === "ACTIVE" ? "Ready to Embed" : "Draft (Unpublished)"}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-zinc-400">
+                    Add the AI floating bubble widget to your website in less than 2 minutes. Works on Shopify, WordPress, Webflow, React, Next.js, and static sites.
+                  </p>
+                </div>
 
-          {/* Snippet Code Tabs */}
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-md border border-zinc-800 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setInstantIntegrationTab("html")}
-                  className={`px-3 py-1 rounded transition-colors cursor-pointer ${
-                    instantIntegrationTab === "html"
-                      ? "bg-violet-600 text-white font-medium"
-                      : "text-zinc-400 hover:text-zinc-200"
-                  }`}
-                >
-                  HTML / Shopify / WordPress
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInstantIntegrationTab("react")}
-                  className={`px-3 py-1 rounded transition-colors cursor-pointer ${
-                    instantIntegrationTab === "react"
-                      ? "bg-violet-600 text-white font-medium"
-                      : "text-zinc-400 hover:text-zinc-200"
-                  }`}
-                >
-                  Next.js / React
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInstantIntegrationTab("curl")}
-                  className={`px-3 py-1 rounded transition-colors cursor-pointer ${
-                    instantIntegrationTab === "curl"
-                      ? "bg-violet-600 text-white font-medium"
-                      : "text-zinc-400 hover:text-zinc-200"
-                  }`}
-                >
-                  cURL / API
-                </button>
-              </div>
-
-              <span className="text-[11px] text-zinc-500 font-mono">
-                {instantIntegrationTab === "html"
-                  ? "Standard Script Tag"
-                  : instantIntegrationTab === "react"
-                    ? "React Script Component"
-                    : "Public JSON API"}
-              </span>
-            </div>
-
-            <div className="relative rounded-md border border-zinc-800 bg-[#050507] p-3.5">
-              <pre className="font-mono text-xs text-violet-200/90 overflow-x-auto leading-relaxed max-h-40">
-                {getActiveIntegrationCode()}
-              </pre>
-              <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-zinc-800/60">
-                <span className="text-[11px] text-zinc-400">
-                  {instantIntegrationTab === "html"
-                    ? "Paste just before the closing </body> tag of your website."
-                    : instantIntegrationTab === "react"
-                      ? "Drop into your RootLayout or main page component."
-                      : "Direct HTTP POST endpoint for custom mobile apps or headless SDKs."}
-                </span>
-                <div className="flex items-center gap-2">
+                {/* Public ID Token Box */}
+                <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-md">
+                  <span className="text-xs text-zinc-400 font-mono">ID: {chatbot.publicId}</span>
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="h-8 text-xs font-medium border-violet-500/40 text-violet-300 hover:bg-violet-950/40 cursor-pointer"
-                    onClick={handleToggleFloatingWidget}
+                    variant="ghost"
+                    className="h-6 text-[11px] px-2 text-violet-400 hover:text-violet-300 font-mono"
+                    onClick={() => void handleCopyPublicId()}
                   >
-                    {isFloatingWidgetActive ? "✕ Close Widget Preview" : "🚀 Test Floating Widget on Screen"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="h-8 text-xs font-medium cursor-pointer"
-                    onClick={() => void handleCopyIntegrationSnippet()}
-                  >
-                    {copiedIntegration ? "✓ Copied to Clipboard" : "Copy Code Snippet"}
+                    {copiedId ? "Copied!" : "Copy"}
                   </Button>
                 </div>
               </div>
-            </div>
+
+              {/* Publication notice banner */}
+              {chatbot.status !== "ACTIVE" ? (
+                <div className="rounded-lg border border-amber-800/50 bg-amber-950/20 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-amber-200">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                    <span>
+                      This assistant is currently <strong>{chatbot.status}</strong>. Click &ldquo;Publish Assistant&rdquo; so visitors on your website can receive real-time answers.
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    disabled={isPublishing || isProcessing}
+                    onClick={() => void handleTogglePublish()}
+                    className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-black font-semibold shrink-0 cursor-pointer"
+                  >
+                    {isPublishing ? "Publishing…" : "Publish Now"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-emerald-800/40 bg-emerald-950/15 px-4 py-2.5 flex items-center gap-2.5 text-xs text-emerald-300">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span>
+                    <strong>Assistant is Live!</strong> Visitors on any website with this widget script can chat with your assistant in real time.
+                  </span>
+                </div>
+              )}
+
+              {/* Interactive Widget Test Callout */}
+              <div className="rounded-xl border border-violet-500/25 bg-gradient-to-r from-violet-950/30 via-zinc-900/50 to-zinc-900/30 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 shrink-0">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-white">Test Floating Launcher on Screen</h4>
+                    <p className="text-xs text-zinc-400">
+                      Experience how the floating icon, launcher animation, and expandable window look to your visitors.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  size="default"
+                  variant="outline"
+                  onClick={handleToggleFloatingWidget}
+                  className="border-violet-500/40 bg-violet-950/20 text-violet-300 hover:bg-violet-900/40 hover:text-white text-xs font-semibold shrink-0 cursor-pointer h-9 px-4"
+                >
+                  {isFloatingWidgetActive ? "✕ Dismiss Live Simulator" : "🚀 Launch Widget Simulator"}
+                </Button>
+              </div>
+
+              {/* Snippet Code Tabs */}
+              <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setInstantIntegrationTab("html")}
+                      className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+                        instantIntegrationTab === "html"
+                          ? "bg-violet-600 text-white font-medium shadow-sm"
+                          : "text-zinc-400 hover:text-zinc-200"
+                      }`}
+                    >
+                      HTML / Shopify / WordPress
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInstantIntegrationTab("react")}
+                      className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+                        instantIntegrationTab === "react"
+                          ? "bg-violet-600 text-white font-medium shadow-sm"
+                          : "text-zinc-400 hover:text-zinc-200"
+                      }`}
+                    >
+                      Next.js / React
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInstantIntegrationTab("curl")}
+                      className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+                        instantIntegrationTab === "curl"
+                          ? "bg-violet-600 text-white font-medium shadow-sm"
+                          : "text-zinc-400 hover:text-zinc-200"
+                      }`}
+                    >
+                      cURL / API
+                    </button>
+                  </div>
+
+                  <span className="text-[11px] text-zinc-500 font-mono">
+                    {instantIntegrationTab === "html"
+                      ? "Standard Script Tag"
+                      : instantIntegrationTab === "react"
+                        ? "React Script Component"
+                        : "Public JSON API"}
+                  </span>
+                </div>
+
+                <div className="relative rounded-lg border border-zinc-800 bg-[#050507] p-4">
+                  <pre className="font-mono text-xs text-violet-200/90 overflow-x-auto leading-relaxed max-h-48">
+                    {getActiveIntegrationCode()}
+                  </pre>
+                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-zinc-800/60">
+                    <span className="text-xs text-zinc-400">
+                      {instantIntegrationTab === "html"
+                        ? "Paste just before the closing </body> tag of your website."
+                        : instantIntegrationTab === "react"
+                          ? "Drop into your RootLayout or main page component."
+                          : "Direct unauthenticated HTTP endpoint for custom mobile apps or SDKs."}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 text-xs font-semibold cursor-pointer shrink-0"
+                      onClick={() => void handleCopyIntegrationSnippet()}
+                    >
+                      {copiedIntegration ? "✓ Copied to Clipboard" : "Copy Code Snippet"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3-Step Setup Guide */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                <div className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 p-3.5 flex flex-col gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-600/20 text-violet-300 font-mono text-xs font-bold">1</span>
+                  <p className="text-xs font-medium text-white">Copy the Snippet</p>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Choose HTML or React and click Copy Code Snippet above.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 p-3.5 flex flex-col gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-600/20 text-violet-300 font-mono text-xs font-bold">2</span>
+                  <p className="text-xs font-medium text-white">Paste Before &lt;/body&gt;</p>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Insert the script tag into your theme or root layout template.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 p-3.5 flex flex-col gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600/20 text-emerald-300 font-mono text-xs font-bold">3</span>
+                  <p className="text-xs font-medium text-white">Instant Floating Bot</p>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    The floating chat bubble automatically appears and answers questions.
+                  </p>
+                </div>
+              </div>
+            </Card>
           </div>
-        </Card>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 3: SETTINGS & MANAGE                                                  */}
+        {/* ========================================================================= */}
+        {instantActiveTab === "settings" && (
+          <div className="flex flex-col gap-5">
+            {/* Website Knowledge Source Card */}
+            <Card className="rounded-xl border border-zinc-800 bg-[#0a0a0a] p-5 shadow-lg flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-white">Website Knowledge Base</span>
+                  <Badge variant={isReady ? "success" : isFailed ? "warning" : "default"}>
+                    {isReady ? "Indexed & Ready" : isProcessing ? "Indexing…" : "Ingestion Failed"}
+                  </Badge>
+                </div>
+                {websiteUrl && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isProcessing || isRetryingIngestion}
+                    onClick={() => void handleRetryIngestion()}
+                    className="h-8 text-xs border-violet-500/30 text-violet-300 hover:bg-violet-950/30 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <svg
+                      className={`w-3.5 h-3.5 text-violet-400 ${
+                        isRetryingIngestion || isProcessing ? "animate-spin" : ""
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                      />
+                    </svg>
+                    <span>{isRetryingIngestion ? "Re-syncing…" : "Sync Latest Website"}</span>
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex flex-col divide-y divide-zinc-800/80 text-xs">
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-zinc-400">Target URL</span>
+                  <a
+                    href={websiteUrl || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-violet-400 hover:underline font-mono"
+                  >
+                    {websiteUrl || "No URL specified"}
+                  </a>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-zinc-400">Creation Mode</span>
+                  <span className="text-zinc-200 font-mono">Instant URL Synthesis</span>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-zinc-400">Vector Embeddings</span>
+                  <span className="text-zinc-200">Gemini Text-Embedding-004 (768-dim)</span>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-zinc-400">Vector Storage</span>
+                  <span className="text-zinc-200">ChromaDB / Qdrant RAG store</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* AI Runtime Configuration */}
+            <Card className="rounded-xl border border-zinc-800 bg-[#0a0a0a] p-5 shadow-lg flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+                <span className="text-sm font-semibold text-white">AI Engine &amp; Parameters</span>
+                <span className="text-xs text-zinc-500 font-mono">Auto-Tuned</span>
+              </div>
+              <div className="flex flex-col divide-y divide-zinc-800/80 text-xs">
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-zinc-400">LLM Provider</span>
+                  <span className="text-zinc-200 capitalize font-medium">{chatbot.provider || "OpenAI"}</span>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-zinc-400">Model Name</span>
+                  <span className="text-zinc-200 font-mono">{chatbot.model || "gpt-4o-mini"}</span>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-zinc-400">Temperature</span>
+                  <span className="text-zinc-200 font-mono">{chatbot.temperature ?? 0.7}</span>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-zinc-400">Max Tokens</span>
+                  <span className="text-zinc-200 font-mono">{chatbot.maxTokens ?? 2048}</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* Danger Zone: Delete Bot */}
+            <Card className="rounded-xl border border-red-950/40 bg-red-950/10 p-5 shadow-lg flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-red-300">Danger Zone</h4>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Permanently delete this Instant Bot and its vector knowledge base.
+                  </p>
+                </div>
+                {isConfirmingDelete ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={isDeletingChatbot}
+                      onClick={() => void handleDeleteChatbot()}
+                      className="h-8 text-xs font-semibold cursor-pointer"
+                    >
+                      {isDeletingChatbot ? "Deleting…" : "Confirm Delete"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isDeletingChatbot}
+                      onClick={() => setIsConfirmingDelete(false)}
+                      className="h-8 text-xs text-zinc-400 hover:text-white cursor-pointer"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setIsConfirmingDelete(true)}
+                    className="h-8 text-xs font-semibold cursor-pointer"
+                  >
+                    Delete Assistant
+                  </Button>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* In-App Floating Widget Simulator Controller Banner */}
         {isFloatingWidgetActive && (
