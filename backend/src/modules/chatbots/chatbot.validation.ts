@@ -39,6 +39,11 @@ export const createChatbotSchema = z
       .min(1, "model cannot be empty")
       .max(120, "model must be at most 120 characters")
       .optional(),
+    apiKey: z
+      .string({ message: "apiKey must be a string" })
+      .trim()
+      .max(500, "apiKey must be at most 500 characters")
+      .optional(),
     temperature: z
       .number({ message: "temperature must be a number" })
       .min(0, "temperature must be at least 0")

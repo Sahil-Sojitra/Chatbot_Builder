@@ -39,4 +39,7 @@ export const env = {
   // Internal FastAPI AI Service configuration
   AI_SERVICE_URL: process.env.AI_SERVICE_URL ?? 'http://127.0.0.1:8000',
   AI_SERVICE_API_KEY: process.env.AI_SERVICE_API_KEY ?? process.env.INTERNAL_API_KEY ?? '',
+
+  // Dedicated encryption secret for customer LLM API keys (AES-256-GCM)
+  LLM_ENCRYPTION_SECRET: process.env.LLM_ENCRYPTION_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'fallback-secure-llm-secret-chatbot-builder',
 };

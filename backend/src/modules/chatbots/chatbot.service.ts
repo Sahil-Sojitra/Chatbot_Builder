@@ -10,6 +10,7 @@ import {
   organizationNotFound,
 } from "../../shared/errors.js";
 import { aiServiceClient, AIServiceError } from "../../shared/aiServiceClient.js";
+import { encryptSecret, decryptSecret } from "../../shared/encryption.js";
 import { deleteObject } from "../../shared/storage.js";
 import { generateUniqueSlug } from "../../shared/slug.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
@@ -45,31 +46,36 @@ const generateUniquePublicId = async (): Promise<string> => {
 
 const toPublicChatbot = (
   chatbot: HydratedDocument<IChatbot>,
-): PublicChatbot => ({
-  id: chatbot._id.toString(),
-  organizationId: chatbot.organizationId.toString(),
-  name: chatbot.name,
-  slug: chatbot.slug,
-  description: chatbot.description,
-  status: chatbot.status,
-  creationMode: chatbot.creationMode ?? "CUSTOM",
-  publicId: chatbot.publicId,
-  systemPrompt: chatbot.systemPrompt,
-  provider: chatbot.provider,
-  model: chatbot.model,
-  temperature: chatbot.temperature,
-  maxTokens: chatbot.maxTokens,
-  ragEnabled: chatbot.ragEnabled,
-  ragTopK: chatbot.ragTopK,
-  ragSimilarityThreshold: chatbot.ragSimilarityThreshold,
-  starterQuestions: chatbot.starterQuestions ?? [],
-  uiConfig: chatbot.uiConfig,
-  createdBy: chatbot.createdBy.toString(),
-  publishedBy: chatbot.publishedBy ? chatbot.publishedBy.toString() : null,
-  publishedAt: chatbot.publishedAt ? chatbot.publishedAt.toISOString() : null,
-  createdAt: chatbot.createdAt.toISOString(),
-  updatedAt: chatbot.updatedAt.toISOString(),
-});
+): PublicChatbot => {
+  const hasKey = Boolean(chatbot.apiKey);
+
+  return {
+    id: chatbot._id.toString(),
+    organizationId: chatbot.organizationId.toString(),
+    name: chatbot.name,
+    slug: chatbot.slug,
+    description: chatbot.description,
+    status: chatbot.status,
+    creationMode: chatbot.creationMode ?? "CUSTOM",
+    publicId: chatbot.publicId,
+    systemPrompt: chatbot.systemPrompt,
+    provider: chatbot.provider,
+    model: chatbot.model,
+    hasApiKey: hasKey,
+    temperature: chatbot.temperature,
+    maxTokens: chatbot.maxTokens,
+    ragEnabled: chatbot.ragEnabled,
+    ragTopK: chatbot.ragTopK,
+    ragSimilarityThreshold: chatbot.ragSimilarityThreshold,
+    starterQuestions: chatbot.starterQuestions ?? [],
+    uiConfig: chatbot.uiConfig,
+    createdBy: chatbot.createdBy.toString(),
+    publishedBy: chatbot.publishedBy ? chatbot.publishedBy.toString() : null,
+    publishedAt: chatbot.publishedAt ? chatbot.publishedAt.toISOString() : null,
+    createdAt: chatbot.createdAt.toISOString(),
+    updatedAt: chatbot.updatedAt.toISOString(),
+  };
+};
 
 export const chatbotService = {
   /**
@@ -112,6 +118,9 @@ export const chatbotService = {
     }
     if (input.model !== undefined) {
       creationInput.model = input.model;
+    }
+    if (input.apiKey !== undefined) {
+      creationInput.apiKey = input.apiKey?.trim() ? encryptSecret(input.apiKey.trim()) : null;
     }
     if (input.temperature !== undefined) {
       creationInput.temperature = input.temperature;
@@ -211,6 +220,9 @@ export const chatbotService = {
     }
     if (input.model !== undefined) {
       fields.model = input.model;
+    }
+    if (input.apiKey !== undefined) {
+      fields.apiKey = input.apiKey?.trim() ? encryptSecret(input.apiKey.trim()) : null;
     }
     if (input.temperature !== undefined) {
       fields.temperature = input.temperature;
@@ -374,6 +386,8 @@ export const chatbotService = {
     const websiteUrl = websiteSource?.sourceUrl || undefined;
 
     try {
+      const rawApiKey = chatbot.apiKey ? decryptSecret(chatbot.apiKey) : undefined;
+
       const qaResponse = await aiServiceClient.askQuestion({
         chatbotId: chatbot._id.toString(),
         question,
@@ -381,6 +395,9 @@ export const chatbotService = {
         websiteUrl,
         systemPrompt: chatbot.systemPrompt || undefined,
         topK: input.topK ?? chatbot.ragTopK ?? 8,
+        llmProvider: chatbot.provider || undefined,
+        llmModel: chatbot.model || undefined,
+        llmApiKey: rawApiKey || undefined,
       });
 
       return {
@@ -568,6 +585,8 @@ export const chatbotService = {
     const websiteUrl = websiteSource?.sourceUrl || undefined;
 
     try {
+      const rawApiKey = chatbot.apiKey ? decryptSecret(chatbot.apiKey) : undefined;
+
       const qaResponse = await aiServiceClient.askQuestion({
         chatbotId: chatbot._id.toString(),
         question,
@@ -575,6 +594,9 @@ export const chatbotService = {
         websiteUrl,
         systemPrompt: chatbot.systemPrompt || undefined,
         topK: input.topK ?? chatbot.ragTopK ?? 8,
+        llmProvider: chatbot.provider || undefined,
+        llmModel: chatbot.model || undefined,
+        llmApiKey: rawApiKey || undefined,
       });
 
       return {
