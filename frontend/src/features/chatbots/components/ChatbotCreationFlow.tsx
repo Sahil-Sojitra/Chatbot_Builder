@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { ChatbotCreationChooser } from "./ChatbotCreationChooser";
 import { CreateChatbotForm } from "./CreateChatbotForm";
-import { InstantBotUrlForm } from "./InstantBotUrlForm";
+import { InstantBotUrlForm, type InstantBotFormData } from "./InstantBotUrlForm";
 import { InstantBotProgress } from "./InstantBotProgress";
 import { InstantBotSuccess } from "./InstantBotSuccess";
 import { InstantBotFailure } from "./InstantBotFailure";
@@ -37,6 +37,9 @@ export function ChatbotCreationFlow() {
 
   // Instant bot state
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [provider, setProvider] = useState("openai");
+  const [model, setModel] = useState("gpt-4o-mini");
+  const [apiKey, setApiKey] = useState("");
   const [botName, setBotName] = useState("");
   const [stages, setStages] = useState<InstantBotStage[]>(createInitialStages());
   const [processingStatus, setProcessingStatus] = useState<InstantBotStatus>("creating");
@@ -87,13 +90,13 @@ export function ChatbotCreationFlow() {
     setCurrentView("custom-form");
   };
 
-  const handleUrlSubmit = async (url: string, forceNew = false) => {
+  const handleUrlSubmit = async (formData: InstantBotFormData, forceNew = false) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     const isDifferentUrl =
       Boolean(websiteUrl) &&
-      url.trim().toLowerCase() !== websiteUrl.trim().toLowerCase();
+      formData.url.trim().toLowerCase() !== websiteUrl.trim().toLowerCase();
     const shouldResetBot = forceNew || isDifferentUrl;
 
     const botToReuse = shouldResetBot ? null : createdChatbot;
@@ -101,8 +104,12 @@ export function ChatbotCreationFlow() {
       setCreatedChatbot(null);
     }
 
-    setWebsiteUrl(url);
-    const derived = botToReuse ? botToReuse.name : deriveBotNameFromUrl(url);
+    setWebsiteUrl(formData.url);
+    setProvider(formData.provider);
+    setModel(formData.model);
+    setApiKey(formData.apiKey);
+
+    const derived = botToReuse ? botToReuse.name : deriveBotNameFromUrl(formData.url);
     setBotName(derived);
     setStages(createInitialStages());
     setProcessingStatus(botToReuse ? "processing" : "creating");
@@ -114,7 +121,10 @@ export function ChatbotCreationFlow() {
 
     try {
       const result = await service.runSetup({
-        websiteUrl: url,
+        websiteUrl: formData.url,
+        provider: formData.provider,
+        model: formData.model,
+        apiKey: formData.apiKey,
         existingChatbot: botToReuse ?? undefined,
         onChatbotCreated: (bot) => {
           setCreatedChatbot(bot);
@@ -122,7 +132,7 @@ export function ChatbotCreationFlow() {
             // Save pending bot info so page refresh or navigation redirects to /dashboard/chatbots/[id]
             localStorage.setItem(
               "pending_instant_bot",
-              JSON.stringify({ id: bot.id, websiteUrl: url, createdAt: Date.now() })
+              JSON.stringify({ id: bot.id, websiteUrl: formData.url, createdAt: Date.now() })
             );
             // Replace browser URL bar with the chatbot URL so standard F5 / browser reload
             // immediately reloads /dashboard/chatbots/[id]
@@ -172,7 +182,7 @@ export function ChatbotCreationFlow() {
     setCurrentView("instant-processing");
 
     // Retry with the preserved URL and preserved chatbot
-    void handleUrlSubmit(websiteUrl, false);
+    void handleUrlSubmit({ url: websiteUrl, provider, model, apiKey }, false);
   };
 
   const handleCancelProgress = () => {
@@ -215,8 +225,11 @@ export function ChatbotCreationFlow() {
       {currentView === "instant-url" && (
         <InstantBotUrlForm
           initialUrl={websiteUrl}
+          initialProvider={provider}
+          initialModel={model}
+          initialApiKey={apiKey}
           isSubmitting={isSubmitting}
-          onSubmit={(url) => void handleUrlSubmit(url)}
+          onSubmit={(data) => void handleUrlSubmit(data)}
           onBack={() => setCurrentView("chooser")}
         />
       )}

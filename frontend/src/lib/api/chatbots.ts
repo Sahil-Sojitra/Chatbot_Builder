@@ -14,6 +14,7 @@ export interface CreateChatbotInput {
   systemPrompt?: string;
   provider?: string;
   model?: string;
+  apiKey?: string;
   temperature?: number;
   maxTokens?: number;
   ragEnabled?: boolean;

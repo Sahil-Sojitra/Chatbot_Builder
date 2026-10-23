@@ -12,6 +12,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CustomSelect,
   Input,
   Label,
   Select,
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui";
 import { useChatbotDetail } from "@/features/chatbots/ChatbotDetailProvider";
 import { useRequireCustomBot } from "@/features/chatbots/useRequireCustomBot";
+import { LLM_PROVIDERS, LLM_MODELS_BY_PROVIDER } from "@/features/chatbots/llmCatalog";
 import { chatbotsApi } from "@/lib/api/chatbots";
 import { ApiRequestError } from "@/lib/api/client";
 import type { UpdateChatbotInput } from "@/lib/api/chatbots";
@@ -30,15 +32,6 @@ const TEMPERATURE_MIN = 0;
 const TEMPERATURE_MAX = 2;
 const MAX_TOKENS_MAX = 32000;
 
-const PROVIDER_OPTIONS = [
-  { value: "", label: "Select AI Provider (Optional)" },
-  { value: "openai", label: "OpenAI" },
-  { value: "anthropic", label: "Anthropic" },
-  { value: "google", label: "Google Gemini" },
-  { value: "groq", label: "Groq" },
-  { value: "custom", label: "Custom Provider" },
-];
-
 export default function ChatbotSettingsPage() {
   const router = useRouter();
   const { isAllowed, isLoading } = useRequireCustomBot();
@@ -49,6 +42,8 @@ export default function ChatbotSettingsPage() {
   const [systemPrompt, setSystemPrompt] = useState("");
   const [provider, setProvider] = useState("");
   const [model, setModel] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
   const [temperature, setTemperature] = useState("");
   const [maxTokens, setMaxTokens] = useState("");
   const [ragEnabled, setRagEnabled] = useState(false);
@@ -152,6 +147,7 @@ export default function ChatbotSettingsPage() {
       systemPrompt: systemPrompt.trim() || undefined,
       provider: provider.trim() || undefined,
       model: model.trim() || undefined,
+      apiKey: apiKey.trim() || undefined,
       temperature: temperature.trim() !== "" ? Number(temperature) : undefined,
       maxTokens: maxTokens.trim() !== "" ? Number(maxTokens) : undefined,
       ragEnabled,
@@ -342,30 +338,70 @@ export default function ChatbotSettingsPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="setting-provider">Provider</Label>
-                <Select
+                <CustomSelect
                   id="setting-provider"
                   value={provider}
-                  onChange={(e) => setProvider(e.target.value)}
+                  onChange={(val) => {
+                    setProvider(val);
+                    const defaultM = LLM_PROVIDERS.find((p) => p.value === val)?.defaultModel || LLM_MODELS_BY_PROVIDER[val]?.[0]?.value || "";
+                    setModel(defaultM);
+                  }}
                   disabled={isSubmitting}
-                >
-                  {PROVIDER_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Select>
+                  options={LLM_PROVIDERS.map((p) => ({
+                    value: p.value,
+                    label: p.label,
+                  }))}
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="setting-model">Model Name</Label>
-                <Input
+                <CustomSelect
                   id="setting-model"
                   value={model}
-                  onChange={(e) => setModel(e.target.value)}
+                  onChange={(val) => setModel(val)}
                   disabled={isSubmitting}
-                  placeholder="e.g. gpt-4o, claude-3-5-sonnet, gemini-1.5-pro"
+                  options={LLM_MODELS_BY_PROVIDER[provider] || []}
                 />
               </div>
+            </div>
+
+            {/* API Key Field */}
+            <div className="flex flex-col gap-1.5 pt-1">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="setting-api-key">LLM Provider API Key</Label>
+                {chatbot.hasApiKey && (
+                  <span className="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    Key configured & encrypted
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <Input
+                  id="setting-api-key"
+                  type={showApiKey ? "text" : "password"}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  disabled={isSubmitting}
+                  placeholder={
+                    chatbot.hasApiKey
+                      ? "Enter new API key to update existing key..."
+                      : "Paste your API key here..."
+                  }
+                  className="pr-16 font-mono text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-white cursor-pointer select-none"
+                >
+                  {showApiKey ? "Hide" : "Show"}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Leave blank to keep your existing key. Your key is stored securely and never shown in plain text.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
