@@ -46,6 +46,7 @@ class LLMGenerationAdapter(ABC):
         bot_name: Optional[str] = None,
         website_url: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        chat_history: Optional[List[Any]] = None,
     ) -> GeneratedAnswer:
         """Synchronously generates a grounded answer given a question and evidence chunks."""
         pass
@@ -58,6 +59,7 @@ class LLMGenerationAdapter(ABC):
         bot_name: Optional[str] = None,
         website_url: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        chat_history: Optional[List[Any]] = None,
     ) -> GeneratedAnswer:
         """Asynchronously generates a grounded answer given a question and evidence chunks."""
         pass
@@ -99,6 +101,7 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
         bot_name: Optional[str],
         website_url: Optional[str],
         system_prompt: Optional[str],
+        chat_history: Optional[List[Any]] = None,
     ) -> Tuple[str, Dict[str, Any]]:
         """Prepares API endpoint URL and generation payload."""
         api_key = self._get_api_key()
@@ -108,6 +111,7 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
             bot_name=bot_name,
             website_url=website_url,
             system_prompt=system_prompt,
+            chat_history=chat_history,
         )
         url = f"{self.BASE_URL}/{self.model}:generateContent?key={api_key}"
         payload = {
@@ -189,6 +193,7 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
         bot_name: Optional[str] = None,
         website_url: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        chat_history: Optional[List[Any]] = None,
     ) -> GeneratedAnswer:
         """Synchronously generates a grounded answer using Google Gemini with soft fallback."""
         start_time = time.perf_counter()
@@ -200,7 +205,7 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
                 bot_name=bot_name, website_url=website_url,
             )
 
-        url, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt)
+        url, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt, chat_history)
 
         try:
             with httpx.Client(timeout=self.timeout_seconds) as client:
@@ -233,6 +238,7 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
         bot_name: Optional[str] = None,
         website_url: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        chat_history: Optional[List[Any]] = None,
     ) -> GeneratedAnswer:
         """Asynchronously generates a grounded answer using Google Gemini with soft fallback."""
         start_time = time.perf_counter()
@@ -244,7 +250,7 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
                 bot_name=bot_name, website_url=website_url,
             )
 
-        url, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt)
+        url, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt, chat_history)
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
@@ -299,6 +305,7 @@ class OpenAIGenerationAdapter(LLMGenerationAdapter):
         bot_name: Optional[str],
         website_url: Optional[str],
         system_prompt: Optional[str],
+        chat_history: Optional[List[Any]] = None,
     ) -> Tuple[str, Dict[str, str], Dict[str, Any]]:
         api_key = self._get_api_key()
         prompt = build_grounding_prompt(
@@ -307,6 +314,7 @@ class OpenAIGenerationAdapter(LLMGenerationAdapter):
             bot_name=bot_name,
             website_url=website_url,
             system_prompt=system_prompt,
+            chat_history=chat_history,
         )
         url = f"{self.base_url}/chat/completions"
         headers = {
@@ -367,13 +375,14 @@ class OpenAIGenerationAdapter(LLMGenerationAdapter):
         bot_name: Optional[str] = None,
         website_url: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        chat_history: Optional[List[Any]] = None,
     ) -> GeneratedAnswer:
         start_time = time.perf_counter()
         sources = build_sources(evidence_chunks)
         if not evidence_chunks:
             return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
 
-        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt)
+        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt, chat_history)
         try:
             with httpx.Client(timeout=self.timeout_seconds) as client:
                 response = client.post(url, headers=headers, json=payload)
@@ -389,13 +398,14 @@ class OpenAIGenerationAdapter(LLMGenerationAdapter):
         bot_name: Optional[str] = None,
         website_url: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        chat_history: Optional[List[Any]] = None,
     ) -> GeneratedAnswer:
         start_time = time.perf_counter()
         sources = build_sources(evidence_chunks)
         if not evidence_chunks:
             return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
 
-        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt)
+        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt, chat_history)
         try:
             async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
                 response = await client.post(url, headers=headers, json=payload)
@@ -433,6 +443,7 @@ class AnthropicGenerationAdapter(LLMGenerationAdapter):
         bot_name: Optional[str],
         website_url: Optional[str],
         system_prompt: Optional[str],
+        chat_history: Optional[List[Any]] = None,
     ) -> Tuple[str, Dict[str, str], Dict[str, Any]]:
         api_key = self._get_api_key()
         prompt = build_grounding_prompt(
@@ -441,6 +452,7 @@ class AnthropicGenerationAdapter(LLMGenerationAdapter):
             bot_name=bot_name,
             website_url=website_url,
             system_prompt=system_prompt,
+            chat_history=chat_history,
         )
         headers = {
             "x-api-key": api_key,
@@ -494,13 +506,14 @@ class AnthropicGenerationAdapter(LLMGenerationAdapter):
         bot_name: Optional[str] = None,
         website_url: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        chat_history: Optional[List[Any]] = None,
     ) -> GeneratedAnswer:
         start_time = time.perf_counter()
         sources = build_sources(evidence_chunks)
         if not evidence_chunks:
             return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
 
-        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt)
+        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt, chat_history)
         try:
             with httpx.Client(timeout=self.timeout_seconds) as client:
                 response = client.post(url, headers=headers, json=payload)
@@ -516,13 +529,14 @@ class AnthropicGenerationAdapter(LLMGenerationAdapter):
         bot_name: Optional[str] = None,
         website_url: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        chat_history: Optional[List[Any]] = None,
     ) -> GeneratedAnswer:
         start_time = time.perf_counter()
         sources = build_sources(evidence_chunks)
         if not evidence_chunks:
             return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
 
-        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt)
+        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt, chat_history)
         try:
             async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
                 response = await client.post(url, headers=headers, json=payload)

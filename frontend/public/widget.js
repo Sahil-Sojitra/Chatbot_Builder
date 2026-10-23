@@ -251,6 +251,13 @@
       box-shadow: 0 0 6px #10b981;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-action-btn,
     .header-close-btn {
       background: transparent;
       border: none;
@@ -264,6 +271,7 @@
       transition: background 0.15s, color 0.15s;
     }
 
+    .header-action-btn:hover,
     .header-close-btn:hover {
       background: rgba(255, 255, 255, 0.08);
       color: #ffffff;
@@ -606,13 +614,20 @@
               <span id="cb-bot-status-text">Online</span>
             </span>
           </div>
+        <div class="header-actions">
+          <button class="header-action-btn" id="cb-header-reset" aria-label="Restart Conversation" title="Restart conversation (clears history)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 4v6h-6"></path>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+          </button>
+          <button class="header-close-btn" id="cb-header-close" aria-label="Close Chat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
-        <button class="header-close-btn" id="cb-header-close" aria-label="Close Chat">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
       </div>
 
       <div class="chat-body" id="cb-chat-body">
@@ -665,6 +680,7 @@
   const launcherBtn = shadow.getElementById("cb-launcher-btn");
   const chatWindow = shadow.getElementById("cb-chat-window");
   const headerClose = shadow.getElementById("cb-header-close");
+  const headerReset = shadow.getElementById("cb-header-reset");
   const botNameEl = shadow.getElementById("cb-bot-name");
   const botAvatarEl = shadow.getElementById("cb-bot-avatar");
   const statusTextEl = shadow.getElementById("cb-bot-status-text");
@@ -691,6 +707,11 @@
 
   launcherBtn.addEventListener("click", () => toggleWidget());
   headerClose.addEventListener("click", () => toggleWidget(false));
+  if (headerReset) {
+    headerReset.addEventListener("click", () => {
+      resetSession();
+    });
+  }
 
   // Escape key closes modal
   document.addEventListener("keydown", (e) => {
@@ -837,10 +858,68 @@
     sendBtn.disabled = true;
   }
 
+  function getStorageKey() {
+    return "cb_convo_" + (publicId || "default");
+  }
+
+  function loadStoredHistory() {
+    try {
+      const raw = localStorage.getItem(getStorageKey());
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.slice(-5);
+      }
+    } catch {
+      // LocalStorage access might be restricted or corrupted
+    }
+    return [];
+  }
+
+  function saveStoredHistory() {
+    try {
+      const trimmed = messages.slice(-5).map((m) => ({
+        role: m.role === "bot" ? "assistant" : m.role,
+        content: m.content,
+        sources: m.sources || [],
+      }));
+      localStorage.setItem(getStorageKey(), JSON.stringify(trimmed));
+    } catch {
+      // LocalStorage might be full or restricted
+    }
+  }
+
+  function clearStoredHistory() {
+    try {
+      localStorage.removeItem(getStorageKey());
+    } catch {}
+  }
+
+  function restoreHistory() {
+    const saved = loadStoredHistory();
+    if (saved && saved.length > 0) {
+      messages = saved;
+      const welcomeCard = shadow.getElementById("cb-welcome-card");
+      if (welcomeCard) {
+        welcomeCard.style.display = "none";
+      }
+      messages.forEach((msg) => {
+        const sender = msg.role === "assistant" || msg.role === "bot" ? "bot" : "user";
+        appendMessage(sender, msg.content, msg.sources || []);
+      });
+    }
+  }
+
   function resetSession() {
     sessionMessageCount = 0;
+    messages = [];
+    clearStoredHistory();
+    const rows = chatBody.querySelectorAll(".message-row");
+    rows.forEach((r) => r.remove());
     const banner = shadow.getElementById("cb-session-limit-card");
     if (banner) banner.remove();
+    const welcomeCard = shadow.getElementById("cb-welcome-card");
+    if (welcomeCard) welcomeCard.style.display = "block";
     chatInput.disabled = false;
     chatInput.placeholder = "Type your question…";
     sendBtn.disabled = false;
@@ -865,7 +944,17 @@
       welcomeCard.style.display = "none";
     }
 
+    // Capture the previous history (up to last 5 messages) to provide conversational memory to the LLM
+    const historyToSend = messages.slice(-5).map((m) => ({
+      role: m.role === "bot" ? "assistant" : m.role,
+      content: m.content,
+    }));
+
     appendMessage("user", trimmed);
+    messages.push({ role: "user", content: trimmed });
+    if (messages.length > 5) messages = messages.slice(-5);
+    saveStoredHistory();
+
     chatInput.value = "";
     isSending = true;
     sendBtn.disabled = true;
@@ -878,7 +967,10 @@
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({
+          message: trimmed,
+          chatHistory: historyToSend,
+        }),
       });
 
       removeTypingIndicator();
@@ -895,6 +987,9 @@
       const sources = data.data?.sources || data.sources || [];
 
       appendMessage("bot", answer, sources);
+      messages.push({ role: "assistant", content: answer, sources });
+      if (messages.length > 5) messages = messages.slice(-5);
+      saveStoredHistory();
     } catch {
       removeTypingIndicator();
       appendMessage(
@@ -971,8 +1066,9 @@
     }
   }
 
-  // Load config on mount
+  // Load config & restore stored conversation on mount
   loadConfig();
+  restoreHistory();
 
   // Expose global interface for testing or programmatic triggering
   window.ChatbotWidget = {
@@ -1001,12 +1097,18 @@
       if (script) script.remove();
     },
     init: (newPublicId, newApiHost) => {
+      const idChanged = newPublicId && newPublicId !== publicId;
       if (newPublicId) publicId = newPublicId;
       if (newApiHost) apiHost = newApiHost;
       if (!document.body.contains(host)) {
         document.body.appendChild(host);
       }
       host.style.display = "block";
+      if (idChanged) {
+        const rows = chatBody.querySelectorAll(".message-row");
+        rows.forEach((r) => r.remove());
+        restoreHistory();
+      }
       loadConfig();
     },
   };

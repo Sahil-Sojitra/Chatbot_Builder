@@ -6,6 +6,13 @@ from pydantic import BaseModel, Field
 from app.models.generator import SourceReference
 
 
+class ChatHistoryItem(BaseModel):
+    """Single turn of conversational history."""
+
+    role: str = Field(..., description="Role of the sender ('user' or 'assistant').")
+    content: str = Field(..., description="Text content of the message.")
+
+
 class QARequest(BaseModel):
     """Input payload for asking a question against a chatbot's indexed knowledge base."""
 
@@ -58,6 +65,10 @@ class QARequest(BaseModel):
     llm_api_key: Optional[str] = Field(
         default=None,
         description="Client's private API key for the chosen LLM provider.",
+    )
+    chat_history: Optional[List[ChatHistoryItem]] = Field(
+        default=None,
+        description="Recent conversation turns (up to 5) for multi-turn conversational memory.",
     )
 
 

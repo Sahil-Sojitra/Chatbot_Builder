@@ -61,10 +61,17 @@ export interface PublicChatbot {
   updatedAt: string;
 }
 
+export interface ChatHistoryMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export interface ChatMessageInput {
   message?: string;
   question?: string;
   topK?: number;
+  chatHistory?: ChatHistoryMessage[];
+  chat_history?: ChatHistoryMessage[];
 }
 
 export interface ChatResponseData {

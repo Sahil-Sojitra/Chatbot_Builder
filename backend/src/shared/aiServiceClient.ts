@@ -62,6 +62,7 @@ export interface AskQuestionPayload {
   llmProvider?: string | undefined;
   llmModel?: string | undefined;
   llmApiKey?: string | undefined;
+  chatHistory?: Array<{ role: string; content: string }> | undefined;
 }
 
 export interface SourceReference {
@@ -208,6 +209,7 @@ export class AIServiceClient {
           llm_provider: payload.llmProvider,
           llm_model: payload.llmModel,
           llm_api_key: payload.llmApiKey,
+          chat_history: payload.chatHistory?.slice(-5),
         }),
         signal: controller.signal,
       });

@@ -1,7 +1,7 @@
 """Prompt construction and fallback templates for grounded LLM answer generation."""
 
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from app.core.brand import extract_brand_name
 from app.models.generator import (
@@ -51,6 +51,7 @@ def build_grounding_prompt(
     bot_name: Optional[str] = None,
     website_url: Optional[str] = None,
     system_prompt: Optional[str] = None,
+    chat_history: Optional[List[Any]] = None,
 ) -> str:
     """Constructs a strict grounding prompt establishing native first-party brand identity.
 
@@ -58,6 +59,7 @@ def build_grounding_prompt(
     - Enforces first-person brand voice ('we', 'our team', 'at {brand}').
     - Strict anti-hallucination constraints forbidding external speculation.
     - Preserves exact numbers, URLs, currencies, and technical terms.
+    - Contextual multi-turn memory from previous conversational turns.
     - Handles greetings warmly while keeping domain-specific accuracy.
 
     Args:
@@ -66,6 +68,7 @@ def build_grounding_prompt(
         bot_name: Optional bot display name.
         website_url: Target website root URL.
         system_prompt: Optional user-configured system instructions.
+        chat_history: Optional list of recent conversation turns (up to 5 messages).
 
     Returns:
         Complete formatted prompt ready for the Gemini generateContent API.
@@ -93,12 +96,29 @@ def build_grounding_prompt(
             f"=== END OF CUSTOM INSTRUCTIONS ===\n\n"
         )
 
+    history_section = ""
+    if chat_history and len(chat_history) > 0:
+        lines = []
+        for item in chat_history[-5:]:
+            r = getattr(item, "role", "") or (item.get("role") if isinstance(item, dict) else "")
+            c = getattr(item, "content", "") or (item.get("content") if isinstance(item, dict) else "")
+            role_label = "User" if str(r).lower() == "user" else "Assistant"
+            if c and str(c).strip():
+                lines.append(f"{role_label}: {str(c).strip()}")
+        if lines:
+            history_section = (
+                "=== RECENT CONVERSATION HISTORY (LAST 5 TURNS) ===\n"
+                + "\n".join(lines)
+                + "\n=== END OF CONVERSATION HISTORY ===\n\n"
+            )
+
     prompt = (
         f"You are the official representative and assistant for {brand}.\n"
         f"You are integrated directly into our official website{f' ({website_url})' if website_url else ''} to help our visitors and customers.\n"
         "Your objective is to provide an accurate, helpful, welcoming, and professionally structured answer "
         "based strictly on our website content provided below.\n\n"
         f"{custom_prompt_section}"
+        f"{history_section}"
         "=== OPERATIONAL DIRECTIVES ===\n"
         f"1. FIRST-PERSON BRAND IDENTITY & VOICE:\n"
         f"   - You ARE an integral part of {brand}. Always speak in the first-person plural ('we', 'our', 'us', 'our team', 'at {brand}') when describing products, services, capabilities, values, and policies.\n"
