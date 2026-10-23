@@ -47,6 +47,18 @@ class QARequest(BaseModel):
         le=1.0,
         description="Optional minimum cosine similarity score cutoff.",
     )
+    llm_provider: Optional[str] = Field(
+        default=None,
+        description="Client-provided LLM provider (openai, google, anthropic, groq).",
+    )
+    llm_model: Optional[str] = Field(
+        default=None,
+        description="Client-selected LLM model name.",
+    )
+    llm_api_key: Optional[str] = Field(
+        default=None,
+        description="Client's private API key for the chosen LLM provider.",
+    )
 
 
 class QAStats(BaseModel):

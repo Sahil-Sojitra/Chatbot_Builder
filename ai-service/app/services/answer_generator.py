@@ -271,6 +271,288 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
         return self._process_response(response, evidence_chunks, sources, start_time, bot_name, website_url)
 
 
+class OpenAIGenerationAdapter(LLMGenerationAdapter):
+    """OpenAI and OpenAI-compatible (Groq) generation adapter."""
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+        base_url: str = "https://api.openai.com/v1",
+        timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    ):
+        self._api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.model = model or "gpt-4o-mini"
+        self.base_url = base_url.rstrip("/")
+        self.timeout_seconds = timeout_seconds
+
+    def _get_api_key(self) -> str:
+        key = self._api_key or os.getenv("OPENAI_API_KEY")
+        if not key:
+            raise GenerationProviderError("API key is required for LLM provider.")
+        return key.strip()
+
+    def _prepare_call(
+        self,
+        question: str,
+        evidence_chunks: List[RetrievedChunk],
+        bot_name: Optional[str],
+        website_url: Optional[str],
+        system_prompt: Optional[str],
+    ) -> Tuple[str, Dict[str, str], Dict[str, Any]]:
+        api_key = self._get_api_key()
+        prompt = build_grounding_prompt(
+            question=question,
+            evidence_chunks=evidence_chunks,
+            bot_name=bot_name,
+            website_url=website_url,
+            system_prompt=system_prompt,
+        )
+        url = f"{self.base_url}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+            "max_tokens": 2048,
+        }
+        return url, headers, payload
+
+    def _process_response(
+        self,
+        response: httpx.Response,
+        evidence_chunks: List[RetrievedChunk],
+        sources: List[SourceReference],
+        start_time: float,
+        bot_name: Optional[str],
+        website_url: Optional[str],
+    ) -> GeneratedAnswer:
+        if response.status_code != 200:
+            logger.warning(f"OpenAI-compatible API error (HTTP {response.status_code}): {response.text}")
+            return create_soft_fallback(
+                self.model, evidence_chunks, sources, start_time,
+                note=f"experiencing provider status {response.status_code}",
+                bot_name=bot_name, website_url=website_url,
+            )
+
+        data = response.json()
+        choices = data.get("choices", [])
+        if not choices:
+            return create_soft_fallback(
+                self.model, evidence_chunks, sources, start_time,
+                note="unable to formulate an answer",
+                bot_name=bot_name, website_url=website_url,
+            )
+
+        answer_text = choices[0].get("message", {}).get("content", "").strip()
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        return GeneratedAnswer(
+            answer=answer_text,
+            sources=sources,
+            has_grounded_evidence=True,
+            stats=GenerationStats(
+                model_name=self.model,
+                duration_ms=duration_ms,
+                total_evidence_chunks=len(evidence_chunks),
+            ),
+        )
+
+    def generate_answer(
+        self,
+        question: str,
+        evidence_chunks: List[RetrievedChunk],
+        bot_name: Optional[str] = None,
+        website_url: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+    ) -> GeneratedAnswer:
+        start_time = time.perf_counter()
+        sources = build_sources(evidence_chunks)
+        if not evidence_chunks:
+            return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
+
+        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt)
+        try:
+            with httpx.Client(timeout=self.timeout_seconds) as client:
+                response = client.post(url, headers=headers, json=payload)
+        except Exception as exc:
+            logger.warning(f"OpenAI connection error: {exc}")
+            return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
+        return self._process_response(response, evidence_chunks, sources, start_time, bot_name, website_url)
+
+    async def agenerate_answer(
+        self,
+        question: str,
+        evidence_chunks: List[RetrievedChunk],
+        bot_name: Optional[str] = None,
+        website_url: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+    ) -> GeneratedAnswer:
+        start_time = time.perf_counter()
+        sources = build_sources(evidence_chunks)
+        if not evidence_chunks:
+            return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
+
+        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt)
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+                response = await client.post(url, headers=headers, json=payload)
+        except Exception as exc:
+            logger.warning(f"OpenAI async connection error: {exc}")
+            return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
+        return self._process_response(response, evidence_chunks, sources, start_time, bot_name, website_url)
+
+
+class AnthropicGenerationAdapter(LLMGenerationAdapter):
+    """Anthropic Claude generation adapter."""
+
+    BASE_URL: str = "https://api.anthropic.com/v1/messages"
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+        timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    ):
+        self._api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        self.model = model or "claude-3-5-sonnet-20241022"
+        self.timeout_seconds = timeout_seconds
+
+    def _get_api_key(self) -> str:
+        key = self._api_key or os.getenv("ANTHROPIC_API_KEY")
+        if not key:
+            raise GenerationProviderError("Anthropic API key is required. Please provide your API key.")
+        return key.strip()
+
+    def _prepare_call(
+        self,
+        question: str,
+        evidence_chunks: List[RetrievedChunk],
+        bot_name: Optional[str],
+        website_url: Optional[str],
+        system_prompt: Optional[str],
+    ) -> Tuple[str, Dict[str, str], Dict[str, Any]]:
+        api_key = self._get_api_key()
+        prompt = build_grounding_prompt(
+            question=question,
+            evidence_chunks=evidence_chunks,
+            bot_name=bot_name,
+            website_url=website_url,
+            system_prompt=system_prompt,
+        )
+        headers = {
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self.model,
+            "max_tokens": 2048,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+        }
+        return self.BASE_URL, headers, payload
+
+    def _process_response(
+        self,
+        response: httpx.Response,
+        evidence_chunks: List[RetrievedChunk],
+        sources: List[SourceReference],
+        start_time: float,
+        bot_name: Optional[str],
+        website_url: Optional[str],
+    ) -> GeneratedAnswer:
+        if response.status_code != 200:
+            logger.warning(f"Anthropic API error (HTTP {response.status_code}): {response.text}")
+            return create_soft_fallback(
+                self.model, evidence_chunks, sources, start_time,
+                note=f"experiencing provider status {response.status_code}",
+                bot_name=bot_name, website_url=website_url,
+            )
+
+        data = response.json()
+        content_parts = data.get("content", [])
+        answer_text = "".join(part.get("text", "") for part in content_parts if part.get("type") == "text").strip()
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        return GeneratedAnswer(
+            answer=answer_text,
+            sources=sources,
+            has_grounded_evidence=True,
+            stats=GenerationStats(
+                model_name=self.model,
+                duration_ms=duration_ms,
+                total_evidence_chunks=len(evidence_chunks),
+            ),
+        )
+
+    def generate_answer(
+        self,
+        question: str,
+        evidence_chunks: List[RetrievedChunk],
+        bot_name: Optional[str] = None,
+        website_url: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+    ) -> GeneratedAnswer:
+        start_time = time.perf_counter()
+        sources = build_sources(evidence_chunks)
+        if not evidence_chunks:
+            return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
+
+        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt)
+        try:
+            with httpx.Client(timeout=self.timeout_seconds) as client:
+                response = client.post(url, headers=headers, json=payload)
+        except Exception as exc:
+            logger.warning(f"Anthropic connection error: {exc}")
+            return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
+        return self._process_response(response, evidence_chunks, sources, start_time, bot_name, website_url)
+
+    async def agenerate_answer(
+        self,
+        question: str,
+        evidence_chunks: List[RetrievedChunk],
+        bot_name: Optional[str] = None,
+        website_url: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+    ) -> GeneratedAnswer:
+        start_time = time.perf_counter()
+        sources = build_sources(evidence_chunks)
+        if not evidence_chunks:
+            return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
+
+        url, headers, payload = self._prepare_call(question, evidence_chunks, bot_name, website_url, system_prompt)
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+                response = await client.post(url, headers=headers, json=payload)
+        except Exception as exc:
+            logger.warning(f"Anthropic async connection error: {exc}")
+            return create_soft_fallback(self.model, evidence_chunks, sources, start_time, bot_name=bot_name, website_url=website_url)
+        return self._process_response(response, evidence_chunks, sources, start_time, bot_name, website_url)
+
+
+def create_llm_adapter(
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+    api_key: Optional[str] = None,
+) -> LLMGenerationAdapter:
+    """Factory creating the appropriate LLM generation adapter based on client provider selection."""
+    norm = (provider or "").strip().lower()
+    if norm in ("openai", "chatgpt"):
+        return OpenAIGenerationAdapter(api_key=api_key, model=model or "gpt-4o-mini")
+    if norm in ("groq",):
+        return OpenAIGenerationAdapter(
+            api_key=api_key,
+            model=model or "llama-3.3-70b-versatile",
+            base_url="https://api.groq.com/openai/v1",
+        )
+    if norm in ("anthropic", "claude"):
+        return AnthropicGenerationAdapter(api_key=api_key, model=model or "claude-3-5-sonnet-20241022")
+    # Default to Gemini (using client key and model if provided, or environment default)
+    return GeminiGenerationAdapter(api_key=api_key, model=model)
+
+
 # Global singleton instance
 answer_generator_service = GeminiGenerationAdapter()
 generator_service = answer_generator_service
@@ -287,6 +569,9 @@ __all__ = [
     "GeneratedAnswer",
     "LLMGenerationAdapter",
     "GeminiGenerationAdapter",
+    "OpenAIGenerationAdapter",
+    "AnthropicGenerationAdapter",
+    "create_llm_adapter",
     "answer_generator_service",
     "generator_service",
 ]

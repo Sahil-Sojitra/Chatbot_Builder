@@ -20,6 +20,7 @@ from app.models.qa import (
 )
 from app.services.generator import (
     LLMGenerationAdapter,
+    create_llm_adapter,
     generator_service as default_generator_service,
 )
 from app.services.retrieval import (
@@ -110,7 +111,16 @@ class RAGQuestionAnsweringService:
 
         # Step 3: Grounded Answer Generation
         gen_start = time.perf_counter()
-        gen_result = await self._generator_service.agenerate_answer(
+        active_generator = (
+            create_llm_adapter(
+                provider=request.llm_provider,
+                model=request.llm_model,
+                api_key=request.llm_api_key,
+            )
+            if (request.llm_provider or request.llm_api_key or request.llm_model)
+            else self._generator_service
+        )
+        gen_result = await active_generator.agenerate_answer(
             question=clean_question,
             evidence_chunks=evidence_chunks,
             bot_name=request.bot_name,
@@ -157,7 +167,16 @@ class RAGQuestionAnsweringService:
 
         # Step 3: Grounded Answer Generation
         gen_start = time.perf_counter()
-        gen_result = self._generator_service.generate_answer(
+        active_generator = (
+            create_llm_adapter(
+                provider=request.llm_provider,
+                model=request.llm_model,
+                api_key=request.llm_api_key,
+            )
+            if (request.llm_provider or request.llm_api_key or request.llm_model)
+            else self._generator_service
+        )
+        gen_result = active_generator.generate_answer(
             question=clean_question,
             evidence_chunks=evidence_chunks,
             bot_name=request.bot_name,

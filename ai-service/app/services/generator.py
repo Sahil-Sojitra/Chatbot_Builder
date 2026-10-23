@@ -12,6 +12,7 @@ from app.services.answer_generator import (
     LLMGenerationAdapter,
     SourceReference,
     answer_generator_service,
+    create_llm_adapter,
     extract_brand_name,
     generator_service,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "GeneratedAnswer",
     "LLMGenerationAdapter",
     "GeminiGenerationAdapter",
+    "create_llm_adapter",
     "answer_generator_service",
     "generator_service",
 ]
