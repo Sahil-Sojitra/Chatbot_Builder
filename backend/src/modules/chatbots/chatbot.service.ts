@@ -16,6 +16,7 @@ import { generateUniqueSlug } from "../../shared/slug.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
 import { knowledgeSourceRepository } from "../knowledge-sources/knowledgeSource.repository.js";
 import { chatbotRepository } from "./chatbot.repository.js";
+import { DevChatLogModel } from "../dev/devChatLog.model.js";
 import type {
   CreateChatbotInput as RepositoryCreateChatbotInput,
   UpdateChatbotFields,
@@ -603,10 +604,42 @@ export const chatbotService = {
         websiteUrl,
         systemPrompt: chatbot.systemPrompt || undefined,
         topK: input.topK ?? chatbot.ragTopK ?? 8,
-        llmProvider: chatbot.provider || undefined,
-        llmModel: chatbot.model || undefined,
-        llmApiKey: rawApiKey || undefined,
+        llmProvider: chatbot.provider || "gemini",
+        llmModel: chatbot.model || process.env.GEMINI_MODEL || "gemini-flash-latest",
+        llmApiKey: rawApiKey || process.env.GEMINI_API_KEY,
         chatHistory: input.chatHistory || input.chat_history,
+      });
+
+      // Non-blocking asynchronous interaction logging for developer observability
+      const maxScore =
+        qaResponse.sources?.reduce(
+          (max, s) => (typeof s.score === "number" && s.score > max ? s.score : max),
+          0,
+        ) ?? 0;
+      const isLowConfidence =
+        Boolean(qaResponse.sources && qaResponse.sources.length > 0 && maxScore < 0.65);
+      const isUnverified = !qaResponse.has_grounded_evidence;
+      const shouldFlag = isUnverified || isLowConfidence;
+      const flagReason = isUnverified
+        ? "NO_GROUNDED_EVIDENCE"
+        : isLowConfidence
+        ? `LOW_SIMILARITY (${(maxScore * 100).toFixed(1)}%)`
+        : undefined;
+
+      void DevChatLogModel.create({
+        chatbotId: chatbot._id,
+        chatbotName: chatbot.name,
+        publicId,
+        question,
+        answer: qaResponse.answer,
+        hasGroundedEvidence: qaResponse.has_grounded_evidence,
+        sources: qaResponse.sources || [],
+        stats: qaResponse.stats,
+        isFlagged: shouldFlag,
+        flagReason,
+        isTestChat: false,
+      }).catch((logErr) => {
+        console.error("Failed to write dev chat log:", logErr);
       });
 
       return {
@@ -621,9 +654,24 @@ export const chatbotService = {
         error: err instanceof Error ? err.message : String(err),
       });
 
+      const fallbackAnswer =
+        "We are currently experiencing a brief delay connecting to our service. Please try asking your question again in a moment, or feel free to explore our website directly.";
+
+      void DevChatLogModel.create({
+        chatbotId: chatbot._id,
+        chatbotName: chatbot.name,
+        publicId,
+        question,
+        answer: fallbackAnswer,
+        hasGroundedEvidence: false,
+        sources: [],
+        isFlagged: true,
+        flagReason: `INFERENCE_ERROR: ${err instanceof Error ? err.message : String(err)}`,
+        isTestChat: false,
+      }).catch(() => {});
+
       return {
-        answer:
-          "We are currently experiencing a brief delay connecting to our service. Please try asking your question again in a moment, or feel free to explore our website directly.",
+        answer: fallbackAnswer,
         sources: [],
         hasGroundedEvidence: false,
         stats: {
