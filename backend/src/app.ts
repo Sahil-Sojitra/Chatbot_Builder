@@ -13,6 +13,7 @@ import {
   changePasswordSchema,
   updateMeSchema,
 } from "./modules/auth/auth.validation.js";
+import { setupSwagger } from "./config/swagger.js";
 import chatbotRoutes from "./modules/chatbots/chatbot.routes.js";
 import publicChatbotRoutes from "./modules/chatbots/publicChatbot.routes.js";
 import knowledgeSourceRoutes from "./modules/knowledge-sources/knowledgeSource.routes.js";
@@ -26,7 +27,12 @@ const app = express();
 // for HttpOnly refresh-token cookies.
 app.use(
   cors((req, callback) => {
-    const isPublic = req.url && (req.url.startsWith("/api/v1/public") || req.url === "/");
+    const isPublic =
+      req.url &&
+      (req.url.startsWith("/api/v1/public") ||
+        req.url === "/" ||
+        req.url.startsWith("/api-docs") ||
+        req.url.startsWith("/docs"));
     if (isPublic) {
       return callback(null, { origin: true, credentials: false });
     }
@@ -40,9 +46,13 @@ app.use(requestLogger);
 app.use(express.json());
 app.use(cookieParser());
 
+// Mount Swagger documentation UI (/api-docs, /docs, /api-docs.json)
+setupSwagger(app);
+
 app.get("/", (_req, res) => {
   res.json({
     message: "Chatbot Builder API is running",
+    docs: "/api-docs",
   });
 });
 
