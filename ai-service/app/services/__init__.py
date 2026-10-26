@@ -60,6 +60,13 @@ from app.services.vector_store import (
     VectorUpsertResult,
     vector_store,
 )
+from app.services.document_parser import (
+    DocumentParserService,
+    DocumentSection,
+    ParsedDocumentResult,
+    DocumentParsingError,
+    document_parser_service,
+)
 from app.services.retrieval import (
     DEFAULT_TOP_K,
     InvalidQueryError,
@@ -187,4 +194,10 @@ __all__ = [
     "QARequest",
     "QAResponse",
     "QAStats",
+    # Document Parsers
+    "DocumentParserService",
+    "DocumentSection",
+    "ParsedDocumentResult",
+    "DocumentParsingError",
+    "document_parser_service",
 ]
