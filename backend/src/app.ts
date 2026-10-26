@@ -18,6 +18,7 @@ import chatbotRoutes from "./modules/chatbots/chatbot.routes.js";
 import publicChatbotRoutes from "./modules/chatbots/publicChatbot.routes.js";
 import knowledgeSourceRoutes from "./modules/knowledge-sources/knowledgeSource.routes.js";
 import organizationRoutes from "./modules/organizations/organization.routes.js";
+import devRoutes from "./modules/dev/dev.routes.js";
 import { asyncHandler } from "./shared/asyncHandler.js";
 
 const app = express();
@@ -30,6 +31,7 @@ app.use(
     const isPublic =
       req.url &&
       (req.url.startsWith("/api/v1/public") ||
+        req.url.startsWith("/api/v1/dev") ||
         req.url === "/" ||
         req.url.startsWith("/api-docs") ||
         req.url.startsWith("/docs"));
@@ -80,6 +82,8 @@ app.use("/api/v1/organization", organizationRoutes);
 app.use("/api/v1/chatbots", chatbotRoutes);
 // Knowledge source endpoints
 app.use("/api/v1/knowledge-sources", knowledgeSourceRoutes);
+// Developer troubleshooting & observability endpoints
+app.use("/api/v1/dev", devRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
