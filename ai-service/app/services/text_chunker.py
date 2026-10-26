@@ -239,6 +239,126 @@ class ContentChunker:
             success=True,
         )
 
+    def chunk_document(
+        self,
+        doc: Any,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
+    ) -> List[ContentChunk]:
+        """Splits a ParsedDocumentResult (PDF, DOCX, PPTX, TXT, CSV, Image) into bounded chunks."""
+        filename = getattr(doc, "filename", "document")
+        doc_title = getattr(doc, "title", None) or Path(filename).stem
+        sections = getattr(doc, "sections", [])
+
+        splitter = self.get_splitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        chunks: List[ContentChunk] = []
+        valid_idx = 0
+
+        if sections:
+            for section in sections:
+                sec_content = getattr(section, "content", "").strip()
+                if not sec_content:
+                    continue
+
+                sec_title = getattr(section, "title", f"Section {getattr(section, 'section_number', 1)}")
+                sec_meta = dict(getattr(section, "metadata", {}))
+
+                if "page" in sec_meta:
+                    page_num = sec_meta["page"]
+                    canonical_url = f"doc://{filename}#page={page_num}"
+                    cite_label = f"Page {page_num}"
+                elif "slide" in sec_meta:
+                    slide_num = sec_meta["slide"]
+                    canonical_url = f"doc://{filename}#slide={slide_num}"
+                    cite_label = f"Slide {slide_num}"
+                else:
+                    slug = sec_title.lower().replace(" ", "-")[:40]
+                    canonical_url = f"doc://{filename}#{slug}"
+                    cite_label = sec_title
+
+                raw_splits = splitter.split_text(sec_content)
+                for split_text in raw_splits:
+                    cleaned = split_text.strip()
+                    tokens = self.count_tokens(cleaned)
+                    if not cleaned or tokens < self.MIN_CHUNK_TOKENS:
+                        continue
+
+                    context_header = f"Document: {doc_title} ({filename} - {cite_label})\n\n"
+                    enriched = f"{context_header}{cleaned}" if not cleaned.startswith("Document:") else cleaned
+                    tokens = self.count_tokens(enriched)
+
+                    chunk_id = self.generate_chunk_id(
+                        canonical_url=canonical_url,
+                        chunk_index=valid_idx,
+                        content=enriched,
+                    )
+
+                    chunks.append(
+                        ContentChunk(
+                            chunk_id=chunk_id,
+                            source_url=f"doc://{filename}",
+                            canonical_url=canonical_url,
+                            title=f"{doc_title} [{cite_label}]",
+                            content=enriched,
+                            chunk_index=valid_idx,
+                            token_count=tokens,
+                            char_count=len(enriched),
+                            metadata={
+                                **sec_meta,
+                                "filename": filename,
+                                "document_title": doc_title,
+                                "file_type": getattr(doc, "file_type", "document"),
+                                "citation_label": cite_label,
+                                "chunk_index": valid_idx,
+                                "token_count": tokens,
+                            },
+                        )
+                    )
+                    valid_idx += 1
+        else:
+            full_text = getattr(doc, "full_text", "").strip()
+            if full_text:
+                raw_splits = splitter.split_text(full_text)
+                for split_text in raw_splits:
+                    cleaned = split_text.strip()
+                    tokens = self.count_tokens(cleaned)
+                    if not cleaned or tokens < self.MIN_CHUNK_TOKENS:
+                        continue
+
+                    context_header = f"Document: {doc_title} ({filename})\n\n"
+                    enriched = f"{context_header}{cleaned}" if not cleaned.startswith("Document:") else cleaned
+                    tokens = self.count_tokens(enriched)
+                    canonical_url = f"doc://{filename}"
+
+                    chunk_id = self.generate_chunk_id(
+                        canonical_url=canonical_url,
+                        chunk_index=valid_idx,
+                        content=enriched,
+                    )
+
+                    chunks.append(
+                        ContentChunk(
+                            chunk_id=chunk_id,
+                            source_url=f"doc://{filename}",
+                            canonical_url=canonical_url,
+                            title=doc_title,
+                            content=enriched,
+                            chunk_index=valid_idx,
+                            token_count=tokens,
+                            char_count=len(enriched),
+                            metadata={
+                                "filename": filename,
+                                "document_title": doc_title,
+                                "file_type": getattr(doc, "file_type", "document"),
+                                "chunk_index": valid_idx,
+                                "token_count": tokens,
+                            },
+                        )
+                    )
+                    valid_idx += 1
+
+        return chunks
+
 
 # Global singleton instance
 text_chunker_service = ContentChunker()
