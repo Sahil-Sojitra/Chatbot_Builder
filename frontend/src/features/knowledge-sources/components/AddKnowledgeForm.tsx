@@ -34,9 +34,18 @@ const MAX_FILE_SIZE_BYTES = 26_214_400; // 25 MB
 const SUPPORTED_FILE_MIME_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-powerpoint",
   "text/plain",
   "text/csv",
+  "application/csv",
+  "text/x-csv",
   "text/markdown",
+  "text/x-markdown",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
 ] as const;
 
 type SupportedMimeType = (typeof SUPPORTED_FILE_MIME_TYPES)[number];
@@ -44,10 +53,18 @@ type SupportedMimeType = (typeof SUPPORTED_FILE_MIME_TYPES)[number];
 const EXTENSION_TO_MIME: Record<string, SupportedMimeType> = {
   pdf: "application/pdf",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  doc: "application/msword",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ppt: "application/vnd.ms-powerpoint",
   txt: "text/plain",
+  text: "text/plain",
   csv: "text/csv",
   md: "text/markdown",
   markdown: "text/markdown",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
 };
 
 const resolveMimeType = (file: File): SupportedMimeType | null => {
@@ -115,7 +132,7 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
     if (!mime) {
       setSelectedFile(null);
       setFileError(
-        "Unsupported file type. Supported formats: PDF (.pdf), Word (.docx), Plain Text (.txt), CSV (.csv), Markdown (.md).",
+        "Unsupported file type. Supported formats: PDF, Word (.docx), PowerPoint (.pptx), CSV (.csv), Plain Text (.txt, .md), and Images (PNG, JPG, WEBP).",
       );
       return;
     }
@@ -146,7 +163,7 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
       const mimeType = resolveMimeType(selectedFile);
       if (!mimeType) {
         setFileError(
-          "Unsupported file type. Supported formats: PDF (.pdf), Word (.docx), Plain Text (.txt), CSV (.csv), Markdown (.md).",
+          "Unsupported file type. Supported formats: PDF, Word (.docx), PowerPoint (.pptx), CSV (.csv), Plain Text (.txt, .md), and Images (PNG, JPG, WEBP).",
         );
         return;
       }
@@ -310,7 +327,7 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
                 <Input
                   id="knowledge-file"
                   type="file"
-                  accept=".pdf,.docx,.txt,.csv,.md,.markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/csv,text/markdown"
+                  accept=".pdf,.docx,.doc,.pptx,.ppt,.txt,.csv,.md,.png,.jpg,.jpeg,.webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,text/markdown,image/*"
                   onChange={handleFileChange}
                   disabled={isSubmitting}
                   aria-invalid={Boolean(fileError)}
@@ -318,7 +335,7 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
                   className="cursor-pointer file:cursor-pointer file:rounded-md file:border file:border-zinc-700 file:bg-zinc-800 file:px-3 file:py-1 file:text-sm file:font-medium file:text-zinc-200 file:hover:bg-zinc-700"
                 />
                 <p id="knowledge-file-help" className="text-xs text-zinc-400">
-                  Supported formats: PDF, Word (.docx), Plain text (.txt), CSV (.csv), Markdown (.md). Maximum size: 25 MB.
+                  Supported formats: PDF, Word (.docx), PowerPoint (.pptx), Spreadsheets (.csv), Plain text (.txt, .md), and Images (PNG, JPG, WEBP). Maximum size: 25 MB.
                 </p>
                 {fileError ? (
                   <p id="knowledge-file-error" role="alert" className="text-sm font-medium text-red-400">

@@ -163,7 +163,12 @@ export const swaggerSpec = {
         required: ["originalName", "mimeType", "sizeBytes"],
         properties: {
           originalName: { type: "string", example: "user-manual.pdf" },
-          mimeType: { type: "string", example: "application/pdf" },
+          mimeType: {
+            type: "string",
+            example: "application/pdf",
+            description:
+              "Supported formats: PDF, DOCX, DOC, PPTX, PPT, CSV, Markdown, Plain Text, and Images (PNG, JPEG, WEBP)",
+          },
           sizeBytes: { type: "integer", example: 1048576 },
         },
       },

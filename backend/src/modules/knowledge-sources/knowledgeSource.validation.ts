@@ -68,16 +68,56 @@ export type CreateKnowledgeSourceBody = z.infer<
 
 /**
  * MIME types accepted for FILE knowledge sources, and the hard size ceiling
- * (25 MB) enforced both here and by the presigned PUT's Content-Length range
- * once actual upload-completion handling exists.
+ * (25 MB) enforced both here and by the presigned PUT's Content-Length range.
  */
 export const SUPPORTED_FILE_MIME_TYPES = [
+  // Documents
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+  // Presentations
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-powerpoint",
+  // Plain text & markdown
   "text/plain",
-  "text/csv",
   "text/markdown",
+  "text/x-markdown",
+  // Tabular data
+  "text/csv",
+  "application/csv",
+  "text/x-csv",
+  // Images (multimodal vision OCR)
+  "image/png",
+  "image/jpeg",
+  "image/webp",
 ] as const;
+
+export const EXTENSION_TO_MIME: Record<string, (typeof SUPPORTED_FILE_MIME_TYPES)[number]> = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  doc: "application/msword",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ppt: "application/vnd.ms-powerpoint",
+  txt: "text/plain",
+  text: "text/plain",
+  md: "text/markdown",
+  markdown: "text/markdown",
+  csv: "text/csv",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+};
+
+export const resolveMimeTypeFromFilename = (
+  filename: string,
+): (typeof SUPPORTED_FILE_MIME_TYPES)[number] | null => {
+  const ext = filename.split(".").pop()?.toLowerCase();
+  if (ext && ext in EXTENSION_TO_MIME) {
+    return EXTENSION_TO_MIME[ext]!;
+  }
+  return null;
+};
 
 export const MAX_FILE_SIZE_BYTES = 26_214_400;
 
