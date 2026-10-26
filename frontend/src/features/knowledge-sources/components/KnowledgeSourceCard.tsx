@@ -143,16 +143,21 @@ export function KnowledgeSourceCard({
   };
 
   const handleResync = async () => {
-    if (!source.sourceUrl || isResyncing) return;
+    if (isResyncing) return;
     setIsResyncing(true);
     setCardError(null);
     try {
-      const response = await knowledgeSourcesApi.create(source.chatbotId, {
-        type: "URL",
-        name: source.name,
-        sourceUrl: source.sourceUrl,
-      });
-      onUpdated?.(response.knowledgeSource);
+      if ((source.type === "URL" || source.type === "WEBPAGE") && source.sourceUrl) {
+        const response = await knowledgeSourcesApi.create(source.chatbotId, {
+          type: "URL",
+          name: source.name,
+          sourceUrl: source.sourceUrl,
+        });
+        onUpdated?.(response.knowledgeSource);
+      } else {
+        const response = await knowledgeSourcesApi.retry(source.chatbotId, source.id);
+        onUpdated?.(response.knowledgeSource);
+      }
     } catch (err: unknown) {
       setCardError(
         err instanceof ApiRequestError
@@ -248,7 +253,7 @@ export function KnowledgeSourceCard({
             {source.status}
           </Badge>
 
-          {!isEditing && !isConfirmingDelete && (source.type === "URL" || source.type === "WEBPAGE") && source.sourceUrl ? (
+          {!isEditing && !isConfirmingDelete && (((source.type === "URL" || source.type === "WEBPAGE") && source.sourceUrl) || source.status === "FAILED") ? (
             <Button
               type="button"
               variant="outline"
@@ -256,7 +261,7 @@ export function KnowledgeSourceCard({
               className="h-7 text-xs border-zinc-700 bg-zinc-900 hover:bg-violet-950/40 hover:border-violet-500/50 text-zinc-300 hover:text-white font-mono flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               onClick={() => void handleResync()}
               disabled={isResyncing || source.status === "PROCESSING"}
-              title="Re-crawl and update with latest website content"
+              title={source.status === "FAILED" ? "Retry processing this knowledge source" : "Re-crawl and update with latest website content"}
             >
               <svg
                 className={`w-3 h-3 text-violet-400 ${isResyncing ? "animate-spin" : ""}`}
@@ -271,7 +276,7 @@ export function KnowledgeSourceCard({
                   d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
                 />
               </svg>
-              <span>{isResyncing ? "SYNCING…" : "RE-SYNC"}</span>
+              <span>{isResyncing ? "SYNCING…" : source.status === "FAILED" ? "RETRY" : "RE-SYNC"}</span>
             </Button>
           ) : null}
 

@@ -166,4 +166,20 @@ export const knowledgeSourcesApi = {
       },
     );
   },
+
+  retry: (
+    chatbotId: string,
+    sourceId: string,
+  ): Promise<KnowledgeSourceResponse> => {
+    const trimmedId = chatbotId?.trim();
+    if (!trimmedId || !sourceId?.trim()) {
+      return Promise.reject(new Error("Chatbot ID and Source ID are required."));
+    }
+    return apiRequest<KnowledgeSourceResponse>(
+      `/api/v1/knowledge-sources/${trimmedId}/${sourceId.trim()}/retry`,
+      {
+        method: "POST",
+      },
+    );
+  },
 };
