@@ -88,6 +88,13 @@ class GeminiGenerationAdapter(LLMGenerationAdapter):
         """Retrieves and validates the configured Gemini API key."""
         key = self._api_key or os.getenv("GEMINI_API_KEY")
         if not key:
+            try:
+                from dotenv import load_dotenv
+                load_dotenv(override=True)
+                key = os.getenv("GEMINI_API_KEY")
+            except Exception:
+                pass
+        if not key:
             raise GenerationProviderError(
                 "GEMINI_API_KEY is not configured. Set the GEMINI_API_KEY environment variable "
                 "or pass api_key to GeminiGenerationAdapter."
