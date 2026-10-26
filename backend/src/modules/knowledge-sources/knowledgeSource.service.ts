@@ -4,7 +4,13 @@ import { Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
 import { AppError, chatbotNotFound, organizationNotFound } from "../../shared/errors.js";
-import { createPresignedUploadUrl, deleteObject, headObject } from "../../shared/storage.js";
+import {
+  createPresignedUploadUrl,
+  deleteObject,
+  downloadObject,
+  headObject,
+} from "../../shared/storage.js";
+import { decryptSecret } from "../../shared/encryption.js";
 import { chatbotRepository } from "../chatbots/chatbot.repository.js";
 import { organizationRepository } from "../organizations/organization.repository.js";
 import { aiServiceClient, AIServiceError } from "../../shared/aiServiceClient.js";
@@ -328,10 +334,48 @@ export const knowledgeSourceService = {
 
       return toPublicKnowledgeSource(activeSource);
     } else if (input.type === "TEXT") {
-      // Mark text knowledge sources READY immediately
-      await knowledgeSourceRepository.claimForProcessing(source._id.toString());
-      const readySource = await knowledgeSourceRepository.markReady(source._id.toString(), input.sourceText);
-      return toPublicKnowledgeSource(readySource ?? source);
+      const claimedSource = await knowledgeSourceRepository.claimForProcessing(source._id.toString());
+      const activeSource = claimedSource ?? source;
+      const processSourceId = activeSource._id.toString();
+      const botIdStr = chatbot._id.toString();
+      const textContent = input.sourceText;
+      const sourceName = input.name;
+
+      // Asynchronously embed and index text into Pinecone under chatbot namespace
+      void (async () => {
+        try {
+          const rawApiKey = chatbot.apiKey ? decryptSecret(chatbot.apiKey) : undefined;
+          const base64Content = Buffer.from(textContent, "utf-8").toString("base64");
+
+          const result = await aiServiceClient.ingestDocument({
+            chatbotId: botIdStr,
+            filename: `${sanitizeFileName(sourceName)}.txt`,
+            contentBase64: base64Content,
+            mimeType: "text/plain",
+            sourceName,
+            llmApiKey: rawApiKey,
+            llmModel: typeof chatbot.model === "string" ? chatbot.model : undefined,
+          });
+
+          if (!result.success) {
+            const failMsg = result.error_message || "Text indexing failed in AI service";
+            await knowledgeSourceRepository.markFailed(processSourceId, failMsg);
+            return;
+          }
+
+          await knowledgeSourceRepository.markReady(processSourceId, textContent);
+        } catch (err: unknown) {
+          const safeError =
+            err instanceof AIServiceError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : "Text indexing failed in AI service";
+          await knowledgeSourceRepository.markFailed(processSourceId, safeError);
+        }
+      })();
+
+      return toPublicKnowledgeSource(activeSource);
     }
 
     return toPublicKnowledgeSource(source);
@@ -457,7 +501,51 @@ export const knowledgeSourceService = {
       storageKey: pendingUpload.storageKey,
     });
 
-    return toPublicKnowledgeSource(source);
+    const claimedSource = await knowledgeSourceRepository.claimForProcessing(source._id.toString());
+    const activeSource = claimedSource ?? source;
+    const processSourceId = activeSource._id.toString();
+    const botIdStr = chatbot._id.toString();
+    const storageKey = pendingUpload.storageKey;
+    const filename = pendingUpload.originalName;
+    const mimeType = pendingUpload.mimeType;
+    const sourceName = activeSource.name;
+
+    // Asynchronously download file from object storage and ingest into AI service
+    void (async () => {
+      try {
+        const fileBuffer = await downloadObject(storageKey);
+        const base64Content = fileBuffer.toString("base64");
+        const rawApiKey = chatbot.apiKey ? decryptSecret(chatbot.apiKey) : undefined;
+
+        const result = await aiServiceClient.ingestDocument({
+          chatbotId: botIdStr,
+          filename,
+          contentBase64: base64Content,
+          mimeType,
+          sourceName,
+          llmApiKey: rawApiKey,
+          llmModel: typeof chatbot.model === "string" ? chatbot.model : undefined,
+        });
+
+        if (!result.success) {
+          const failMsg = result.error_message || "Document ingestion failed in AI service";
+          await knowledgeSourceRepository.markFailed(processSourceId, failMsg);
+          return;
+        }
+
+        await knowledgeSourceRepository.markReady(processSourceId);
+      } catch (err: unknown) {
+        const safeError =
+          err instanceof AIServiceError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : "Document indexing failed in AI service";
+        await knowledgeSourceRepository.markFailed(processSourceId, safeError);
+      }
+    })();
+
+    return toPublicKnowledgeSource(activeSource);
   },
 
   /**
@@ -488,7 +576,180 @@ export const knowledgeSourceService = {
       throw knowledgeSourceNotFound();
     }
 
+    // Re-index updated text source in AI service vector store
+    if (input.sourceText !== undefined && updated.type === "TEXT") {
+      const processSourceId = updated._id.toString();
+      const botIdStr = chatbot._id.toString();
+      const textContent = input.sourceText;
+      const sourceName = updated.name;
+
+      await knowledgeSourceRepository.resetForProcessing(processSourceId);
+
+      void (async () => {
+        try {
+          const rawApiKey = chatbot.apiKey ? decryptSecret(chatbot.apiKey) : undefined;
+          const base64Content = Buffer.from(textContent, "utf-8").toString("base64");
+
+          const result = await aiServiceClient.ingestDocument({
+            chatbotId: botIdStr,
+            filename: `${sanitizeFileName(sourceName)}.txt`,
+            contentBase64: base64Content,
+            mimeType: "text/plain",
+            sourceName,
+            llmApiKey: rawApiKey,
+            llmModel: typeof chatbot.model === "string" ? chatbot.model : undefined,
+          });
+
+          if (!result.success) {
+            const failMsg = result.error_message || "Text indexing failed in AI service";
+            await knowledgeSourceRepository.markFailed(processSourceId, failMsg);
+            return;
+          }
+
+          await knowledgeSourceRepository.markReady(processSourceId, textContent);
+        } catch (err: unknown) {
+          const safeError =
+            err instanceof AIServiceError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : "Text indexing failed in AI service";
+          await knowledgeSourceRepository.markFailed(processSourceId, safeError);
+        }
+      })();
+    }
+
     return toPublicKnowledgeSource(updated);
+  },
+
+  /**
+   * Retries ingestion for a failed knowledge source.
+   */
+  async retryForOwner(
+    ownerId: string,
+    chatbotId: string,
+    sourceId: string,
+  ): Promise<ClientFacingKnowledgeSource> {
+    const chatbot = await resolveOwnedChatbot(ownerId, chatbotId);
+
+    const existing = await knowledgeSourceRepository.findByIdForChatbot(
+      sourceId,
+      chatbot._id,
+    );
+    if (!existing) {
+      throw knowledgeSourceNotFound();
+    }
+
+    const resetSource = await knowledgeSourceRepository.resetForRetry(sourceId);
+    if (!resetSource) {
+      return toPublicKnowledgeSource(existing);
+    }
+
+    const processSourceId = resetSource._id.toString();
+    const botIdStr = chatbot._id.toString();
+
+    if (resetSource.type === "URL" || resetSource.type === "WEBPAGE") {
+      const targetUrl = resetSource.sourceUrl;
+      if (!targetUrl) {
+        await knowledgeSourceRepository.markFailed(processSourceId, "Missing source URL");
+        return toPublicKnowledgeSource(resetSource);
+      }
+      void (async () => {
+        try {
+          const ingestionResult = await aiServiceClient.ingestWebsite({
+            chatbotId: botIdStr,
+            websiteUrl: targetUrl,
+            maxPages: 25,
+          });
+
+          if (!ingestionResult.success) {
+            const failureMsg = ingestionResult.error_message || "Website ingestion failed in AI service";
+            await knowledgeSourceRepository.markFailed(processSourceId, failureMsg);
+            return;
+          }
+
+          await knowledgeSourceRepository.markReady(processSourceId);
+        } catch (err: unknown) {
+          const safeError = err instanceof AIServiceError ? err.message : "Website crawling and indexing failed";
+          await knowledgeSourceRepository.markFailed(processSourceId, safeError);
+        }
+      })();
+    } else if (resetSource.type === "FILE") {
+      const storageKey = resetSource.storageKey;
+      if (!storageKey) {
+        await knowledgeSourceRepository.markFailed(processSourceId, "Missing storage key for file");
+        return toPublicKnowledgeSource(resetSource);
+      }
+      void (async () => {
+        try {
+          const fileBuffer = await downloadObject(storageKey);
+          const base64Content = fileBuffer.toString("base64");
+          const rawApiKey = chatbot.apiKey ? decryptSecret(chatbot.apiKey) : undefined;
+
+          const result = await aiServiceClient.ingestDocument({
+            chatbotId: botIdStr,
+            filename: resetSource.originalName || resetSource.name,
+            contentBase64: base64Content,
+            mimeType: resetSource.mimeType || undefined,
+            sourceName: resetSource.name,
+            llmApiKey: rawApiKey,
+            llmModel: typeof chatbot.model === "string" ? chatbot.model : undefined,
+          });
+
+          if (!result.success) {
+            const failMsg = result.error_message || "Document ingestion failed in AI service";
+            await knowledgeSourceRepository.markFailed(processSourceId, failMsg);
+            return;
+          }
+
+          await knowledgeSourceRepository.markReady(processSourceId);
+        } catch (err: unknown) {
+          const safeError =
+            err instanceof AIServiceError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : "Document indexing failed in AI service";
+          await knowledgeSourceRepository.markFailed(processSourceId, safeError);
+        }
+      })();
+    } else if (resetSource.type === "TEXT") {
+      const textContent = resetSource.sourceText || "";
+      void (async () => {
+        try {
+          const rawApiKey = chatbot.apiKey ? decryptSecret(chatbot.apiKey) : undefined;
+          const base64Content = Buffer.from(textContent, "utf-8").toString("base64");
+
+          const result = await aiServiceClient.ingestDocument({
+            chatbotId: botIdStr,
+            filename: `${sanitizeFileName(resetSource.name)}.txt`,
+            contentBase64: base64Content,
+            mimeType: "text/plain",
+            sourceName: resetSource.name,
+            llmApiKey: rawApiKey,
+            llmModel: typeof chatbot.model === "string" ? chatbot.model : undefined,
+          });
+
+          if (!result.success) {
+            const failMsg = result.error_message || "Text indexing failed in AI service";
+            await knowledgeSourceRepository.markFailed(processSourceId, failMsg);
+            return;
+          }
+
+          await knowledgeSourceRepository.markReady(processSourceId, textContent);
+        } catch (err: unknown) {
+          const safeError =
+            err instanceof AIServiceError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : "Text indexing failed in AI service";
+          await knowledgeSourceRepository.markFailed(processSourceId, safeError);
+        }
+      })();
+    }
+
+    return toPublicKnowledgeSource(resetSource);
   },
 
   /**

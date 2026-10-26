@@ -118,4 +118,18 @@ export const knowledgeSourceController = {
 
     sendSuccess(res, { deleted: true }, 200);
   },
+
+  async retry(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const knowledgeSource = await knowledgeSourceService.retryForOwner(
+      req.auth.userId,
+      req.params.chatbotId as string,
+      req.params.sourceId as string,
+    );
+
+    sendSuccess(res, { knowledgeSource }, 200);
+  },
 };

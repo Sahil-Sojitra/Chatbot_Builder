@@ -56,10 +56,10 @@ export interface IngestDocumentPayload {
   chatbotId: string;
   filename: string;
   contentBase64: string;
-  mimeType?: string;
-  sourceName?: string;
-  llmApiKey?: string;
-  llmModel?: string;
+  mimeType?: string | undefined;
+  sourceName?: string | undefined;
+  llmApiKey?: string | undefined;
+  llmModel?: string | undefined;
 }
 
 export interface IngestDocumentResponse {

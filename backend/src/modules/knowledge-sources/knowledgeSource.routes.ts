@@ -65,4 +65,10 @@ router.delete(
   asyncHandler(knowledgeSourceController.delete),
 );
 
+router.post(
+  "/:chatbotId/:sourceId/retry",
+  requireAuth,
+  asyncHandler(knowledgeSourceController.retry),
+);
+
 export default router;
