@@ -594,6 +594,55 @@ export const swaggerSpec = {
         },
       },
     },
+    "/knowledge-sources/{chatbotId}/upload-direct": {
+      post: {
+        tags: ["Knowledge Sources"],
+        summary: "Direct multipart file upload for immediate storage and vector ingestion",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "chatbotId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                properties: {
+                  file: {
+                    type: "string",
+                    format: "binary",
+                    description: "Single document file to upload (PDF, Word, PPTX, CSV, TXT, MD, Image)",
+                  },
+                  files: {
+                    type: "array",
+                    items: { type: "string", format: "binary" },
+                    description: "Multiple document files to upload simultaneously",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "File(s) uploaded and queued for processing" },
+        },
+      },
+    },
+    "/knowledge-sources/{chatbotId}/{sourceId}/retry": {
+      post: {
+        tags: ["Knowledge Sources"],
+        summary: "Retry ingestion for a failed knowledge source",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "chatbotId", in: "path", required: true, schema: { type: "string" } },
+          { name: "sourceId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Knowledge source reset and queued for processing" },
+        },
+      },
+    },
   },
 };
 

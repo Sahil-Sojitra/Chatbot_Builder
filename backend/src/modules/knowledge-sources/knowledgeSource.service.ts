@@ -9,6 +9,7 @@ import {
   deleteObject,
   downloadObject,
   headObject,
+  uploadObject,
 } from "../../shared/storage.js";
 import { decryptSecret } from "../../shared/encryption.js";
 import { chatbotRepository } from "../chatbots/chatbot.repository.js";
@@ -17,7 +18,11 @@ import { aiServiceClient, AIServiceError } from "../../shared/aiServiceClient.js
 import { knowledgeSourceRepository } from "./knowledgeSource.repository.js";
 import type { CreateKnowledgeSourceInput as RepositoryCreateKnowledgeSourceInput } from "./knowledgeSource.repository.js";
 import { pendingUploadRepository } from "./pendingUpload.repository.js";
-import { MAX_FILE_SIZE_BYTES } from "./knowledgeSource.validation.js";
+import {
+  MAX_FILE_SIZE_BYTES,
+  resolveMimeTypeFromFilename,
+  SUPPORTED_FILE_MIME_TYPES,
+} from "./knowledgeSource.validation.js";
 import type {
   CompleteFileUploadBody,
   CreateKnowledgeSourceBody,
@@ -546,6 +551,117 @@ export const knowledgeSourceService = {
     })();
 
     return toPublicKnowledgeSource(activeSource);
+  },
+
+  /**
+   * Directly uploads one or multiple files, stores them to object storage,
+   * creates knowledge source records, and triggers vector ingestion in the AI service.
+   */
+  async uploadDirectForOwner(
+    ownerId: string,
+    chatbotId: string,
+    files: Array<{ originalname: string; mimetype: string; size: number; buffer: Buffer }>,
+  ): Promise<ClientFacingKnowledgeSource[]> {
+    const chatbot = await resolveOwnedChatbot(ownerId, chatbotId);
+
+    if (!files || files.length === 0) {
+      throw new AppError(400, "VALIDATION_ERROR", "No files provided for upload");
+    }
+
+    const createdSources: ClientFacingKnowledgeSource[] = [];
+
+    for (const file of files) {
+      // 1. Resolve and validate MIME type
+      const resolvedMime =
+        (SUPPORTED_FILE_MIME_TYPES as readonly string[]).includes(file.mimetype)
+          ? file.mimetype
+          : resolveMimeTypeFromFilename(file.originalname);
+
+      if (!resolvedMime) {
+        throw new AppError(
+          400,
+          "VALIDATION_ERROR",
+          `Unsupported file format for '${file.originalname}'. Supported formats: PDF, Word (.docx), PowerPoint (.pptx), Spreadsheets (.csv), Plain Text (.txt, .md), and Images (PNG, JPG, WEBP).`,
+        );
+      }
+
+      if (file.size <= 0) {
+        throw new AppError(400, "VALIDATION_ERROR", `Uploaded file '${file.originalname}' is empty`);
+      }
+
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new AppError(
+          400,
+          "VALIDATION_ERROR",
+          `File '${file.originalname}' exceeds the maximum allowed size of ${MAX_FILE_SIZE_BYTES} bytes (25 MB)`,
+        );
+      }
+
+      // 2. Generate unique storage key and upload directly to object storage
+      const storageKey = generateObjectKey(chatbot._id, file.originalname);
+      try {
+        await uploadObject(storageKey, file.buffer, resolvedMime);
+      } catch (uploadErr) {
+        console.warn(`[KnowledgeSourceService] Failed to upload ${file.originalname} to storage:`, uploadErr);
+      }
+
+      // 3. Create KnowledgeSource record in MongoDB
+      const source = await knowledgeSourceRepository.create({
+        chatbotId: chatbot._id,
+        type: "FILE",
+        name: file.originalname,
+        createdBy: new Types.ObjectId(ownerId),
+        originalName: file.originalname,
+        mimeType: resolvedMime,
+        sizeBytes: file.size,
+        storageKey,
+      });
+
+      // 4. Claim for processing
+      const claimedSource = await knowledgeSourceRepository.claimForProcessing(source._id.toString());
+      const activeSource = claimedSource ?? source;
+      const processSourceId = activeSource._id.toString();
+      const botIdStr = chatbot._id.toString();
+      const filename = file.originalname;
+      const base64Content = file.buffer.toString("base64");
+      const sourceName = activeSource.name;
+
+      // 5. Trigger asynchronous document parsing, chunking, embedding, and vector upsert
+      void (async () => {
+        try {
+          const rawApiKey = chatbot.apiKey ? decryptSecret(chatbot.apiKey) : undefined;
+          const result = await aiServiceClient.ingestDocument({
+            chatbotId: botIdStr,
+            filename,
+            contentBase64: base64Content,
+            mimeType: resolvedMime,
+            sourceName,
+            llmApiKey: rawApiKey,
+            llmModel: typeof chatbot.model === "string" ? chatbot.model : undefined,
+          });
+
+          if (!result.success) {
+            const failMsg = result.error_message || "Document ingestion failed in AI service";
+            await knowledgeSourceRepository.markFailed(processSourceId, failMsg);
+            return;
+          }
+
+          await knowledgeSourceRepository.markReady(processSourceId);
+        } catch (err: unknown) {
+          const safeError =
+            err instanceof AIServiceError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : "Document indexing failed in AI service";
+          await knowledgeSourceRepository.markFailed(processSourceId, safeError);
+        }
+      })();
+
+      createdSources.push(toPublicKnowledgeSource(activeSource));
+    }
+
+    return createdSources;
   },
 
   /**

@@ -4,12 +4,21 @@ import { requireAuth } from "../../middleware/auth.middleware.js";
 import { validateBody } from "../../middleware/validate.js";
 import { asyncHandler } from "../../shared/asyncHandler.js";
 import { knowledgeSourceController } from "./knowledgeSource.controller.js";
+import multer from "multer";
 import {
   completeFileUploadSchema,
   createKnowledgeSourceSchema,
   initiateFileUploadSchema,
   updateKnowledgeSourceSchema,
+  MAX_FILE_SIZE_BYTES,
 } from "./knowledgeSource.validation.js";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: MAX_FILE_SIZE_BYTES,
+  },
+});
 
 const router = Router();
 
@@ -32,6 +41,13 @@ router.post(
   requireAuth,
   validateBody(completeFileUploadSchema),
   asyncHandler(knowledgeSourceController.completeUpload),
+);
+
+router.post(
+  "/:chatbotId/upload-direct",
+  requireAuth,
+  upload.any(),
+  asyncHandler(knowledgeSourceController.uploadDirect),
 );
 
 router.get(

@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { unauthorized } from "../../shared/errors.js";
+import { AppError, unauthorized } from "../../shared/errors.js";
 import { sendSuccess } from "../../shared/http.js";
 import { knowledgeSourceService } from "./knowledgeSource.service.js";
 import type {
@@ -131,5 +131,44 @@ export const knowledgeSourceController = {
     );
 
     sendSuccess(res, { knowledgeSource }, 200);
+  },
+
+  async uploadDirect(req: Request, res: Response): Promise<void> {
+    if (!req.auth) {
+      throw unauthorized();
+    }
+
+    const files: Express.Multer.File[] = [];
+    if (req.files && Array.isArray(req.files)) {
+      files.push(...(req.files as Express.Multer.File[]));
+    } else if (req.files && typeof req.files === "object") {
+      for (const fieldFiles of Object.values(req.files)) {
+        if (Array.isArray(fieldFiles)) {
+          files.push(...fieldFiles);
+        }
+      }
+    } else if (req.file) {
+      files.push(req.file);
+    }
+
+    if (files.length === 0) {
+      throw new AppError(
+        400,
+        "VALIDATION_ERROR",
+        "No file uploaded. Please attach a file using multipart/form-data with field name 'file' or 'files'.",
+      );
+    }
+
+    const knowledgeSources = await knowledgeSourceService.uploadDirectForOwner(
+      req.auth.userId,
+      req.params.chatbotId as string,
+      files,
+    );
+
+    if (knowledgeSources.length === 1) {
+      sendSuccess(res, { knowledgeSource: knowledgeSources[0], knowledgeSources }, 201);
+    } else {
+      sendSuccess(res, { knowledgeSources }, 201);
+    }
   },
 };
