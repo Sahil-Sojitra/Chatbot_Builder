@@ -11,7 +11,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Pinecone](https://img.shields.io/badge/Vector%20DB-Pinecone%20Serverless-000000?style=flat-square)](https://www.pinecone.io/)
-[![Google Gemini](https://img.shields.io/badge/LLM-Gemini%203.5%20Pro%2FFlash-8E75C2?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Multi-Model BYOK](https://img.shields.io/badge/LLM-Multi--Model%20BYOK%20(Gemini%20%7C%20OpenAI%20%7C%20Claude)-8E75C2?style=flat-square)](#-key-features)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
 
 <p align="center">
@@ -92,7 +92,7 @@ Featuring an **interactive 3-step creation wizard**, **direct multipart file ing
               Python 3.11 / LangChain
          - PyPDF, python-docx, BS4 Parsers
          - Recursive Character Chunker
-         - Gemini 1.5 Flash / Pro Synthesis
+         - Multi-Model Synthesis (BYOK: Gemini / GPT-4o / Claude)
                       │
                       ▼
             [Pinecone Serverless]
@@ -111,7 +111,7 @@ Featuring an **interactive 3-step creation wizard**, **direct multipart file ing
 | **Vector Storage** | Pinecone Serverless (AWS `us-east-1`, dimension: 768, cosine metric) |
 | **Primary Database** | MongoDB Atlas / Local MongoDB 7.0 |
 | **Object Storage** | Backblaze B2 (S3-compatible, private ACL, presigned URL access) |
-| **LLMs & Embeddings** | Google Gemini 1.5 Pro & Flash, `text-embedding-004` (with extensible OpenAI/Anthropic support) |
+| **LLMs & Embeddings** | Multi-Model BYOK (Google Gemini, OpenAI GPT-4o, Anthropic Claude) + text-embedding-004 |
 
 ---
 
@@ -122,7 +122,7 @@ Featuring an **interactive 3-step creation wizard**, **direct multipart file ing
 - **Python** 3.11 or higher
 - **MongoDB** instance (local or Atlas)
 - **Pinecone** API Key ([pinecone.io](https://www.pinecone.io/))
-- **Google AI Studio** Gemini API Key ([aistudio.google.com](https://aistudio.google.com/))
+- **LLM API Key for BYOK** (Google Gemini, OpenAI, or Anthropic)
 - **Backblaze B2** account ([backblaze.com/b2](https://www.backblaze.com/b2/))
 
 ---
