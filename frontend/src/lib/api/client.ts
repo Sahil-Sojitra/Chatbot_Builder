@@ -40,14 +40,21 @@ export async function rawRequest<T>(
   const method = options.method ?? "GET";
   const start = typeof performance !== "undefined" ? performance.now() : Date.now();
 
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const headers: Record<string, string> = {
+    ...(!isFormData ? { "Content-Type": "application/json" } : {}),
+    ...options.headers,
+  };
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    headers,
+    body: isFormData
+      ? (options.body as FormData)
+      : options.body !== undefined
+        ? JSON.stringify(options.body)
+        : undefined,
   });
 
   const duration = (typeof performance !== "undefined" ? performance.now() : Date.now()) - start;

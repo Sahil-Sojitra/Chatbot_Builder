@@ -182,4 +182,27 @@ export const knowledgeSourcesApi = {
       },
     );
   },
+
+  uploadDirect: (
+    chatbotId: string,
+    file: File | File[],
+  ): Promise<KnowledgeSourceResponse & { knowledgeSources?: KnowledgeSource[] }> => {
+    const trimmedId = chatbotId?.trim();
+    if (!trimmedId) {
+      return Promise.reject(new Error("Chatbot ID is required to upload files."));
+    }
+    const formData = new FormData();
+    if (Array.isArray(file)) {
+      file.forEach((f) => formData.append("files", f));
+    } else {
+      formData.append("file", file);
+    }
+    return apiRequest<KnowledgeSourceResponse & { knowledgeSources?: KnowledgeSource[] }>(
+      `/api/v1/knowledge-sources/${trimmedId}/upload-direct`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+  },
 };
