@@ -2,9 +2,10 @@ import os
 import base64
 import logging
 from typing import Optional, List, Dict
-from fastapi import APIRouter, HTTPException, Header, status, File, UploadFile, Form
+from fastapi import APIRouter, Depends, HTTPException, Header, status, File, UploadFile, Form
 from pydantic import BaseModel, Field
 
+from app.core.internal_auth import verify_internal_api_key
 from app.schemas.ingestion import WebsiteIngestionRequest
 from app.services.crawler import crawler_service, get_url_priority
 from app.services.content_normalizer import content_normalizer
@@ -16,7 +17,11 @@ from app.services.document_parser import document_parser_service, DocumentParsin
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/ingest", tags=["Ingestion (v1)"])
+router = APIRouter(
+    prefix="/ingest",
+    tags=["Ingestion (v1)"],
+    dependencies=[Depends(verify_internal_api_key)],
+)
 
 
 def select_balanced_chunks(chunks: List[ContentChunk], max_chunks: int = 60) -> List[ContentChunk]:
@@ -95,18 +100,6 @@ class DocumentBase64IngestionRequest(BaseModel):
     llm_model: Optional[str] = Field(None, description="Optional LLM model override for vision OCR.")
 
 
-def verify_internal_api_key(x_api_key: Optional[str] = Header(None)) -> None:
-    """Verifies internal service-to-service API key if configured in the environment."""
-    expected_key = os.getenv("INTERNAL_API_KEY", "").strip()
-    if expected_key:
-        if not x_api_key or x_api_key.strip() != expected_key:
-            logger.warning("Unauthorized internal API access attempt to ingestion route.")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Unauthorized: invalid or missing internal API key.",
-            )
-
-
 @router.post(
     "/website",
     response_model=IngestionResponse,
@@ -116,10 +109,7 @@ def verify_internal_api_key(x_api_key: Optional[str] = Header(None)) -> None:
 )
 async def ingest_website(
     payload: WebsiteIngestionRequest,
-    x_api_key: Optional[str] = Header(None),
 ) -> IngestionResponse:
-    verify_internal_api_key(x_api_key)
-
     clean_bot_id = payload.chatbot_id.strip()
     url_str = str(payload.website_url)
 
@@ -346,9 +336,7 @@ async def ingest_document(
     source_name: Optional[str] = Form(None),
     llm_api_key: Optional[str] = Form(None),
     llm_model: Optional[str] = Form(None),
-    x_api_key: Optional[str] = Header(None),
 ) -> DocumentIngestionResponse:
-    verify_internal_api_key(x_api_key)
     file_bytes = await file.read()
     filename = source_name or file.filename or "uploaded_document"
     return await _process_and_index_document(
@@ -370,9 +358,7 @@ async def ingest_document(
 )
 async def ingest_document_raw(
     payload: DocumentBase64IngestionRequest,
-    x_api_key: Optional[str] = Header(None),
 ) -> DocumentIngestionResponse:
-    verify_internal_api_key(x_api_key)
     try:
         file_bytes = base64.b64decode(payload.content_base64)
     except Exception as b64_err:
@@ -392,18 +378,28 @@ async def ingest_document_raw(
 
 
 @router.delete("/chatbot/{chatbot_id}", response_model=VectorDeleteResult)
-async def delete_chatbot_content(
-    chatbot_id: str,
-    x_api_key: Optional[str] = Header(None),
-):
+async def delete_chatbot_content(chatbot_id: str):
     """Deletes all indexed vectors and knowledge base content associated with a chatbot."""
     clean_bot_id = chatbot_id.strip()
+    if not clean_bot_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Chatbot ID must not be empty.",
+        )
     try:
-        return vector_store.delete_chatbot_content(chatbot_id=clean_bot_id)
+        result = vector_store.delete_chatbot_content(chatbot_id=clean_bot_id)
+        if hasattr(result, "success") and not result.success:
+            logger.error(f"Vector store deletion reported failure for chatbot '{clean_bot_id}'")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete chatbot vector store content.",
+            )
+        return result
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.error(f"Failed to delete chatbot vectors for '{clean_bot_id}': {exc}")
-        return VectorDeleteResult(
-            chatbot_id=clean_bot_id,
-            success=False,
-            error_message=str(exc),
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete chatbot vector store content.",
         )

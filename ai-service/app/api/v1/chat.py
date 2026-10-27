@@ -1,6 +1,7 @@
 import logging
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.core.internal_auth import verify_internal_api_key
 from app.services.qa import qa_service, QARequest, QAResponse
 from app.services.retrieval import RetrievalError, InvalidQueryError
 from app.services.generator import (
@@ -11,7 +12,11 @@ from app.services.generator import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/chat", tags=["Chat & Question Answering (v1)"])
+router = APIRouter(
+    prefix="/chat",
+    tags=["Chat & Question Answering (v1)"],
+    dependencies=[Depends(verify_internal_api_key)],
+)
 
 
 @router.post(

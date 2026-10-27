@@ -1,3 +1,4 @@
+import os
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from fastapi.testclient import TestClient
@@ -116,7 +117,8 @@ def mock_generator_service():
 
 @pytest.fixture
 def test_client():
-    return TestClient(app)
+    key = os.getenv("INTERNAL_API_KEY", "test-internal-secret-key-12345")
+    return TestClient(app, headers={"X-API-Key": key})
 
 
 class TestRAGQuestionAnsweringService:

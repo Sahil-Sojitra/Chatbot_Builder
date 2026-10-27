@@ -14,8 +14,8 @@ from app.services.vector_store import VectorUpsertResult
 
 @pytest.fixture
 def auth_headers():
-    key = os.getenv("INTERNAL_API_KEY", "")
-    return {"x-api-key": key} if key else {}
+    key = os.getenv("INTERNAL_API_KEY", "test-internal-secret-key-12345")
+    return {"x-api-key": key}
 
 
 @pytest.fixture

@@ -11,8 +11,8 @@ from app.services.vector_store import VectorUpsertResult
 
 @pytest.fixture
 def auth_headers():
-    key = os.getenv("INTERNAL_API_KEY", "")
-    return {"x-api-key": key} if key else {}
+    key = os.getenv("INTERNAL_API_KEY", "test-internal-secret-key-12345")
+    return {"x-api-key": key}
 
 
 @pytest.fixture
@@ -129,6 +129,8 @@ def test_ingest_website_ssrf_violation_returns_400(test_client, auth_headers):
 def test_ingest_internal_api_key_enforcement(test_client, monkeypatch):
     """When INTERNAL_API_KEY is configured, requests without key or with wrong key return 401."""
     monkeypatch.setenv("INTERNAL_API_KEY", "secret-key-xyz")
+    from app.core.config import get_settings
+    get_settings.cache_clear()
 
     # 1. Missing key
     resp_missing = test_client.post(
