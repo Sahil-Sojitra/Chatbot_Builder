@@ -267,9 +267,9 @@ export function ChatbotCreationFlow() {
         />
       )}
 
-      {/* 6. Custom Bot Flow: Reusing the existing manual CreateChatbotForm */}
+      {/* 6. Custom Bot Flow: 3-Step Wizard with BYOK & Multi-Source Ingestion */}
       {currentView === "custom-form" && (
-        <div className="flex flex-col gap-4 max-w-xl mx-auto">
+        <div className="flex flex-col gap-4 max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
             <button
               type="button"
@@ -282,7 +282,7 @@ export function ChatbotCreationFlow() {
               Custom Bot Flow
             </span>
           </div>
-          <CreateChatbotForm />
+          <CreateChatbotForm onBack={() => setCurrentView("chooser")} />
         </div>
       )}
     </div>

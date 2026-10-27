@@ -21,6 +21,7 @@ export interface CreateChatbotInput {
   ragEnabled?: boolean;
   ragTopK?: number;
   ragSimilarityThreshold?: number;
+  starterQuestions?: string[];
   creationMode?: ChatbotCreationMode;
 }
 
