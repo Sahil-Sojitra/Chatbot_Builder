@@ -171,26 +171,10 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
       setFormError(null);
       setFileError(null);
       setIsSubmitting(true);
-      setUploadStatus("Initiating upload…");
+      setUploadStatus("Uploading document to knowledge engine…");
 
       try {
-        // Step 1: Request presigned upload URL from backend
-        const { uploadId, uploadUrl } = await knowledgeSourcesApi.initiateUpload(
-          chatbotId,
-          {
-            originalName: selectedFile.name,
-            mimeType,
-          },
-        );
-
-        // Step 2: Upload directly to object storage via PUT
-        setUploadStatus("Uploading file to storage…");
-        await knowledgeSourcesApi.uploadToStorage(uploadUrl, selectedFile, mimeType);
-
-        // Step 3: Complete upload and enqueue ingestion
-        setUploadStatus("Finalizing…");
-        await knowledgeSourcesApi.completeUpload(chatbotId, { uploadId });
-
+        await knowledgeSourcesApi.uploadDirect(chatbotId, selectedFile);
         backToList();
       } catch (err) {
         setIsSubmitting(false);

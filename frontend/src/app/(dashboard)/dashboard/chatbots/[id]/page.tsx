@@ -280,17 +280,24 @@ export default function ChatbotOverviewPage() {
   };
 
 
-  // Instant Bot specific knowledge source & retry state
+  // Knowledge source & retry state (Instant & Custom bots)
   const isInstant = chatbot?.creationMode === "INSTANT";
   const {
     knowledgeSources,
     status: ksStatus,
     refetch: refetchKs,
-  } = useKnowledgeSources(chatbot && isInstant ? chatbot.id : "");
+  } = useKnowledgeSources(chatbot ? chatbot.id : "");
 
   const [isRetryingIngestion, setIsRetryingIngestion] = useState(false);
   const [retryError, setRetryError] = useState<string | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
+
+  // Custom Bot Direct Knowledge Upload & Retry states
+  const [isUploadingSource, setIsUploadingSource] = useState(false);
+  const [uploadSourceError, setUploadSourceError] = useState<string | null>(null);
+  const [uploadSourceSuccess, setUploadSourceSuccess] = useState<string | null>(null);
+  const [retryingSourceId, setRetryingSourceId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!chatbot) {
     return null;
@@ -366,6 +373,39 @@ export default function ChatbotOverviewPage() {
       );
     } finally {
       setIsRetryingIngestion(false);
+    }
+  };
+
+  const handleCustomBotFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !chatbot) return;
+    setIsUploadingSource(true);
+    setUploadSourceError(null);
+    setUploadSourceSuccess(null);
+    try {
+      await knowledgeSourcesApi.uploadDirect(chatbot.id, file);
+      setUploadSourceSuccess(`"${file.name}" uploaded successfully and indexing started!`);
+      refetchKs();
+      setTimeout(() => setUploadSourceSuccess(null), 5000);
+    } catch (err) {
+      setUploadSourceError(err instanceof Error ? err.message : "Failed to upload document.");
+    } finally {
+      setIsUploadingSource(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRetryCustomSource = async (sourceId: string) => {
+    if (!chatbot || retryingSourceId) return;
+    setRetryingSourceId(sourceId);
+    setUploadSourceError(null);
+    try {
+      await knowledgeSourcesApi.retry(chatbot.id, sourceId);
+      refetchKs();
+    } catch (err) {
+      setUploadSourceError(err instanceof Error ? err.message : "Failed to retry processing.");
+    } finally {
+      setRetryingSourceId(null);
     }
   };
 
@@ -1900,8 +1940,49 @@ export default function ChatbotOverviewPage() {
                 </span>
               </div>
 
-              {/* Viewport switchers */}
-              <div className="flex items-center gap-1">
+              {/* Simulator Action Buttons & Viewport switchers */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleToggleFloatingWidget}
+                  className="rounded px-2.5 py-1 text-xs font-medium border border-emerald-500/30 text-emerald-300 hover:bg-emerald-950/30 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+                  title="Launch the floating bubble widget directly on this screen to preview it"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="hidden sm:inline">
+                    {isFloatingWidgetActive ? "Close Widget" : "Test Floating Widget"}
+                  </span>
+                  <span className="sm:hidden">
+                    {isFloatingWidgetActive ? "Close" : "Test Widget"}
+                  </span>
+                </button>
+
+                {messages.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (streamIntervalRef.current) {
+                        clearInterval(streamIntervalRef.current);
+                        streamIntervalRef.current = null;
+                      }
+                      setIsStreaming(false);
+                      setIsLoadingResponse(false);
+                      setMessages([]);
+                      setInputValue("");
+                      setChatError(null);
+                    }}
+                    className="rounded px-2 py-1 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                    title="Reset conversation"
+                  >
+                    <svg className="w-3 h-3 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span className="hidden sm:inline">Clear</span>
+                  </button>
+                )}
+
+                <div className="h-3 w-px bg-zinc-800 hidden md:block" />
+
                 <button
                   type="button"
                   onClick={() => setDeviceMode("widget")}
@@ -1955,6 +2036,52 @@ export default function ChatbotOverviewPage() {
                   ref={messagesContainerRef}
                   className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm scroll-smooth"
                 >
+                  {messages.length === 0 && (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-5 my-auto">
+                      <div className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-800 flex items-center justify-center text-zinc-200 font-semibold mb-3 shadow-xs text-sm">
+                        {chatbot.name.charAt(0).toUpperCase()}
+                      </div>
+                      <h3 className="text-sm font-semibold text-white">
+                        Welcome to {chatbot.name}!
+                      </h3>
+                      <p className="text-xs text-zinc-400 mt-1 max-w-xs leading-relaxed">
+                        {chatbot.description ||
+                          "Ask any question about your ingested documents or click a starter question below:"}
+                      </p>
+
+                      {/* Interactive Starter Questions Chips */}
+                      <div className="mt-4 flex flex-col gap-2 w-full max-w-sm">
+                        {(chatbot.starterQuestions && chatbot.starterQuestions.length > 0
+                          ? chatbot.starterQuestions
+                          : [
+                            "Summarize key information from the knowledge base",
+                            "What topics and services are documented?",
+                            "How do I get started?",
+                          ]
+                        ).map((question, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            disabled={isLoadingResponse || isStreaming}
+                            onClick={() => void sendQuestion(question)}
+                            className="text-left text-xs text-zinc-300 bg-zinc-900/70 hover:bg-zinc-800 hover:text-white border border-zinc-800 hover:border-zinc-700 rounded-lg px-3 py-2 transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center justify-between gap-2 group shadow-xs"
+                          >
+                            <span className="truncate font-medium">{question}</span>
+                            <svg
+                              className="w-3 h-3 text-zinc-500 group-hover:text-emerald-400 shrink-0 transition-colors"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
@@ -2167,31 +2294,191 @@ export default function ChatbotOverviewPage() {
             </div>
           </Card>
 
-          {/* Knowledge & RAG Readiness */}
-          <Card className="rounded-md border border-zinc-800 bg-[#000000] p-5">
+          {/* Knowledge Sources & Grounding Studio Hub */}
+          <Card className="rounded-md border border-zinc-800 bg-[#000000] p-5 flex flex-col gap-3.5">
+            {/* Hidden File Input for Instant Studio Ingestion */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleCustomBotFileUpload}
+              accept=".pdf,.docx,.doc,.pptx,.ppt,.txt,.csv,.md,.png,.jpg,.jpeg,.webp"
+              className="hidden"
+            />
+
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="text-sm font-semibold text-white">
-                RAG Knowledge Retrieval
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-white">
+                  Knowledge Sources
+                </span>
+                <span className="font-mono text-xs text-zinc-500 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded">
+                  {knowledgeSources.length} {knowledgeSources.length === 1 ? "source" : "sources"}
+                </span>
+              </div>
               <Badge variant={chatbot.ragEnabled ? "success" : "default"}>
                 <span
                   className={`h-2 w-2 rounded-full ${chatbot.ragEnabled ? "bg-emerald-400" : "bg-zinc-500"
                     } mr-1`}
                 />
-                {chatbot.ragEnabled ? "Enabled" : "Disabled"}
+                {chatbot.ragEnabled ? "RAG Active" : "Disabled"}
               </Badge>
             </div>
-            <p className="pt-2.5 text-sm text-zinc-400 leading-relaxed">
-              {chatbot.ragEnabled
-                ? `Vector search connected: Retrieves top ${chatbot.ragTopK || 5} chunks with similarity threshold ${chatbot.ragSimilarityThreshold || 0.7}.`
-                : "Vector search offline. Ground your assistant with private documentation."}
-            </p>
-            <div className="pt-3.5">
+
+            {/* Quick Upload & Add Actions */}
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={isUploadingSource}
+                onClick={() => fileInputRef.current?.click()}
+                className="h-8 text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 cursor-pointer flex items-center gap-1.5 flex-1"
+              >
+                {isUploadingSource ? (
+                  <>
+                    <svg className="animate-spin w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    <span>Ingesting Document…</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                    </svg>
+                    <span>Upload Document</span>
+                  </>
+                )}
+              </Button>
+
+              <Link
+                href={`/dashboard/chatbots/${chatbot.id}/knowledge-sources/new`}
+                className="h-8 px-3 rounded-md text-xs font-medium border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+              >
+                <span>+ Web URL</span>
+              </Link>
+            </div>
+
+            {/* Upload Feedback Messages */}
+            {uploadSourceSuccess && (
+              <div className="p-2.5 rounded-md bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+                <span>{uploadSourceSuccess}</span>
+                <button
+                  type="button"
+                  onClick={() => setUploadSourceSuccess(null)}
+                  className="text-emerald-400 hover:text-white font-bold ml-2 cursor-pointer"
+                >
+                  &times;
+                </button>
+              </div>
+            )}
+
+            {uploadSourceError && (
+              <div className="p-2.5 rounded-md bg-rose-950/30 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
+                <span>{uploadSourceError}</span>
+                <button
+                  type="button"
+                  onClick={() => setUploadSourceError(null)}
+                  className="text-rose-400 hover:text-white font-bold ml-2 cursor-pointer"
+                >
+                  &times;
+                </button>
+              </div>
+            )}
+
+            {/* Ingested Sources List */}
+            {ksStatus === "loading" && knowledgeSources.length === 0 ? (
+              <div className="py-6 text-center text-xs text-zinc-500 font-mono">
+                Loading knowledge sources…
+              </div>
+            ) : knowledgeSources.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-zinc-800 p-4 text-center">
+                <p className="text-xs text-zinc-400">
+                  No documents ingested yet. Ground your chatbot by uploading PDF, DOCX, PPTX, CSV, TXT, or Image files.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1">
+                {knowledgeSources.map((source) => {
+                  const ext = source.name.split(".").pop()?.toLowerCase() || "";
+                  const isUrl = source.type === "URL" || source.type === "WEBPAGE";
+                  const isReady = source.status === "READY";
+                  const isProcessing = source.status === "PENDING" || source.status === "PROCESSING";
+                  const isFailed = source.status === "FAILED";
+
+                  return (
+                    <div
+                      key={source.id}
+                      className="flex items-center justify-between gap-2.5 rounded-md border border-zinc-800/80 bg-zinc-950/60 px-3 py-2 text-xs"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {/* Format Badge */}
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold shrink-0 ${
+                          isUrl
+                            ? "bg-violet-500/20 text-violet-300"
+                            : ext === "pdf"
+                            ? "bg-rose-500/20 text-rose-300"
+                            : ext === "docx" || ext === "doc"
+                            ? "bg-sky-500/20 text-sky-300"
+                            : ext === "pptx" || ext === "ppt"
+                            ? "bg-amber-500/20 text-amber-300"
+                            : ext === "csv"
+                            ? "bg-emerald-500/20 text-emerald-300"
+                            : ["png", "jpg", "jpeg", "webp"].includes(ext)
+                            ? "bg-purple-500/20 text-purple-300"
+                            : "bg-zinc-800 text-zinc-300"
+                        }`}>
+                          {isUrl ? "URL" : ext.toUpperCase() || "DOC"}
+                        </span>
+
+                        <span className="truncate text-zinc-200 font-medium font-mono" title={source.name}>
+                          {source.name}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isReady ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-mono">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                            Ready
+                          </span>
+                        ) : isProcessing ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-amber-400 font-mono">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                            Indexing…
+                          </span>
+                        ) : isFailed ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] text-rose-400 font-mono">Failed</span>
+                            <button
+                              type="button"
+                              onClick={() => void handleRetryCustomSource(source.id)}
+                              disabled={retryingSourceId === source.id}
+                              className="px-2 py-0.5 rounded text-[10px] bg-rose-950 border border-rose-800 text-rose-200 hover:bg-rose-900 cursor-pointer disabled:opacity-50"
+                            >
+                              {retryingSourceId === source.id ? "…" : "Retry"}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-zinc-500 font-mono">{source.status}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between">
+              <span className="text-[11px] text-zinc-500">
+                Top {chatbot.ragTopK || 5} chunks · Threshold {chatbot.ragSimilarityThreshold || 0.7}
+              </span>
               <Link
                 href={`/dashboard/chatbots/${chatbot.id}/knowledge-sources`}
-                className={buttonVariants({ variant: "secondary", size: "default" }) + " w-full text-sm"}
+                className="text-xs text-zinc-400 hover:text-white font-medium flex items-center gap-1"
               >
-                Manage Knowledge Sources &rarr;
+                <span>Full Manager</span>
+                <span>&rarr;</span>
               </Link>
             </div>
           </Card>
