@@ -65,6 +65,29 @@ export const createPresignedUploadUrl = async (
   });
 };
 
+export const uploadObject = async (
+  key: string,
+  body: Buffer,
+  contentType: string,
+): Promise<void> => {
+  if (!env.S3_BUCKET_NAME) {
+    throw new AppError(
+      500,
+      "INTERNAL_ERROR",
+      "Object storage is not configured",
+    );
+  }
+
+  await getStorageClient().send(
+    new PutObjectCommand({
+      Bucket: env.S3_BUCKET_NAME,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    }),
+  );
+};
+
 export interface StorageObjectMetadata {
   sizeBytes: number;
   contentType: string | null;
