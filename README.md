@@ -11,7 +11,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Pinecone](https://img.shields.io/badge/Vector%20DB-Pinecone%20Serverless-000000?style=flat-square)](https://www.pinecone.io/)
-[![Google Gemini](https://img.shields.io/badge/LLM-Gemini%201.5%20Pro%2FFlash-8E75C2?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Google Gemini](https://img.shields.io/badge/LLM-Gemini%203.5%20Pro%2FFlash-8E75C2?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
 
 <p align="center">
