@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui";
+"use client";
 
 interface ChatbotCreationChooserProps {
   onSelectInstant: () => void;
@@ -10,73 +10,62 @@ export function ChatbotCreationChooser({
   onSelectCustom,
 }: ChatbotCreationChooserProps) {
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-8 py-4">
-      {/* Header */}
-      <div className="text-center max-w-lg mx-auto">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Create a New Chatbot
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
+      <div className="text-center max-w-lg mx-auto mb-2">
+        <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+          Create a New AI Assistant
         </h1>
-        <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
-          Select an assistant setup method. You can index your public website automatically
-          or build a customized assistant with granular prompt and source control.
+        <p className="mt-2 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
+          Choose between automated website crawling or full custom knowledge engineering.
         </p>
       </div>
 
-      {/* Two Options Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
-        {/* Option 1: Instant Bot */}
-        <div className="rounded-xl border border-zinc-700/80 bg-[#0d0d10] p-6 flex flex-col justify-between transition-colors hover:border-zinc-600">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+        {/* Option 1: Instant Bot (Featured) */}
+        <div className="relative rounded-2xl border-2 border-emerald-600 dark:border-emerald-500 bg-white dark:bg-[#0E1B15] text-zinc-900 dark:text-white p-7 flex flex-col justify-between shadow-md dark:shadow-xl ring-1 ring-emerald-500/20 transition-all">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800/80 text-zinc-200">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                </svg>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-lg font-bold shadow-xs">
+                ⚡
               </div>
-              <span className="text-[11px] font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-                Recommended · ~1 min
+              <span className="text-xs font-semibold text-white bg-emerald-600 px-3.5 py-1 rounded-full shadow-xs">
+                Recommended · ~60s
               </span>
             </div>
 
-            <h2 className="text-base font-semibold text-white tracking-tight">
+            <h2 className="font-display text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
               Website Crawler (Instant)
             </h2>
-            <p className="text-xs text-zinc-300 mt-1 font-medium">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1.5 font-medium">
               Automatically index knowledge from your public website.
             </p>
-            <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-              Enter your domain. Our crawler extracts your public pages, generates embeddings,
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-3 leading-relaxed">
+              Enter your domain. Our crawler extracts public pages, generates embeddings,
               and prepares an interactive assistant with zero manual formatting.
             </p>
 
             {/* Feature Bullets */}
-            <div className="mt-5 space-y-2 border-t border-zinc-800/80 pt-4 text-xs text-zinc-300">
-              <div className="flex items-center gap-2">
-                <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Automated sitemap discovery &amp; indexing</span>
+            <div className="mt-6 space-y-3 border-t border-zinc-200 dark:border-white/10 pt-5 text-xs text-zinc-700 dark:text-zinc-300">
+              <div className="flex items-center gap-2.5">
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                <span>Automated sitemap discovery &amp; crawling</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="flex items-center gap-2.5">
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
                 <span>Ready-to-embed floating widget snippet</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Bring your own LLM API key</span>
+              <div className="flex items-center gap-2.5">
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                <span>Bring your own LLM API key (BYOK)</span>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-zinc-800/80">
+          <div className="mt-8 pt-5 border-t border-zinc-200 dark:border-white/10">
             <button
               type="button"
               onClick={onSelectInstant}
-              className="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-medium py-2 rounded-md text-xs transition-colors cursor-pointer"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-full text-sm shadow-xs transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
               Start with Website URL &rarr;
             </button>
@@ -84,58 +73,50 @@ export function ChatbotCreationChooser({
         </div>
 
         {/* Option 2: Custom Bot */}
-        <div className="rounded-xl border border-zinc-800 bg-[#0d0d10] p-6 flex flex-col justify-between transition-colors hover:border-zinc-700">
+        <div className="card-studio rounded-2xl p-7 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 text-zinc-900 dark:border-white/10 dark:bg-white/[0.05] dark:text-white text-lg font-bold shadow-xs">
+                🧠
               </div>
-              <span className="text-[11px] font-mono text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">
-                Advanced
+              <span className="text-xs font-mono font-medium text-zinc-600 bg-zinc-100 border border-zinc-200 dark:text-zinc-400 dark:bg-white/[0.04] dark:border-white/10 px-3 py-1 rounded-full">
+                Custom RAG
               </span>
             </div>
 
-            <h2 className="text-base font-semibold text-white tracking-tight">
-              Custom RAG Assistant
+            <h2 className="font-display text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
+              Custom Knowledge Studio
             </h2>
-            <p className="text-xs text-zinc-300 mt-1 font-medium">
-              Granular control over knowledge sources and prompts.
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1.5 font-medium">
+              3-step setup with direct document uploads &amp; prompts.
             </p>
-            <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-              Step-by-step setup where you define custom system personas, temperature,
-              and connect multiple file uploads (PDF, TXT), raw text snippets, or selective URLs.
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-3 leading-relaxed">
+              Upload PDFs, Word docs, CSVs, and configure custom system instructions,
+              starter questions, and vector retrieval thresholds manually.
             </p>
 
             {/* Feature Bullets */}
-            <div className="mt-5 space-y-2 border-t border-zinc-800/80 pt-4 text-xs text-zinc-400">
-              <div className="flex items-center gap-2">
-                <svg className="w-3.5 h-3.5 text-zinc-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Upload PDF and text documentation</span>
+            <div className="mt-6 space-y-3 border-t border-zinc-200 dark:border-white/[0.08] pt-5 text-xs text-zinc-700 dark:text-zinc-300">
+              <div className="flex items-center gap-2.5">
+                <span className="text-zinc-900 dark:text-zinc-300 font-bold">✓</span>
+                <span>Direct presigned cloud storage (Backblaze B2 / S3)</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-3.5 h-3.5 text-zinc-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Full system prompt &amp; persona customization</span>
+              <div className="flex items-center gap-2.5">
+                <span className="text-zinc-900 dark:text-zinc-300 font-bold">✓</span>
+                <span>Multi-document ingestion &amp; chunk inspection</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-3.5 h-3.5 text-zinc-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Fine-tune similarity thresholds &amp; top-K</span>
+              <div className="flex items-center gap-2.5">
+                <span className="text-zinc-900 dark:text-zinc-300 font-bold">✓</span>
+                <span>Persona presets: Support, Sales, Technical, Legal</span>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-zinc-800/80">
+          <div className="mt-8 pt-5 border-t border-zinc-200 dark:border-white/[0.08]">
             <button
               type="button"
               onClick={onSelectCustom}
-              className="w-full border border-zinc-800 hover:border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-medium py-2 rounded-md text-xs transition-colors cursor-pointer"
+              className="w-full border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-white font-semibold py-3 rounded-full text-sm transition-all cursor-pointer shadow-xs"
             >
               Configure Custom Bot &rarr;
             </button>
