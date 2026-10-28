@@ -5,31 +5,32 @@ import { type VariantProps, cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-1 focus-visible:ring-offset-black disabled:pointer-events-none disabled:opacity-40 cursor-pointer [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-40 cursor-pointer select-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-white text-black hover:bg-zinc-200 active:bg-zinc-300 border border-white/20 shadow-xs font-medium",
+          "bg-emerald-600 text-white font-bold border border-[#c2ea30] dark:border-transparent hover:bg-emerald-700 shadow-[0_4px_14px_rgba(200,240,40,0.35)] dark:shadow-[0_4px_14px_rgba(5, 150, 105, 0.25)] hover:shadow-[0_10px_26px_rgba(5, 150, 105, 0.45)] hover:scale-[1.01] active:scale-[0.99]",
         primary:
-          "bg-violet-600 text-white hover:bg-violet-500 active:bg-violet-700 border border-violet-500/40 shadow-xs font-medium",
+          "bg-emerald-600 text-white font-bold border border-[#c2ea30] dark:border-transparent hover:bg-emerald-700 shadow-[0_4px_14px_rgba(200,240,40,0.35)] dark:shadow-[0_4px_14px_rgba(5, 150, 105, 0.25)] hover:shadow-[0_10px_26px_rgba(5, 150, 105, 0.45)] hover:scale-[1.01] active:scale-[0.99]",
         accent:
-          "bg-blue-600 text-white hover:bg-blue-500 active:bg-blue-700 border border-blue-500/40 shadow-xs font-medium",
+          "bg-[#7A4CFF] text-white font-medium hover:bg-[#6A3CEF] shadow-[0_4px_14px_rgba(122,76,255,0.25)] hover:shadow-[0_10px_26px_rgba(122,76,255,0.45)] hover:scale-[1.01] active:scale-[0.99]",
         secondary:
-          "border border-zinc-800 bg-[#0a0a0a] text-zinc-200 hover:bg-[#171717] hover:text-white hover:border-zinc-700 active:bg-[#222222]",
+          "border border-zinc-200 bg-zinc-100 text-zinc-900 hover:bg-zinc-200/80 dark:border-white/10 dark:bg-white/[0.05] dark:text-[#EDEDF0] dark:hover:bg-white/[0.09] dark:hover:border-white/20 active:bg-zinc-200 dark:active:bg-white/[0.12]",
         ghost:
-          "text-zinc-400 hover:text-zinc-100 hover:bg-[#171717] active:bg-[#222222]",
+          "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/[0.06] active:bg-zinc-200 dark:active:bg-white/[0.1]",
         outline:
-          "border border-zinc-800 bg-transparent text-zinc-200 hover:border-zinc-700 hover:bg-[#171717] hover:text-white",
+          "border border-zinc-300 bg-transparent text-zinc-800 hover:bg-zinc-100 hover:text-zinc-950 dark:border-white/12 dark:bg-transparent dark:text-[#EDEDF0] dark:hover:border-white/25 dark:hover:bg-white/[0.05] dark:hover:text-white",
         destructive:
-          "border border-red-900/50 bg-red-950/30 text-red-300 hover:bg-red-900/40 active:bg-red-900/60",
-        link: "text-zinc-300 underline-offset-4 hover:underline hover:text-white",
+          "border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300 hover:bg-rose-500/20 active:bg-rose-500/30",
+        link: "text-zinc-600 dark:text-white/70 underline-offset-4 hover:underline hover:text-zinc-900 dark:hover:text-emerald-600 dark:text-emerald-400",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-10 px-5 text-sm font-medium",
-        icon: "size-9",
+        default: "h-10 px-5 py-2 rounded-full",
+        sm: "h-8 px-3.5 text-xs rounded-full",
+        lg: "h-12 px-7 text-sm font-semibold rounded-full",
+        xl: "h-14 px-8 text-base font-semibold rounded-full",
+        icon: "size-10 rounded-full",
       },
     },
     defaultVariants: {

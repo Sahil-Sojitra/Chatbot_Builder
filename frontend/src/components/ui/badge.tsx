@@ -5,17 +5,25 @@ import { type VariantProps, cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap transition-colors border",
+  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium w-fit whitespace-nowrap transition-colors border select-none",
   {
     variants: {
       variant: {
-        default: "bg-[#111111] text-zinc-300 border-zinc-800",
-        primary: "bg-blue-950/40 text-blue-300 border-blue-800/50",
-        accent: "bg-zinc-800/60 text-zinc-200 border-zinc-700/60",
-        success: "bg-emerald-950/40 text-emerald-300 border-emerald-800/50",
-        warning: "bg-amber-950/40 text-amber-300 border-amber-800/50",
-        destructive: "bg-red-950/40 text-red-300 border-red-800/50",
-        outline: "bg-transparent text-zinc-400 border-zinc-800",
+        default:
+          "bg-zinc-100 text-zinc-800 border-zinc-200 shadow-xs dark:bg-white/[0.06] dark:text-[#EDEDF0] dark:border-white/10",
+        primary:
+          "bg-emerald-50 text-emerald-800 border-emerald-300 font-semibold dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
+        lime: "border-emerald-300/80 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300",
+        accent:
+          "bg-[#7A4CFF]/15 text-[#5B21B6] border-[#7A4CFF]/30 font-semibold dark:text-[#C4B5FD]",
+        success:
+          "bg-emerald-500/15 text-emerald-800 border-emerald-500/30 dark:text-emerald-300",
+        warning:
+          "bg-amber-500/15 text-amber-800 border-amber-500/30 dark:text-amber-300",
+        destructive:
+          "bg-rose-500/15 text-rose-800 border-rose-500/30 dark:text-rose-300",
+        outline:
+          "bg-transparent text-zinc-700 border-zinc-300 dark:text-white/70 dark:border-white/12",
       },
     },
     defaultVariants: {

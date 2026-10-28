@@ -8,3 +8,4 @@ export * from "./label";
 export * from "./select";
 export * from "./Spinner";
 export * from "./textarea";
+export * from "./ThemeToggle";
