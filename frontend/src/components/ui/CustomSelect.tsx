@@ -120,13 +120,13 @@ export function CustomSelect({
   const getBadgeStyle = (variant?: CustomSelectOption["badgeVariant"]) => {
     switch (variant) {
       case "purple":
-        return "bg-violet-500/15 text-violet-300 border-violet-500/30";
+        return "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-500/30";
       case "green":
-        return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
+        return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30";
       case "amber":
-        return "bg-amber-500/15 text-amber-300 border-amber-500/30";
+        return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30";
       default:
-        return "bg-zinc-800 text-zinc-400 border-zinc-700";
+        return "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700";
     }
   };
 
@@ -145,17 +145,18 @@ export function CustomSelect({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cn(
-          "flex h-9 w-full items-center justify-between rounded-lg border border-zinc-800 bg-[#0d0d10] px-3 py-1.5 text-xs sm:text-sm text-zinc-100 transition-all outline-none cursor-pointer",
-          "hover:border-zinc-700 hover:bg-[#121217]",
-          "focus-visible:border-violet-500 focus-visible:ring-1 focus-visible:ring-violet-500",
-          isOpen && "border-violet-500/80 ring-1 ring-violet-500/40 bg-[#121217]",
-          disabled && "cursor-not-allowed opacity-50 bg-zinc-950",
+          "flex h-11 w-full items-center justify-between rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs sm:text-sm text-zinc-900 transition-all outline-none cursor-pointer",
+          "hover:border-zinc-300 hover:bg-zinc-50",
+          "dark:border-white/10 dark:bg-[#0E0F15] dark:text-white dark:hover:border-white/20 dark:hover:bg-[#14151E]",
+          "focus-visible:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500/35",
+          isOpen && "border-emerald-500 ring-2 ring-emerald-500/35 bg-zinc-50 dark:bg-[#14151E]",
+          disabled && "cursor-not-allowed opacity-50 bg-zinc-100 dark:bg-zinc-950",
         )}
       >
         <div className="flex items-center gap-2 min-w-0 truncate">
           {selectedOption ? (
             <>
-              <span className="truncate font-medium text-zinc-100">{selectedOption.label}</span>
+              <span className="truncate font-medium text-zinc-900 dark:text-zinc-100">{selectedOption.label}</span>
               {selectedOption.badge && (
                 <span
                   className={cn(
@@ -168,14 +169,14 @@ export function CustomSelect({
               )}
             </>
           ) : (
-            <span className="text-zinc-500 truncate">{placeholder}</span>
+            <span className="text-zinc-400 dark:text-zinc-500 truncate">{placeholder}</span>
           )}
         </div>
 
         <svg
           className={cn(
-            "h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-200 ml-2",
-            isOpen && "rotate-180 text-violet-400",
+            "h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400 transition-transform duration-200 ml-2",
+            isOpen && "rotate-180 text-zinc-900 dark:text-emerald-600 dark:text-emerald-400",
           )}
           fill="none"
           viewBox="0 0 24 24"
@@ -193,11 +194,12 @@ export function CustomSelect({
           role="listbox"
           tabIndex={-1}
           className={cn(
-            "absolute z-50 mt-1.5 w-full min-w-full sm:min-w-[280px] rounded-xl border border-zinc-800 bg-[#0e0e12] p-1.5 shadow-2xl shadow-black/80 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 overflow-hidden",
+            "absolute z-50 mt-2 w-full min-w-full sm:min-w-[280px] rounded-[20px] border border-zinc-200 bg-white/95 p-2 shadow-xl shadow-zinc-900/10 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 overflow-hidden",
+            "dark:border-white/12 dark:bg-[#0E0F15]/95 dark:shadow-2xl dark:shadow-black/90",
             dropdownClassName,
           )}
         >
-          <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent flex flex-col gap-0.5">
+          <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent flex flex-col gap-0.5">
             {resolvedOptions.length === 0 ? (
               <div className="p-3 text-center text-xs text-zinc-500">No options available</div>
             ) : (
@@ -215,11 +217,11 @@ export function CustomSelect({
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-xs sm:text-sm text-left transition-colors cursor-pointer w-full",
+                      "flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-left transition-colors cursor-pointer w-full",
                       isSelected
-                        ? "bg-violet-600/20 text-violet-200 font-semibold border border-violet-500/30"
-                        : "text-zinc-300 hover:bg-zinc-800/60 hover:text-white",
-                      opt.disabled && "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-zinc-500",
+                        ? "bg-emerald-500/25 text-zinc-900 font-semibold border border-emerald-500/70 dark:bg-emerald-500/15 dark:text-emerald-600 dark:text-emerald-400 dark:border-emerald-500/30"
+                        : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-white",
+                      opt.disabled && "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-zinc-400 dark:hover:text-zinc-500",
                     )}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -238,7 +240,7 @@ export function CustomSelect({
 
                     {isSelected && (
                       <svg
-                        className="h-3.5 w-3.5 shrink-0 text-violet-400"
+                        className="h-3.5 w-3.5 shrink-0 text-zinc-900 dark:text-emerald-600 dark:text-emerald-400"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"

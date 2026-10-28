@@ -20,18 +20,18 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-[4px] border border-dashed border-zinc-800 bg-[#0d0d10]/60 p-10 text-center transition-colors hover:border-zinc-700",
+        "flex flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-zinc-300 bg-white dark:border-white/10 dark:bg-[#111218]/60 p-10 text-center shadow-xs transition-colors hover:border-zinc-400 dark:hover:border-white/20",
         className,
       )}
     >
       {icon ? (
-        <div className="flex h-10 w-10 items-center justify-center rounded-[4px] border border-zinc-800 bg-zinc-900/60 text-muted-foreground shadow-xs">
+        <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 shadow-xs">
           {icon}
         </div>
       ) : (
-        <div className="flex h-10 w-10 items-center justify-center rounded-[4px] border border-zinc-800 bg-zinc-900/60 text-muted-foreground">
+        <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 shadow-xs">
           <svg
-            className="h-6 w-6 text-zinc-400"
+            className="h-6 w-6 text-zinc-500 dark:text-zinc-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
