@@ -1,58 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 /*
- * AI Studio Theme — Modern Deep Obsidian & Electric Indigo/Violet
- * Designed for High-Precision SaaS, Drag-and-Drop Builders & AI Studios
+ * Chatbot Studio "Green World" SaaS Theme
+ * Typography: Plus Jakarta Sans (Display / Headings), Inter (Body), JetBrains Mono (Tech/Metrics)
  */
+
+/* =========================================================================
+   1. LIGHT MODE (DEFAULT - BOTANICAL PORCELAIN)
+   ========================================================================= */
 :root {
-  --background: #000000;
-  --foreground: #ededed;
+  --background: #F8FAF8;
+  --foreground: #0E1C15;
 
-  --surface: #0a0a0a;
-  --surface-hover: #121212;
-  --surface-active: #1a1a1a;
-  --surface-elevated: #111111;
+  --surface: #FFFFFF;
+  --surface-hover: #F0FDF4;
+  --surface-active: #DCFCE7;
+  --surface-elevated: #FFFFFF;
 
-  --card: #000000;
-  --card-foreground: #ededed;
-  --card-border: #262626;
+  --card: #FFFFFF;
+  --card-foreground: #0E1C15;
+  --card-border: rgba(14, 28, 21, 0.08);
 
-  --popover: #0a0a0a;
-  --popover-foreground: #ededed;
+  --popover: #FFFFFF;
+  --popover-foreground: #0E1C15;
 
-  --primary: #ffffff;
-  --primary-hover: #e5e5e5;
-  --primary-foreground: #000000;
+  /* Botanical Emerald */
+  --primary: #059669;
+  --primary-hover: #047857;
+  --primary-foreground: #FFFFFF;
 
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-foreground: #ffffff;
+  --accent: #10B981;
+  --accent-hover: #059669;
+  --accent-foreground: #FFFFFF;
 
-  --secondary: #171717;
-  --secondary-foreground: #d4d4d8;
-  --secondary-hover: #262626;
+  --secondary: #ECFDF5;
+  --secondary-foreground: #064E3B;
+  --secondary-hover: #D1FAE5;
 
-  --muted: #121212;
-  --muted-foreground: #a1a1aa;
+  --muted: #F3F8F5;
+  --muted-foreground: #52796F;
 
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --success: #10b981;
-  --success-foreground: #ffffff;
-  --warning: #f59e0b;
-  --warning-foreground: #ffffff;
+  --destructive: #E11D48;
+  --destructive-foreground: #FFFFFF;
+  --success: #10B981;
+  --success-foreground: #FFFFFF;
+  --warning: #F59E0B;
+  --warning-foreground: #0E1C15;
 
-  --border: #262626;
-  --border-subtle: #1c1c1c;
-  --input: #262626;
-  --ring: #52525b;
+  --border: rgba(14, 28, 21, 0.08);
+  --border-subtle: rgba(14, 28, 21, 0.04);
+  --border-hover: rgba(14, 28, 21, 0.16);
+  --input: rgba(14, 28, 21, 0.08);
+  --ring: #10B981;
 
-  --radius: 6px;
-  --radius-xs: 3px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  /* Organic, generous border radii */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
+  --radius-full: 9999px;
+  --radius: 20px;
+}
+
+/* =========================================================================
+   2. DARK MODE (FOREST OBSIDIAN)
+   ========================================================================= */
+.dark {
+  --background: #070D0A;
+  --foreground: #F1F8F5;
+
+  --surface: #0D1712;
+  --surface-hover: #12221B;
+  --surface-active: #193126;
+  --surface-elevated: #101F18;
+
+  --card: #0E1B15;
+  --card-foreground: #F1F8F5;
+  --card-border: rgba(255, 255, 255, 0.08);
+
+  --popover: #0A130F;
+  --popover-foreground: #F1F8F5;
+
+  --primary: #10B981;
+  --primary-hover: #34D399;
+  --primary-foreground: #070D0A;
+
+  --accent: #10B981;
+  --accent-hover: #34D399;
+  --accent-foreground: #070D0A;
+
+  --secondary: #12221B;
+  --secondary-foreground: #E6F4ED;
+  --secondary-hover: #1A3328;
+
+  --muted: #0E1B15;
+  --muted-foreground: #7CA99A;
+
+  --destructive: #F43F5E;
+  --destructive-foreground: #FFFFFF;
+  --success: #10B981;
+  --success-foreground: #FFFFFF;
+  --warning: #F59E0B;
+  --warning-foreground: #070D0A;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-hover: rgba(255, 255, 255, 0.16);
+  --input: rgba(255, 255, 255, 0.09);
+  --ring: #10B981;
 }
 
 @theme inline {
@@ -95,72 +154,222 @@
 
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);
+  --color-border-hover: var(--border-hover);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-volt: #059669;
+  --color-volt-hover: #047857;
+  --color-emerald: #059669;
+  --color-emerald-light: #10B981;
+  --color-obsidian: #070D0A;
+  --color-obsidian-card: #0E1B15;
 
   --radius-xs: var(--radius-xs);
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
 
-  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 * {
   border-color: var(--border);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
+  font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Precision Developer Utilities */
-.tech-border {
+h1, h2, h3, h4, .font-heading, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+/* =========================================================================
+   3. STUDIO CRAFT UTILITIES (ADAPTIVE LIGHT & DARK)
+   ========================================================================= */
+
+/* Light Mode Card Studio */
+.card-studio {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(14, 28, 21, 0.08);
+  border-radius: 24px;
+  box-shadow: 
+    0 10px 30px rgba(14, 28, 21, 0.04),
+    0 1px 3px rgba(14, 28, 21, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  backdrop-filter: blur(16px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-studio:hover {
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 
+    0 16px 40px rgba(14, 28, 21, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+}
+
+/* Dark Mode Card Studio */
+.dark .card-studio {
+  background: rgba(14, 27, 21, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.tech-panel {
-  background: #111114;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.dark .card-studio:hover {
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 
+    0 26px 50px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-.studio-grid-bg {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-.architect-grid {
-  background-size: 32px 32px;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-}
-
-/* Clean Human-Designer SaaS Utilities */
+/* Interactive Card */
 .card-interactive {
-  background: #0c0c0f;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+  background: #FFFFFF;
+  border: 1px solid rgba(14, 28, 21, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(14, 28, 21, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card-interactive:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: #111115;
+  border-color: #10B981;
+  background: #F8FAF8;
+  transform: translateY(-1px);
 }
 
-.subtle-border {
-  border: 1px solid rgba(255, 255, 255, 0.07);
+.dark .card-interactive {
+  background: rgba(14, 27, 21, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Crisp developer scrollbars */
+.dark .card-interactive:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(18, 34, 27, 0.95);
+}
+
+/* Atmospheric Ambient Glows */
+.studio-ambient-glow {
+  background-image: 
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 60%),
+    radial-gradient(circle at 10% 40%, rgba(5, 150, 105, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 90% 70%, rgba(52, 211, 153, 0.02) 0%, transparent 50%);
+}
+
+.dark .studio-ambient-glow {
+  background-image: 
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(16, 185, 129, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 10% 40%, rgba(5, 150, 105, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 90% 70%, rgba(52, 211, 153, 0.04) 0%, transparent 50%);
+}
+
+.studio-grid-bg {
+  background-image: 
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(16, 185, 129, 0.04) 0%, transparent 55%),
+    radial-gradient(rgba(14, 28, 21, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px;
+}
+
+.dark .studio-grid-bg {
+  background-image: 
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(16, 185, 129, 0.08) 0%, transparent 55%),
+    radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px;
+}
+
+.architect-grid {
+  background-image: 
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(16, 185, 129, 0.04) 0%, transparent 60%),
+    linear-gradient(to right, rgba(14, 28, 21, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(14, 28, 21, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 48px 48px, 48px 48px;
+}
+
+.dark .architect-grid {
+  background-image: 
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(16, 185, 129, 0.07) 0%, transparent 60%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 48px 48px, 48px 48px;
+}
+
+/* Pulsing Status Beacons */
+@keyframes live-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
+}
+
+.anim-live-pulse {
+  animation: live-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Buttons and Pills */
+.btn-volt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #059669;
+  color: #FFFFFF !important;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: 1px solid #047857;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+}
+
+.dark .btn-volt {
+  background-color: #10B981;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.btn-volt:hover {
+  background-color: #047857;
+  color: #FFFFFF !important;
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.45);
+  transform: translateY(-1px) scale(1.01);
+}
+
+.dark .btn-volt:hover {
+  background-color: #059669;
+  color: #FFFFFF !important;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
+}
+
+.btn-volt:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* Sleek Scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -168,11 +377,210 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.3);
 }
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* =========================================================================
+   4. SAAS PRODUCTION ANIMATIONS & MICRO-INTERACTIONS
+   ========================================================================= */
+
+/* Silky, GPU-composited 3D floating physics (zero layout thrashing or blur) */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+@keyframes float-badge {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.35;
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.65;
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translate3d(-150%, 0, 0) skewX(-20deg);
+  }
+  100% {
+    transform: translate3d(250%, 0, 0) skewX(-20deg);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* Staggered Entrance Animations */
+@keyframes fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.anim-float-slow {
+  animation: float-slow 8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  will-change: transform;
+}
+
+.anim-float-reverse {
+  animation: float-reverse 10s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  will-change: transform;
+}
+
+.anim-float-badge {
+  animation: float-badge 5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  will-change: transform;
+}
+
+.anim-pulse-glow {
+  animation: pulse-glow 6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  will-change: opacity, transform;
+}
+
+.anim-marquee {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marquee 52s linear infinite;
+  backface-visibility: hidden;
+}
+
+.anim-marquee:hover {
+  animation-play-state: paused;
+}
+
+.anim-fade-up {
+  animation: fade-slide-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+.anim-delay-100 { animation-delay: 100ms; }
+.anim-delay-200 { animation-delay: 200ms; }
+.anim-delay-300 { animation-delay: 300ms; }
+.anim-delay-400 { animation-delay: 400ms; }
+.anim-delay-500 { animation-delay: 500ms; }
+.anim-delay-600 { animation-delay: 600ms; }
+
+/* Subtle, Luxury Button Shimmer Sweep */
+.btn-shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 100%
+  );
+  transform: translate3d(-150%, 0, 0) skewX(-20deg);
+  animation: shimmer 5.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.anim-radar-pulse {
+  animation: radar-pulse 2.5s infinite;
+}
+
+.anim-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 6s ease infinite;
+}
+
+/* 3D Hero Perspective Window with Spring Damping */
+.hero-3d-window {
+  perspective: 1400px;
+}
+
+.hero-3d-card {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.hero-3d-card:hover {
+  transform: translate3d(0, -6px, 0) rotateX(1.5deg);
+  box-shadow: 0 32px 64px -16px rgba(5, 150, 105, 0.16), 0 20px 40px -20px rgba(0, 0, 0, 0.16);
+}
+
 
