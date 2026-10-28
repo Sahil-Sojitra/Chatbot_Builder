@@ -270,17 +270,23 @@ export function ChatbotCreationFlow() {
       {/* 6. Custom Bot Flow: 3-Step Wizard with BYOK & Multi-Source Ingestion */}
       {currentView === "custom-form" && (
         <div className="flex flex-col gap-4 max-w-4xl mx-auto">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <button
               type="button"
               onClick={() => setCurrentView("chooser")}
-              className="text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer py-1"
+              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950 shadow-2xs transition-all dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-300 dark:hover:bg-white/[0.08] dark:hover:text-white cursor-pointer"
             >
-              ← Back to chatbot options
+              <svg className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span>Back to options</span>
             </button>
-            <span className="text-[11px] font-mono text-zinc-500 uppercase">
-              Custom Bot Flow
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-50/80 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-emerald-800 dark:border-emerald-500/25 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <span className="size-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 anim-live-pulse" />
+                Custom Bot Studio
+              </span>
+            </div>
           </div>
           <CreateChatbotForm onBack={() => setCurrentView("chooser")} />
         </div>
