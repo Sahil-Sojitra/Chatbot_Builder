@@ -101,6 +101,14 @@ export async function hydrateSession(): Promise<void> {
     return;
   }
 
+  // Guard against unauthenticated visitors: If the client has never logged in
+  // (no 'has_session' hint in localStorage), skip the refresh call completely.
+  // This avoids invalid refresh calls and 401 errors on public landing pages.
+  if (typeof window !== "undefined" && !localStorage.getItem("has_session")) {
+    store.dispatch(clearAuth());
+    return;
+  }
+
   store.dispatch(setAuthLoading());
 
   try {

@@ -71,7 +71,11 @@ export async function rawRequest<T>(
     const body: ApiErrorBody = json?.success === false
       ? json.error
       : { code: "UNKNOWN_ERROR", message: `Request failed with status ${response.status}` };
-    logger.error("API", `${method} ${path} failed with [${response.status}] ${body.code}: ${body.message}`);
+    // Suppress console error for expected 401 during silent session refresh
+    const isSilentRefreshFailure = path === "/api/v1/auth/refresh" && response.status === 401;
+    if (!isSilentRefreshFailure) {
+      logger.error("API", `${method} ${path} failed with [${response.status}] ${body.code}: ${body.message}`);
+    }
     throw new ApiRequestError(response.status, body);
   }
 
@@ -110,6 +114,13 @@ export const performRefresh = (): Promise<string | null> => {
 
         return accessToken;
       } catch {
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.removeItem("has_session");
+          } catch {
+            // ignore
+          }
+        }
         const currentState = getStore().getState().auth;
         if (
           currentState.accessToken === tokenBeforeRefresh &&

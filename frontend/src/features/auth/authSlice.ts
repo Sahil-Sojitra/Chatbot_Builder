@@ -43,12 +43,26 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.accessToken = action.payload.accessToken;
       state.status = "authenticated";
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("has_session", "true");
+        } catch {
+          // ignore
+        }
+      }
     },
     /** Call after logout, or when a refresh attempt fails and the session can't be re-established. */
     clearAuth: (state) => {
       state.user = null;
       state.accessToken = null;
       state.status = "unauthenticated";
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("has_session");
+        } catch {
+          // ignore
+        }
+      }
     },
     /** Call while an initial session check (e.g. a silent refresh on app load) is in flight. */
     setAuthLoading: (state) => {
