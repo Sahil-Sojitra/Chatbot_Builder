@@ -32,6 +32,13 @@ export function useLogout() {
     } catch {
       // Ignored deliberately — local state is cleared below regardless.
     } finally {
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("has_session");
+        } catch {
+          // ignore
+        }
+      }
       dispatch(clearAuth());
       dispatch(resetOrganization());
       router.push("/login");

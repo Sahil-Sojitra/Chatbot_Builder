@@ -2,28 +2,38 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { RedirectIfAuthenticated } from "@/components/RedirectIfAuthenticated";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <RedirectIfAuthenticated>
-      <main className="flex min-h-screen flex-col items-center justify-center studio-grid-bg px-4 py-16 sm:px-6">
-        <div className="mb-6 flex flex-col items-center gap-2">
+      <main className="relative flex min-h-screen flex-col items-center justify-center bg-background text-foreground px-4 py-16 sm:px-6 overflow-hidden transition-colors">
+        {/* Top Right Theme Toggle */}
+        <div className="absolute top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
+
+        {/* Studio Ambient Glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 size-96 bg-emerald-500/10 dark:bg-emerald-500/12 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative mb-6 flex flex-col items-center gap-2">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-zinc-700/80 bg-zinc-900 text-zinc-200 transition-colors group-hover:border-zinc-500 group-hover:text-white">
-              <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75 16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z" />
-              </svg>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sm tracking-tight text-zinc-100">Chatbot Studio</span>
-              <span className="rounded-[2px] border border-zinc-700 bg-zinc-800/70 px-1 py-0.2 font-mono text-[9px] font-medium text-zinc-300">
+            <span className="flex size-8 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold text-sm shadow-xs transition-transform group-hover:scale-105">
+              ⚡
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-display font-semibold text-base tracking-tight text-zinc-900 dark:text-white">
+                Chatbot Studio
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-50/70 dark:border-emerald-500/20 dark:bg-emerald-950/40 px-2 py-0.5 font-mono text-[10px] font-medium text-emerald-800 dark:text-emerald-300">
+                <span className="size-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 anim-live-pulse" />
                 v1.0
               </span>
             </div>
           </Link>
         </div>
 
-        <div className="w-full max-w-sm">{children}</div>
+        <div className="relative w-full max-w-sm">{children}</div>
       </main>
     </RedirectIfAuthenticated>
   );
