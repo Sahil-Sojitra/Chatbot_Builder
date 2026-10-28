@@ -13,7 +13,7 @@ export interface ChatSourceItem {
 
 interface ChatSourcesPillsProps {
   sources?: ChatSourceItem[];
-  theme?: "violet" | "emerald" | "zinc";
+  theme?: "violet" | "emerald" | "zinc" | "volt";
 }
 
 function formatSourceTitle(title: string | null, url: string): string {
@@ -104,7 +104,7 @@ function parseDocumentCitation(url: string, rawTitle: string | null): {
   };
 }
 
-export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsProps) {
+export function ChatSourcesPills({ sources }: ChatSourcesPillsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeSnippetModal, setActiveSnippetModal] = useState<ChatSourceItem | null>(null);
 
@@ -122,30 +122,16 @@ export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsPr
   const uniqueSources = Array.from(uniqueSourcesMap.values());
   if (uniqueSources.length === 0) return null;
 
-  const isViolet = theme === "violet";
-  const isEmerald = theme === "emerald";
   const INITIAL_MAX = 4;
   const hasMore = uniqueSources.length > INITIAL_MAX;
   const visibleSources = isExpanded ? uniqueSources : uniqueSources.slice(0, INITIAL_MAX);
 
   return (
-    <div className="mt-3 pt-2.5 border-t border-zinc-800/60 flex flex-col gap-2 text-xs">
-      <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+    <div className="mt-3 pt-2.5 border-t border-zinc-200 dark:border-white/[0.08] flex flex-col gap-2 text-xs">
+      <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
         <div className="flex items-center gap-1.5">
-          <svg
-            className={`h-3.5 w-3.5 ${isViolet ? "text-violet-400" : isEmerald ? "text-emerald-400" : "text-zinc-400"}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"
-            />
-          </svg>
-          <span className="font-semibold uppercase tracking-wider text-[10px]">
+          <span className="size-1.5 rounded-full bg-emerald-600 ring-2 ring-emerald-500/30 anim-live-pulse" />
+          <span className="font-semibold uppercase tracking-wider text-[10px] text-zinc-700 dark:text-zinc-300">
             {uniqueSources.length === 1 ? "Grounded Source" : "Grounded Sources"} ({uniqueSources.length})
           </span>
         </div>
@@ -154,7 +140,7 @@ export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsPr
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-[10px] text-zinc-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-sans"
+            className="text-[10px] text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-sans"
           >
             {isExpanded ? "Show less" : `+${uniqueSources.length - INITIAL_MAX} more`}
           </button>
@@ -170,21 +156,17 @@ export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsPr
 
           const badgeClasses = citation.isDocument
             ? citation.fileType === "pdf"
-              ? "border-rose-500/30 bg-rose-950/25 text-rose-300 hover:border-rose-500/50 hover:bg-rose-900/40"
+              ? "border-rose-500/30 bg-rose-500/10 text-rose-300 hover:border-rose-500/50 hover:bg-rose-500/20"
               : citation.fileType === "pptx"
-              ? "border-amber-500/30 bg-amber-950/25 text-amber-300 hover:border-amber-500/50 hover:bg-amber-900/40"
+              ? "border-amber-500/30 bg-amber-500/10 text-amber-300 hover:border-amber-500/50 hover:bg-amber-500/20"
               : citation.fileType === "docx"
-              ? "border-sky-500/30 bg-sky-950/25 text-sky-300 hover:border-sky-500/50 hover:bg-sky-900/40"
+              ? "border-sky-500/30 bg-sky-500/10 text-sky-300 hover:border-sky-500/50 hover:bg-sky-500/20"
               : citation.fileType === "csv"
-              ? "border-emerald-500/30 bg-emerald-950/25 text-emerald-300 hover:border-emerald-500/50 hover:bg-emerald-900/40"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:border-emerald-500/50 hover:bg-emerald-500/20"
               : citation.fileType === "image"
-              ? "border-purple-500/30 bg-purple-950/25 text-purple-300 hover:border-purple-500/50 hover:bg-purple-900/40"
-              : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800"
-            : isViolet
-            ? "border-violet-500/20 bg-violet-950/30 text-zinc-300 hover:border-violet-500/50 hover:bg-violet-900/40 hover:text-white"
-            : isEmerald
-            ? "border-emerald-500/20 bg-emerald-950/30 text-zinc-300 hover:border-emerald-500/50 hover:bg-emerald-900/40 hover:text-white"
-            : "border-zinc-800 bg-zinc-900/80 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800 hover:text-white";
+              ? "border-purple-500/30 bg-purple-500/10 text-purple-300 hover:border-purple-500/50 hover:bg-purple-500/20"
+              : "border-white/[0.1] bg-white/[0.04] text-zinc-300 hover:border-white/20 hover:bg-white/[0.08]"
+            : "border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-white";
 
           const tooltipText = source.snippet
             ? `Source: ${citation.displayTitle}\n\n"${source.snippet.slice(0, 200)}${source.snippet.length > 200 ? "..." : ""}"`
@@ -198,11 +180,11 @@ export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsPr
                 target="_blank"
                 rel="noopener noreferrer"
                 title={tooltipText}
-                className={`group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-all duration-150 cursor-pointer shadow-xs max-w-full ${badgeClasses}`}
+                className={`group inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] transition-all duration-150 cursor-pointer shadow-xs max-w-full ${badgeClasses}`}
               >
                 {/* Globe Icon */}
                 <svg
-                  className="w-3 h-3 shrink-0 text-zinc-400 group-hover:text-violet-300 transition-colors"
+                  className="size-3 shrink-0 text-zinc-400 group-hover:text-emerald-600 dark:text-emerald-400 transition-colors"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -220,7 +202,7 @@ export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsPr
                 </span>
 
                 <svg
-                  className="w-2.5 h-2.5 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-zinc-400 group-hover:text-white"
+                  className="size-2.5 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-zinc-400 group-hover:text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -243,9 +225,8 @@ export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsPr
               type="button"
               onClick={() => setActiveSnippetModal(source)}
               title={tooltipText}
-              className={`group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-all duration-150 cursor-pointer shadow-xs max-w-full ${badgeClasses}`}
+              className={`group inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] transition-all duration-150 cursor-pointer shadow-xs max-w-full ${badgeClasses}`}
             >
-              {/* Document Icon based on fileType */}
               {citation.fileType === "pdf" ? (
                 <span className="font-mono text-[9px] font-bold text-rose-400 bg-rose-500/20 px-1 py-0.2 rounded shrink-0">
                   PDF
@@ -268,7 +249,7 @@ export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsPr
                 </span>
               ) : (
                 <svg
-                  className="w-3 h-3 shrink-0 text-zinc-400 group-hover:text-zinc-200 transition-colors"
+                  className="size-3 shrink-0 text-zinc-400 group-hover:text-zinc-200 transition-colors"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -286,9 +267,8 @@ export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsPr
                 {citation.displayTitle}
               </span>
 
-              {/* View snippet info icon */}
               <svg
-                className="w-2.5 h-2.5 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity"
+                className="size-2.5 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -306,44 +286,44 @@ export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsPr
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
           onClick={() => setActiveSnippetModal(null)}
         >
           <div
-            className="w-full max-w-lg rounded-xl border border-zinc-700 bg-[#0e0e11] p-5 shadow-2xl flex flex-col gap-3.5"
+            className="w-full max-w-lg rounded-[26px] border border-zinc-200 bg-white dark:border-white/[0.12] dark:bg-[#111218] p-6 shadow-2xl flex flex-col gap-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.08] pb-3">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="text-sm font-semibold text-white">Grounded Evidence Snippet</span>
+                <span className="size-2 rounded-full bg-emerald-600 anim-live-pulse" />
+                <span className="font-display text-sm font-bold text-zinc-900 dark:text-white">Grounded Evidence Snippet</span>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveSnippetModal(null)}
-                className="text-zinc-400 hover:text-white text-sm font-bold cursor-pointer"
+                className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-sm font-bold cursor-pointer rounded-full size-6 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-white/[0.05]"
               >
                 &times;
               </button>
             </div>
 
             <div className="flex flex-col gap-1.5 text-xs font-mono">
-              <div className="flex items-center justify-between text-zinc-400">
+              <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
                 <span>Citation Source</span>
                 {activeSnippetModal.score ? (
-                  <span className="text-emerald-400">
+                  <span className="text-emerald-600 dark:text-emerald-600 dark:text-emerald-400 font-semibold">
                     Relevance Score: {(activeSnippetModal.score * 100).toFixed(0)}%
                   </span>
                 ) : null}
               </div>
-              <p className="font-semibold text-zinc-200 bg-zinc-900 px-2.5 py-1.5 rounded border border-zinc-800 break-all">
+              <p className="font-semibold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-white/[0.03] px-3 py-2 rounded-full border border-zinc-200 dark:border-white/[0.08] break-all">
                 {activeSnippetModal.source_url}
               </p>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] font-mono uppercase text-zinc-400">Indexed Document Passage</span>
-              <div className="max-h-48 overflow-y-auto rounded-md bg-zinc-950 p-3 border border-zinc-800 text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap font-sans">
+              <span className="text-[11px] font-mono uppercase text-zinc-500 dark:text-zinc-400">Indexed Document Passage</span>
+              <div className="max-h-48 overflow-y-auto rounded-[18px] bg-zinc-50 dark:bg-black/40 p-3.5 border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-800 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap font-sans">
                 {activeSnippetModal.snippet || "No text passage available for this chunk."}
               </div>
             </div>
@@ -352,7 +332,7 @@ export function ChatSourcesPills({ sources, theme = "zinc" }: ChatSourcesPillsPr
               <button
                 type="button"
                 onClick={() => setActiveSnippetModal(null)}
-                className="px-4 py-1.5 rounded-md text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 cursor-pointer"
+                className="rounded-full px-5 py-2 text-xs font-semibold bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] dark:text-white dark:border-white/[0.1] cursor-pointer transition-colors"
               >
                 Close Preview
               </button>

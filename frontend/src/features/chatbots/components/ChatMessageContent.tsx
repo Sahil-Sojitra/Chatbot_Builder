@@ -31,7 +31,7 @@ function renderLink(
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-medium text-xs shadow-md shadow-violet-950/40 hover:shadow-violet-900/60 transition-all duration-200 transform hover:-translate-y-0.5 mx-1 no-underline"
+        className="btn-volt inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-[0_4px_16px_rgba(5, 150, 105, 0.3)] hover:shadow-[0_6px_20px_rgba(5, 150, 105, 0.45)] transition-all transform hover:-translate-y-0.5 mx-1 no-underline"
       >
         <span>{title}</span>
         <svg
@@ -57,7 +57,7 @@ function renderLink(
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 font-semibold text-violet-400 hover:text-violet-300 underline underline-offset-2 decoration-violet-500/40 hover:decoration-violet-400 transition-colors mx-0.5"
+      className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-600 dark:text-emerald-400 hover:underline underline-offset-2 transition-colors mx-0.5"
     >
       <span>{title}</span>
       <svg
@@ -79,39 +79,22 @@ function renderLink(
 
 /**
  * Pre-processes and heals LLM markdown glitches before block parsing:
- * - Reconnects links broken across newlines: [Title]\n(url) -> [Title](url)
- * - Reconnects links broken by numbered citations: [Title]\n1. (url) -> 1. [Title](url)
- * - Fixes split links with space: [Title] (url) -> [Title](url)
- * - Cleans stray asterisks around links: **[Title](url)** or • ** [Title](url)
- * - Removes bracketed citations like [Source 1] or [1] before URLs
  */
 function normalizeMessageMarkdown(raw: string): string {
   let text = raw.replace(/\r\n/g, "\n");
 
-  // Remove bracketed citation tags like [Source 1], [Source 1, Source 2], Source 2
   text = text.replace(/\[Source\s*\d+(?:,\s*(?:Source\s*)?\d+)*\]/gi, "");
   text = text.replace(/\bSource\s*\d+\b/gi, "");
 
-  // Reconnect broken links where title is on one line and number/bullet + URL is on next line:
-  // e.g. [Custom AI Development Services]\n1. (https://...) -> 1. [Custom AI Development Services](https://...)
   text = text.replace(/\[([^\]]+)\]\s*\n\s*(\d+\.|\*|\-|\u2022|\[\d+\])\s*\((https?:\/\/[^\s\)]+)\)/g, "$2 [$1]($3)");
-
-  // Reconnect broken links where title is on one line and URL is on next line:
-  // e.g. [Custom AI Development Services]\n(https://...) -> [Custom AI Development Services](https://...)
   text = text.replace(/\[([^\]]+)\]\s*\n\s*\((https?:\/\/[^\s\)]+)\)/g, "[$1]($2)");
-
-  // Fix split links with space between ] and (: [Title] (https://...) -> [Title](https://...)
   text = text.replace(/\[([^\]]+)\]\s+\((https?:\/\/[^\s\)]+)\)/g, "[$1]($2)");
 
-  // Clean stray bold markers wrapped around links or starting bullets with links:
-  // e.g. • ** [AI Agents](url) -> • [AI Agents](url)
-  // e.g. - **[Item](url)**: -> - [Item](url):
   text = text.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
   text = text.replace(/([\*\-\+\u2022]\s+)\*\*\s*(\[[^\]]+\]\([^\)]+\))/g, "$1$2");
   text = text.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))/g, "$1");
   text = text.replace(/(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
 
-  // Fix stray unclosed ** on bullet list items: e.g. "• ** AI Agents" -> "• **AI Agents**"
   text = text.replace(/^([\*\-\+\u2022]\s+)\*\*\s+([^:\n\*]+)(:|\s|$)/gm, (match, bullet, term, rest) => {
     return `${bullet}**${term.trim()}**${rest}`;
   });
@@ -121,11 +104,6 @@ function normalizeMessageMarkdown(raw: string): string {
 
 /**
  * Tokenizes and parses inline markdown:
- * - Markdown links [Title](url)
- * - Raw URLs https://...
- * - **bold** (supports nested links or styles)
- * - *italic*
- * - `code`
  */
 function renderInlineContent(rawText: string): React.ReactNode[] {
   let cleanedText = rawText
@@ -133,12 +111,10 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
     .replace(/\bSource\s*\d+\b/gi, "")
     .trimEnd();
 
-  // Strip stray bold delimiters around links
   cleanedText = cleanedText.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
   cleanedText = cleanedText.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))/g, "$1");
   cleanedText = cleanedText.replace(/(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
 
-  // Tokenize using a single outer capture group to prevent group leakage
   const tokenRegex =
     /(?:(\[(?:[^\]]+)\]\s*\((?:https?:\/\/[^\s\)]+)\)|https?:\/\/[^\s\)\],]+|\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`))/g;
 
@@ -149,12 +125,10 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
     const part = parts[i];
     if (!part) continue;
 
-    // Ignore pure stray asterisks like "**" or "*" so literal asterisks never display to user
     if (/^\*+$/.test(part.trim())) {
       continue;
     }
 
-    // Check markdown link: [title] (url) or [title](url)
     const mdLinkMatch = part.match(
       /^\[([^\]]+)\]\s*\((https?:\/\/[^\s\)]+)\)$/,
     );
@@ -165,7 +139,6 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
       continue;
     }
 
-    // Check raw URL: https://...
     if (/^https?:\/\/[^\s\)\],]+$/.test(part)) {
       elements.push(
         <a
@@ -173,7 +146,7 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 font-semibold text-violet-400 hover:text-violet-300 underline underline-offset-2 break-all transition-colors mx-0.5"
+          className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 hover:underline underline-offset-2 break-all transition-colors mx-0.5"
         >
           <span>{part}</span>
           <svg
@@ -194,7 +167,6 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
       continue;
     }
 
-    // Check bold **text** (recursively process children so links inside bold render properly)
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       elements.push(
         <strong key={`b-${i}`} className="font-semibold text-white">
@@ -204,7 +176,6 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
       continue;
     }
 
-    // Check unclosed leading **text that was never terminated
     const unclosedBold = part.match(/^\*\*\s*([^*]+)$/);
     if (unclosedBold) {
       elements.push(
@@ -215,7 +186,6 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
       continue;
     }
 
-    // Check italic *text*
     if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
       elements.push(
         <em key={`i-${i}`} className="italic text-zinc-300">
@@ -225,12 +195,11 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
       continue;
     }
 
-    // Check code `text`
     if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
       elements.push(
         <code
           key={`c-${i}`}
-          className="rounded bg-zinc-800/90 px-1.5 py-0.5 text-[11px] font-mono text-violet-300 border border-zinc-700/60"
+          className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 border border-zinc-200 dark:border-white/[0.08]"
         >
           {part.slice(1, -1)}
         </code>,
@@ -263,20 +232,20 @@ function CodeBlock({
   };
 
   return (
-    <div className="my-2.5 rounded-lg border border-zinc-800 bg-[#0d0d0d] overflow-hidden text-xs">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-zinc-900/80 border-b border-zinc-800/80 text-zinc-400 font-mono text-[11px]">
+    <div className="my-3 rounded-[18px] border border-zinc-200 dark:border-white/[0.08] bg-[#0c0c10] overflow-hidden text-xs">
+      <div className="flex items-center justify-between px-4 py-2 bg-white/[0.02] border-b border-white/[0.06] text-zinc-400 font-mono text-[11px]">
         <span>{language || "code"}</span>
         <button
           type="button"
           onClick={handleCopy}
-          className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"
         >
           {copied ? (
             <>
-              <svg className="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              <span className="text-emerald-400">Copied!</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Copied!</span>
             </>
           ) : (
             <>
@@ -288,32 +257,22 @@ function CodeBlock({
           )}
         </button>
       </div>
-      <pre className="p-3 overflow-x-auto text-zinc-200 font-mono text-[12px] leading-relaxed">
+      <pre className="p-4 overflow-x-auto text-zinc-200 font-mono text-[12px] leading-relaxed">
         <code>{code}</code>
       </pre>
     </div>
   );
 }
 
-/**
- * Checks whether a line represents a list item:
- * 1. Standard bullet: `* `, `- `, `+ `, `• `
- * 2. Numbered bullet: `1. `
- * 3. Feature / Agent item: starts with `[Title](url):` or `**Title**:`
- */
 function isListItem(line: string): boolean {
   const trimmed = line.trim();
   if (/^[\*\-\+\u2022]\s+/.test(trimmed)) return true;
   if (/^\d+\.\s+/.test(trimmed)) return true;
-  // Feature item: [Name](url): or **Name**: or **[Name](url)**:
   if (/^(?:\*\*)?\[[^\]]+\]\s*\([^\)]+\)(?:\*\*)?\s*:/.test(trimmed)) return true;
   if (/^\*\*[^*]+\*\*\s*:/.test(trimmed)) return true;
   return false;
 }
 
-/**
- * Checks whether a line is a Markdown table row
- */
 function isTableRow(line: string): boolean {
   const trimmed = line.trim();
   return trimmed.startsWith("|") && trimmed.endsWith("|") && trimmed.includes("|");
@@ -330,9 +289,6 @@ type Block =
   | { type: "table"; headers: string[]; rows: string[][] }
   | { type: "cta"; text: string };
 
-/**
- * Parses raw text into semantic blocks, handling LLMs that may omit double newlines
- */
 function parseBlocks(rawContent: string): Block[] {
   const normalized = normalizeMessageMarkdown(rawContent);
   const lines = normalized.split("\n");
@@ -357,7 +313,6 @@ function parseBlocks(rawContent: string): Block[] {
       continue;
     }
 
-    // Code block
     if (trimmed.startsWith("```")) {
       flushParagraph();
       const lang = trimmed.slice(3).trim();
@@ -367,12 +322,11 @@ function parseBlocks(rawContent: string): Block[] {
         codeLines.push(lines[i]);
         i++;
       }
-      if (i < lines.length) i++; // consume closing ```
+      if (i < lines.length) i++;
       blocks.push({ type: "code", language: lang, content: codeLines.join("\n") });
       continue;
     }
 
-    // Table block
     if (isTableRow(trimmed)) {
       flushParagraph();
       const tableLines: string[] = [];
@@ -392,7 +346,6 @@ function parseBlocks(rawContent: string): Block[] {
       continue;
     }
 
-    // Heading
     const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
     if (headingMatch) {
       flushParagraph();
@@ -405,7 +358,6 @@ function parseBlocks(rawContent: string): Block[] {
       continue;
     }
 
-    // Horizontal rule
     if (/^(\-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
       flushParagraph();
       blocks.push({ type: "divider" });
@@ -413,7 +365,6 @@ function parseBlocks(rawContent: string): Block[] {
       continue;
     }
 
-    // Blockquote
     if (trimmed.startsWith(">")) {
       flushParagraph();
       const quoteLines: string[] = [trimmed.replace(/^>\s?/, "")];
@@ -426,7 +377,6 @@ function parseBlocks(rawContent: string): Block[] {
       continue;
     }
 
-    // List item block (standard bullet, numbered, or feature item)
     if (isListItem(line)) {
       flushParagraph();
       const listItems: string[] = [];
@@ -438,7 +388,6 @@ function parseBlocks(rawContent: string): Block[] {
       continue;
     }
 
-    // Lead-in statement ending in colon that introduces a subsequent list
     if (
       trimmed.endsWith(":") &&
       trimmed.length < 140 &&
@@ -451,7 +400,6 @@ function parseBlocks(rawContent: string): Block[] {
       continue;
     }
 
-    // Call To Action block (e.g. invites containing Book a Demo / Contact Us)
     if (
       /\[(Book a Demo|Schedule a Demo|Contact Us|Get Started|Try Now|Request Demo)[^\]]*\]/i.test(
         trimmed,
@@ -471,19 +419,13 @@ function parseBlocks(rawContent: string): Block[] {
   return blocks;
 }
 
-/**
- * Renders an individual list item, checking for feature agent formatting:
- * `[Agent Name](url): Description` or `**Feature Name**: Description`
- */
 function renderStructuredListItem(item: string, index: number) {
-  // Check if bullet starts with standard bullet symbols and clean them
   let cleanItem = item.replace(/^[\*\-\+\u2022]\s+/, "");
   const isNumbered = /^\d+\.\s+/.test(cleanItem);
   if (isNumbered) {
     cleanItem = cleanItem.replace(/^\d+\.\s+/, "");
   }
 
-  // Feature item matching: [Title](url): Description or **[Title](url)**: Description
   const linkFeatureMatch = cleanItem.match(
     /^(?:\*\*)?\[([^\]]+)\]\s*\((https?:\/\/[^\s\)]+)\)(?:\*\*)?\s*:\s*(.+)$/,
   );
@@ -495,17 +437,17 @@ function renderStructuredListItem(item: string, index: number) {
     return (
       <li
         key={index}
-        className="group relative flex flex-col gap-2 p-3.5 rounded-xl bg-zinc-900/70 hover:bg-zinc-900 border border-zinc-800/90 hover:border-violet-500/40 transition-all duration-200 shadow-sm"
+        className="group relative flex flex-col gap-2 p-4 rounded-[20px] bg-white/[0.02] hover:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:border-emerald-500/30 transition-all duration-200 shadow-sm"
       >
         <div className="flex items-center gap-2.5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-violet-600/20 text-violet-400 border border-violet-500/30 text-xs font-mono font-semibold shrink-0">
+          <span className="flex size-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-xs font-mono font-bold shrink-0">
             {index + 1}
           </span>
-          <div className="font-semibold text-white text-[13px] tracking-wide">
+          <div className="font-semibold text-zinc-900 dark:text-white text-[13px] tracking-wide">
             {renderLink(`feature-link-${index}`, linkTitle, linkUrl)}
           </div>
         </div>
-        <div className="pl-8 leading-relaxed text-zinc-300 text-sm">
+        <div className="pl-8 leading-relaxed text-zinc-700 dark:text-zinc-300 text-sm">
           {renderInlineContent(description)}
         </div>
       </li>
@@ -520,54 +462,49 @@ function renderStructuredListItem(item: string, index: number) {
     return (
       <li
         key={index}
-        className="group relative flex flex-col gap-2 p-3.5 rounded-xl bg-zinc-900/70 hover:bg-zinc-900 border border-zinc-800/90 hover:border-violet-500/40 transition-all duration-200 shadow-sm"
+        className="group relative flex flex-col gap-2 p-4 rounded-[20px] bg-white/[0.02] hover:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:border-emerald-500/30 transition-all duration-200 shadow-sm"
       >
         <div className="flex items-center gap-2.5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-violet-600/20 text-violet-400 border border-violet-500/30 text-xs font-mono font-semibold shrink-0">
+          <span className="flex size-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-xs font-mono font-bold shrink-0">
             {index + 1}
           </span>
-          <div className="font-semibold text-white text-[13px] tracking-wide">
+          <div className="font-semibold text-zinc-900 dark:text-white text-[13px] tracking-wide">
             {renderInlineContent(boldTitle)}
           </div>
         </div>
-        <div className="pl-8 leading-relaxed text-zinc-300 text-sm">
+        <div className="pl-8 leading-relaxed text-zinc-700 dark:text-zinc-300 text-sm">
           {renderInlineContent(description)}
         </div>
       </li>
     );
   }
 
-  // Standard bullet item (normalize any leading bold markers)
   const normalizedItem = cleanItem.replace(/^\*\*\s*(.+?)\s*\*\*$/, "$1").replace(/^\*\*\s*/, "");
 
   return (
-    <li key={index} className="flex items-start gap-2.5 leading-relaxed text-zinc-200 pl-1">
-      <span className="h-1.5 w-1.5 rounded-full bg-violet-400 mt-2 shrink-0 opacity-80" />
+    <li key={index} className="flex items-start gap-2.5 leading-relaxed text-zinc-800 dark:text-zinc-200 pl-1">
+      <span className="size-1.5 rounded-full bg-emerald-600 mt-2 shrink-0 opacity-80" />
       <span className="flex-1">{renderInlineContent(normalizedItem)}</span>
     </li>
   );
 }
 
-/**
- * Premium structured message renderer that converts raw LLM output into
- * beautiful typography, interactive feature cards, CTA banners, tables, and code blocks.
- */
 export function ChatMessageContent({ content }: ChatMessageContentProps) {
   if (!content) return null;
 
   const blocks = parseBlocks(content);
 
   return (
-    <div className="flex flex-col gap-3 text-sm leading-relaxed text-zinc-200">
+    <div className="flex flex-col gap-3 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
       {blocks.map((block, blockIndex) => {
         switch (block.type) {
           case "lead_in":
             return (
               <div
                 key={blockIndex}
-                className="font-medium text-zinc-100 flex items-center gap-2 pt-1 text-sm tracking-wide"
+                className="font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-2 pt-1 text-sm tracking-wide"
               >
-                <span className="h-2 w-2 rounded-full bg-violet-400 shrink-0 shadow-sm shadow-violet-400" />
+                <span className="size-1.5 rounded-full bg-emerald-600 shrink-0 anim-live-pulse" />
                 <span>{renderInlineContent(block.text)}</span>
               </div>
             );
@@ -585,11 +522,11 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
             return (
               <div
                 key={blockIndex}
-                className="my-2.5 rounded-xl border border-violet-500/30 bg-gradient-to-r from-violet-950/40 via-indigo-950/20 to-zinc-900/60 p-4 shadow-lg shadow-violet-950/20"
+                className="my-3 rounded-[22px] border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent p-5 shadow-sm"
               >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3 text-zinc-200 text-sm font-medium">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20 text-violet-300 border border-violet-500/30 shrink-0 text-base">
+                    <span className="flex size-9 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0 text-base">
                       🚀
                     </span>
                     <span className="leading-relaxed">
@@ -611,8 +548,8 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
                     : "h4";
             const headingClasses =
               block.level <= 2
-                ? "text-base font-bold text-white tracking-tight mt-2 mb-1"
-                : "text-sm font-semibold text-zinc-100 mt-1.5 mb-0.5";
+                ? "font-display text-base font-bold text-zinc-900 dark:text-white tracking-tight mt-2 mb-1"
+                : "text-sm font-semibold text-zinc-800 dark:text-zinc-100 mt-1.5 mb-0.5";
 
             return (
               <HeadingTag key={blockIndex} className={headingClasses}>
@@ -634,26 +571,26 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
             return (
               <div
                 key={blockIndex}
-                className="my-2.5 overflow-x-auto rounded-lg border border-zinc-800"
+                className="my-3 overflow-x-auto rounded-[18px] border border-zinc-200 dark:border-white/[0.08]"
               >
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-zinc-900/80 text-zinc-300 font-semibold border-b border-zinc-800">
+                  <thead className="bg-zinc-50 text-zinc-700 dark:bg-white/[0.04] dark:text-zinc-300 font-semibold border-b border-zinc-200 dark:border-white/[0.08]">
                     <tr>
                       {block.headers.map((h, i) => (
-                        <th key={i} className="p-2.5">
+                        <th key={i} className="p-3">
                           {renderInlineContent(h)}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800/60 bg-[#111111]">
+                  <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.04] bg-white dark:bg-[#0c0c10]">
                     {block.rows.map((row, rIndex) => (
                       <tr
                         key={rIndex}
-                        className="hover:bg-zinc-800/40 transition-colors"
+                        className="hover:bg-white/[0.02] transition-colors"
                       >
                         {row.map((cell, cIndex) => (
-                          <td key={cIndex} className="p-2.5 text-zinc-200">
+                          <td key={cIndex} className="p-3 text-zinc-800 dark:text-zinc-200">
                             {renderInlineContent(cell)}
                           </td>
                         ))}
@@ -668,7 +605,7 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
             return (
               <blockquote
                 key={blockIndex}
-                className="my-1.5 border-l-2 border-violet-500 bg-violet-950/10 pl-3 py-1.5 text-zinc-300 text-sm rounded-r"
+                className="my-2 border-l-2 border-emerald-500 bg-emerald-500/15 dark:bg-emerald-600/[0.04] pl-3.5 py-2 text-zinc-800 dark:text-zinc-300 text-sm rounded-r-[12px]"
               >
                 {block.lines.map((l, i) => (
                   <p key={i}>{renderInlineContent(l)}</p>
@@ -678,7 +615,7 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
 
           case "divider":
             return (
-              <hr key={blockIndex} className="my-2 border-t border-zinc-800" />
+              <hr key={blockIndex} className="my-2 border-t border-zinc-200 dark:border-white/[0.08]" />
             );
 
           case "paragraph":

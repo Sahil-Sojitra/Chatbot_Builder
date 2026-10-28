@@ -735,7 +735,7 @@ export default function ChatbotOverviewPage() {
         ) : null}
 
         {/* Unified Clean Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/80 dark:border-zinc-800 pb-5">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
               <span className="text-zinc-500">Workspace</span>
@@ -746,10 +746,10 @@ export default function ChatbotOverviewPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-white">{botDisplayName}</h1>
+              <h1 className="font-display text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">{botDisplayName}</h1>
               {chatbot.status === "ACTIVE" ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 anim-live-pulse" />
                   Live &amp; Ready
                 </span>
               ) : (
@@ -788,7 +788,7 @@ export default function ChatbotOverviewPage() {
           <div className="flex items-center gap-2.5 self-start sm:self-center">
             <Link
               href={`/dashboard/chatbots/${chatbot.id}/settings`}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-xs font-medium border border-zinc-700 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:text-white transition-colors cursor-pointer shadow-xs"
             >
               <svg className="w-3.5 h-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -802,10 +802,10 @@ export default function ChatbotOverviewPage() {
               variant={chatbot.status === "ACTIVE" ? "secondary" : "default"}
               disabled={isPublishing || isProcessing}
               onClick={() => void handleTogglePublish()}
-              className={`h-9 px-4 text-xs font-medium transition-all cursor-pointer ${
+              className={`h-9 px-5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
                 chatbot.status === "ACTIVE"
-                  ? "border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
-                  : "bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md shadow-emerald-950/50"
+                  ? "border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-white/[0.1]"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow"
               }`}
             >
               {isPublishing ? (
@@ -828,17 +828,17 @@ export default function ChatbotOverviewPage() {
         </div>
 
         {/* Clean Segmented Tab Control */}
-        <div className="flex items-center gap-1 p-1 bg-zinc-900 border border-zinc-800 rounded-lg w-full sm:w-fit overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1 p-1 bg-zinc-100 border border-zinc-200 dark:bg-white/[0.03] dark:border-white/[0.08] rounded-full w-full sm:w-fit overflow-x-auto scrollbar-none">
           <button
             type="button"
             onClick={() => setInstantActiveTab("playground")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
               instantActiveTab === "playground"
-                ? "bg-zinc-800 text-white font-semibold shadow-xs"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
-            <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             <span>Playground</span>
@@ -847,13 +847,13 @@ export default function ChatbotOverviewPage() {
           <button
             type="button"
             onClick={() => setInstantActiveTab("integration")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
               instantActiveTab === "integration"
-                ? "bg-zinc-800 text-white font-semibold shadow-xs"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
-            <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
             </svg>
             <span>Embed &amp; Integration</span>
@@ -865,13 +865,13 @@ export default function ChatbotOverviewPage() {
           <button
             type="button"
             onClick={() => setInstantActiveTab("settings")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
               instantActiveTab === "settings"
-                ? "bg-zinc-800 text-white font-semibold shadow-xs"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
-            <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -921,49 +921,49 @@ export default function ChatbotOverviewPage() {
 
           {/* Ingestion in Progress / Retrying Card */}
           {(isProcessing || isRetryingIngestion) ? (
-            <div className="mt-3 rounded-lg border border-violet-500/30 bg-[#0d0d12] p-4 shadow-lg text-xs space-y-3 animate-in fade-in duration-300">
+            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/30 dark:bg-[#0E101A] p-4 shadow-sm text-xs space-y-3 animate-in fade-in duration-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="relative flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-500"></span>
                   </span>
-                  <span className="font-semibold text-white">
+                  <span className="font-semibold text-slate-900 dark:text-white">
                     {isRetryingIngestion ? "Retrying Ingestion Pipeline…" : "Indexing Knowledge Base in Progress…"}
                   </span>
                 </div>
-                <span className="text-[11px] font-mono text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded">
+                <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100 border border-emerald-200 dark:text-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/20 px-2 py-0.5 rounded">
                   Live Pipeline
                 </span>
               </div>
 
               {/* Animated Progress Bar */}
-              <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-violet-600 via-indigo-500 to-purple-400 animate-pulse rounded-full w-3/4 transition-all duration-700" />
+              <div className="h-1.5 w-full bg-slate-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-violet-600 via-emerald-500 to-purple-400 animate-pulse rounded-full w-3/4 transition-all duration-700" />
               </div>
 
               {/* Pipeline stages badges */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
-                <div className="flex items-center gap-1.5 p-1.5 rounded bg-zinc-900/80 border border-zinc-800 text-zinc-300">
+                <div className="flex items-center gap-1.5 p-1.5 rounded bg-white border border-slate-200 text-slate-700 dark:bg-white/[0.04] dark:border-white/10 dark:text-slate-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                   <span className="truncate">Sitemap & Discovery</span>
                 </div>
-                <div className="flex items-center gap-1.5 p-1.5 rounded bg-violet-950/30 border border-violet-800/40 text-violet-200">
+                <div className="flex items-center gap-1.5 p-1.5 rounded bg-emerald-100/70 border border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800/40 dark:text-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping shrink-0" />
                   <span className="truncate">Crawling & Anti-Bot</span>
                 </div>
-                <div className="flex items-center gap-1.5 p-1.5 rounded bg-zinc-900/50 border border-zinc-800 text-zinc-400">
+                <div className="flex items-center gap-1.5 p-1.5 rounded bg-slate-100/80 border border-slate-200 text-slate-500 dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0" />
                   <span className="truncate">Chunk & Vector Index</span>
                 </div>
-                <div className="flex items-center gap-1.5 p-1.5 rounded bg-zinc-900/50 border border-zinc-800 text-zinc-400">
+                <div className="flex items-center gap-1.5 p-1.5 rounded bg-slate-100/80 border border-slate-200 text-slate-500 dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0" />
                   <span className="truncate">Persona & Prompts</span>
                 </div>
               </div>
 
               <p className="text-[11px] text-zinc-400 pt-0.5 leading-relaxed">
-                We are actively processing <span className="text-zinc-200 font-mono">{websiteUrl}</span>. Testing in the playground below will automatically unlock the moment indexing completes.
+                We are actively processing <span className="text-slate-900 dark:text-white font-mono">{websiteUrl}</span>. Testing in the playground below will automatically unlock the moment indexing completes.
               </p>
             </div>
           ) : null}
@@ -986,16 +986,16 @@ export default function ChatbotOverviewPage() {
           )}
 
         {/* Focused Full-Width Playground Card */}
-        <div className="flex flex-col h-[580px] sm:h-[650px] overflow-hidden rounded-xl border border-white/[0.08] bg-zinc-950/80 shadow-2xl">
+        <div className="flex flex-col h-[580px] sm:h-[650px] overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0D14] shadow-xl">
           {/* Playground Header & Controls */}
-          <div className="flex items-center justify-between border-b border-white/[0.08] bg-zinc-900/60 backdrop-blur-md px-3 sm:px-4 py-2.5 sm:py-3 gap-2">
+          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/90 dark:border-white/[0.08] dark:bg-[#121420] px-3 sm:px-4 py-2.5 sm:py-3 gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <span
                 className={`flex h-2 w-2 rounded-full shrink-0 ${
-                  isReady ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"
+                  isReady ? "bg-emerald-500 anim-live-pulse" : "bg-slate-400"
                 }`}
               />
-              <span className="font-semibold text-xs sm:text-sm text-zinc-200 truncate">Runtime Simulator</span>
+              <span className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white truncate">Runtime Simulator</span>
               <span className="hidden sm:inline-block text-[11px] text-zinc-400 bg-white/[0.04] rounded-md px-2 py-0.5 border border-white/[0.06] font-mono shrink-0">
                 {isReady ? "Live Ready" : "Pending Ingestion"}
               </span>
@@ -1006,10 +1006,10 @@ export default function ChatbotOverviewPage() {
               <button
                 type="button"
                 onClick={handleToggleFloatingWidget}
-                className="rounded px-2.5 py-1 text-xs font-medium border border-violet-500/30 text-violet-300 hover:bg-violet-950/30 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+                className="rounded-lg px-2.5 py-1 text-xs font-medium border border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
                 title="Launch the floating bubble widget directly on this screen to preview it"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 anim-live-pulse shrink-0" />
                 <span className="hidden sm:inline">
                   {isFloatingWidgetActive ? "Close Widget" : "Test Floating Widget"}
                 </span>
@@ -1045,10 +1045,10 @@ export default function ChatbotOverviewPage() {
               <button
                 type="button"
                 onClick={() => setDeviceMode("widget")}
-                className={`hidden md:inline-block rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                className={`hidden md:inline-block rounded-md px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                   deviceMode === "widget"
-                    ? "bg-zinc-800 text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-white text-slate-900 shadow-xs dark:bg-white/[0.1] dark:text-white font-semibold"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 }`}
               >
                 Widget View
@@ -1056,10 +1056,10 @@ export default function ChatbotOverviewPage() {
               <button
                 type="button"
                 onClick={() => setDeviceMode("mobile")}
-                className={`hidden md:inline-block rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                className={`hidden md:inline-block rounded-md px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                   deviceMode === "mobile"
-                    ? "bg-zinc-800 text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-white text-slate-900 shadow-xs dark:bg-white/[0.1] dark:text-white font-semibold"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 }`}
               >
                 Full Dock
@@ -1068,23 +1068,23 @@ export default function ChatbotOverviewPage() {
           </div>
 
           {/* Chat Stage */}
-          <div className="flex-1 flex items-center justify-center p-2.5 sm:p-5 bg-[#050507] architect-grid overflow-hidden">
+          <div className="flex-1 flex items-center justify-center p-2.5 sm:p-5 bg-slate-100/60 dark:bg-[#08090E] architect-grid overflow-hidden">
             <div
-              className={`flex flex-col rounded-xl border border-white/[0.08] bg-[#0c0c0f] shadow-2xl transition-all duration-200 overflow-hidden ${
+              className={`flex flex-col rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#10121C] shadow-2xl transition-all duration-200 overflow-hidden ${
                 deviceMode === "widget"
                   ? "w-full max-w-[500px] h-full sm:h-[530px]"
                   : "w-full max-w-[640px] h-full sm:h-[550px]"
               }`}
             >
               {/* Chat Widget Top Header */}
-              <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
+              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/90 dark:border-white/10 dark:bg-[#151826] px-4 py-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-700 bg-zinc-800 text-zinc-200 font-semibold text-xs shadow-xs">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white font-semibold text-xs shadow-xs">
                     {botDisplayName.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-xs sm:text-sm font-semibold text-white leading-tight">{botDisplayName}</p>
-                    <p className="text-[11px] text-zinc-400">
+                    <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white leading-tight">{botDisplayName}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       {isReady ? "Ready · Testing assistant" : isProcessing ? "Indexing knowledge…" : "Ingestion Pending"}
                     </p>
                   </div>
@@ -1098,13 +1098,13 @@ export default function ChatbotOverviewPage() {
               >
                 {messages.length === 0 && (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 my-auto">
-                    <div className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-800 flex items-center justify-center text-zinc-200 font-semibold mb-3 shadow-xs text-sm">
+                    <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold mb-3 shadow-sm text-sm">
                       {botDisplayName.charAt(0).toUpperCase()}
                     </div>
-                    <h3 className="text-sm font-semibold text-white">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                       Welcome to {botDisplayName}!
                     </h3>
-                    <p className="text-xs text-zinc-400 mt-1 max-w-sm leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-sm leading-relaxed">
                       {chatbot.description ||
                         "Ask any question about our website and products, or click a prompt below to test:"}
                     </p>
@@ -1124,10 +1124,10 @@ export default function ChatbotOverviewPage() {
                           type="button"
                           disabled={!isReady || isLoadingResponse || isStreaming}
                           onClick={() => void sendQuestion(question)}
-                          className="text-left text-xs text-zinc-300 bg-zinc-900/60 hover:bg-zinc-800 hover:text-white border border-zinc-800 hover:border-zinc-700 rounded-lg px-3.5 py-2.5 transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center justify-between gap-2.5 group shadow-xs"
+                          className="text-left text-xs text-slate-800 dark:text-slate-200 bg-slate-50 hover:bg-slate-100 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/10 hover:border-emerald-300 dark:hover:border-emerald-500/40 rounded-xl px-3.5 py-2.5 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center justify-between gap-2.5 group shadow-xs"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="p-1 rounded-md border border-zinc-800 bg-zinc-850 text-zinc-400 group-hover:text-zinc-200 transition-colors shrink-0">
+                            <span className="p-1 rounded-md border border-slate-200 bg-white text-slate-500 group-hover:text-emerald-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400 dark:group-hover:text-emerald-300 transition-colors shrink-0">
                               <svg
                                 className="w-3.5 h-3.5"
                                 fill="none"
@@ -1145,7 +1145,7 @@ export default function ChatbotOverviewPage() {
                             <span className="truncate font-medium">{question}</span>
                           </div>
                           <svg
-                            className="w-3.5 h-3.5 text-zinc-600 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
+                            className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -1166,12 +1166,12 @@ export default function ChatbotOverviewPage() {
                       }`}
                   >
                     <div
-                      className={`rounded-lg p-3.5 leading-relaxed text-sm ${
+                      className={`leading-relaxed text-sm transition-all ${
                         msg.sender === "user"
-                          ? "bg-zinc-800 border border-zinc-700 text-white font-normal"
+                          ? "bg-emerald-600 text-white font-medium rounded-[22px] rounded-br-sm px-4 py-2.5 shadow-sm"
                           : msg.isError
-                          ? "bg-red-950/40 border border-red-800/60 text-red-200 text-xs font-mono"
-                          : "bg-[#131316] border border-zinc-800 text-zinc-100 font-normal"
+                          ? "bg-rose-950/40 border border-rose-800/60 text-rose-200 text-xs font-mono rounded-[20px] p-3.5"
+                          : "bg-white border border-zinc-200 text-zinc-900 font-normal rounded-[22px] rounded-bl-sm p-4 shadow-xs dark:bg-white/[0.04] dark:border-white/[0.08] dark:text-zinc-100"
                       }`}
                     >
                       {msg.sender === "user" || msg.isError ? (
@@ -1215,7 +1215,7 @@ export default function ChatbotOverviewPage() {
               {/* Interactive Input Box */}
               <form
                 onSubmit={handleSendMessage}
-                className="border-t border-zinc-800 bg-[#0e0e11] p-2.5 flex items-center gap-2"
+                className="border-t border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#121420] p-3 flex items-center gap-2.5"
               >
                 <input
                   type="text"
@@ -1231,23 +1231,23 @@ export default function ChatbotOverviewPage() {
                       ? "Streaming answer…"
                       : "Ask a question about your website…"
                   }
-                  className="flex-1 rounded-md border border-zinc-800 bg-[#09090b] px-3.5 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed font-sans transition-colors dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-white dark:placeholder:text-slate-500"
                 />
                 {isStreaming ? (
                   <button
                     type="button"
                     onClick={handleStopStreaming}
-                    className="h-9 px-3.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors text-xs font-medium"
+                    className="h-9 px-4 rounded-full bg-white/[0.08] hover:bg-white/[0.12] text-white border border-white/[0.1] cursor-pointer flex items-center gap-1.5 transition-colors text-xs font-semibold"
                     title="Stop generation"
                   >
-                    <span className="h-2 w-2 rounded-sm bg-zinc-400" />
+                    <span className="h-2 w-2 rounded-sm bg-emerald-600" />
                     <span>Stop</span>
                   </button>
                 ) : (
                   <button
                     type="submit"
                     disabled={!isReady || !inputValue.trim() || isLoadingResponse}
-                    className="h-9 px-4 rounded-md bg-white hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-950 font-medium text-xs transition-colors cursor-pointer"
+                    className="h-9 px-5 rounded-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-xs shadow-sm transition-all cursor-pointer"
                   >
                     Send
                   </button>
@@ -1265,8 +1265,8 @@ export default function ChatbotOverviewPage() {
         {instantActiveTab === "integration" && (
           <div className="flex flex-col gap-5">
             {/* Instant Bot Integration & Embed Hub Card */}
-            <Card className="rounded-xl border border-zinc-800 bg-[#0a0a0a] p-6 shadow-xl flex flex-col gap-5">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-800/80 pb-4">
+            <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121524] p-6 shadow-sm flex flex-col gap-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-base font-semibold text-white">
@@ -1285,12 +1285,12 @@ export default function ChatbotOverviewPage() {
                 </div>
 
                 {/* Public ID Token Box */}
-                <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-md">
-                  <span className="text-xs text-zinc-400 font-mono">ID: {chatbot.publicId}</span>
+                <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 dark:bg-white/[0.04] dark:border-white/10 px-3 py-1.5 rounded-lg">
+                  <span className="text-xs text-slate-700 dark:text-slate-300 font-mono">ID: {chatbot.publicId}</span>
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-6 text-[11px] px-2 text-violet-400 hover:text-violet-300 font-mono"
+                    className="h-6 text-[11px] px-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-mono"
                     onClick={() => void handleCopyPublicId()}
                   >
                     {copiedId ? "Copied!" : "Copy"}
@@ -1318,8 +1318,8 @@ export default function ChatbotOverviewPage() {
                   </Button>
                 </div>
               ) : (
-                <div className="rounded-lg border border-emerald-800/40 bg-emerald-950/15 px-4 py-2.5 flex items-center gap-2.5 text-xs text-emerald-300">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-950/20 px-4 py-2.5 flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 anim-live-pulse shrink-0" />
                   <span>
                     <strong>Assistant is Live!</strong> Visitors on any website with this widget script can chat with your assistant in real time.
                   </span>
@@ -1378,7 +1378,7 @@ export default function ChatbotOverviewPage() {
                   <pre className="font-mono text-xs text-violet-200/90 overflow-x-auto leading-relaxed max-h-48">
                     {getActiveIntegrationCode()}
                   </pre>
-                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-zinc-800/60">
+                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-slate-200 dark:border-white/10">
                     <span className="text-xs text-zinc-400">
                       {instantIntegrationTab === "html"
                         ? "Paste just before the closing </body> tag of your website."
@@ -1400,24 +1400,24 @@ export default function ChatbotOverviewPage() {
 
               {/* 3-Step Setup Guide */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
-                <div className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 p-3.5 flex flex-col gap-1.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-600/20 text-violet-300 font-mono text-xs font-bold">1</span>
-                  <p className="text-xs font-medium text-white">Copy the Snippet</p>
-                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/75 dark:border-white/10 dark:bg-white/[0.03] p-4 flex flex-col gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 font-mono text-xs font-bold">1</span>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-white">Copy the Snippet</p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
                     Choose HTML or React and click Copy Code Snippet above.
                   </p>
                 </div>
-                <div className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 p-3.5 flex flex-col gap-1.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-600/20 text-violet-300 font-mono text-xs font-bold">2</span>
-                  <p className="text-xs font-medium text-white">Paste Before &lt;/body&gt;</p>
-                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/75 dark:border-white/10 dark:bg-white/[0.03] p-4 flex flex-col gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 font-mono text-xs font-bold">2</span>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-white">Paste Before &lt;/body&gt;</p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
                     Insert the script tag into your theme or root layout template.
                   </p>
                 </div>
-                <div className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 p-3.5 flex flex-col gap-1.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600/20 text-emerald-300 font-mono text-xs font-bold">3</span>
-                  <p className="text-xs font-medium text-white">Instant Floating Bot</p>
-                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/75 dark:border-white/10 dark:bg-white/[0.03] p-4 flex flex-col gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 font-mono text-xs font-bold">3</span>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-white">Instant Floating Bot</p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
                     The floating chat bubble automatically appears and answers questions.
                   </p>
                 </div>
@@ -1432,10 +1432,10 @@ export default function ChatbotOverviewPage() {
         {instantActiveTab === "settings" && (
           <div className="flex flex-col gap-5">
             {/* Website Knowledge Source Card */}
-            <Card className="rounded-xl border border-zinc-800 bg-[#0a0a0a] p-5 shadow-lg flex flex-col gap-4">
-              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+            <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121524] p-5 shadow-sm flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-white">Website Knowledge Base</span>
+                  <span className="text-sm font-bold text-slate-900 dark:text-white">Website Knowledge Base</span>
                   <Badge variant={isReady ? "success" : isFailed ? "warning" : "default"}>
                     {isReady ? "Indexed & Ready" : isProcessing ? "Indexing…" : "Ingestion Failed"}
                   </Badge>
@@ -1446,7 +1446,7 @@ export default function ChatbotOverviewPage() {
                     variant="outline"
                     disabled={isProcessing || isRetryingIngestion}
                     onClick={() => void handleRetryIngestion()}
-                    className="h-8 text-xs border-violet-500/30 text-violet-300 hover:bg-violet-950/30 cursor-pointer flex items-center gap-1.5"
+                    className="h-8 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300 dark:hover:bg-emerald-500/10 cursor-pointer flex items-center gap-1.5"
                   >
                     <svg
                       className={`w-3.5 h-3.5 text-violet-400 ${
@@ -1497,40 +1497,40 @@ export default function ChatbotOverviewPage() {
                 </div>
               )}
 
-              <div className="flex flex-col divide-y divide-zinc-800/80 text-xs">
+              <div className="flex flex-col divide-y divide-slate-200 dark:divide-white/10 text-xs">
                 <div className="flex items-center justify-between py-2.5">
-                  <span className="text-zinc-400">Target URL</span>
+                  <span className="text-slate-500 dark:text-slate-400">Target URL</span>
                   <a
                     href={websiteUrl || "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-violet-400 hover:underline font-mono"
+                    className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline font-mono"
                   >
                     {websiteUrl || "No URL specified"}
                   </a>
                 </div>
                 <div className="flex items-center justify-between py-2.5">
-                  <span className="text-zinc-400">Creation Mode</span>
-                  <span className="text-zinc-200 font-mono">Instant URL Synthesis</span>
+                  <span className="text-slate-500 dark:text-slate-400">Creation Mode</span>
+                  <span className="text-slate-900 dark:text-white font-mono">Instant URL Synthesis</span>
                 </div>
                 <div className="flex items-center justify-between py-2.5">
-                  <span className="text-zinc-400">Vector Embeddings</span>
-                  <span className="text-zinc-200">Gemini Text-Embedding-004 (768-dim)</span>
+                  <span className="text-slate-500 dark:text-slate-400">Vector Embeddings</span>
+                  <span className="text-slate-900 dark:text-white">Gemini Text-Embedding-004 (768-dim)</span>
                 </div>
                 <div className="flex items-center justify-between py-2.5">
-                  <span className="text-zinc-400">Vector Storage</span>
-                  <span className="text-zinc-200">ChromaDB / Qdrant RAG store</span>
+                  <span className="text-slate-500 dark:text-slate-400">Vector Storage</span>
+                  <span className="text-slate-900 dark:text-white">ChromaDB / Qdrant RAG store</span>
                 </div>
               </div>
             </Card>
 
             {/* AI Runtime Configuration & Direct Engine Controls */}
-            <Card className="rounded-xl border border-zinc-800 bg-[#0a0a0a] p-6 shadow-xl flex flex-col gap-5">
-              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+            <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121524] p-6 shadow-sm flex flex-col gap-5">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                     <span>AI Engine & Parameters</span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700/60">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
                       Direct Control
                     </span>
                   </h3>
@@ -1540,7 +1540,7 @@ export default function ChatbotOverviewPage() {
                 </div>
                 <Link
                   href={`/dashboard/chatbots/${chatbot.id}/settings`}
-                  className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors inline-flex items-center gap-1 hover:underline"
+                  className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors inline-flex items-center gap-1 hover:underline font-medium"
                 >
                   Advanced Settings
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1589,7 +1589,7 @@ export default function ChatbotOverviewPage() {
                 {/* Provider and Model selectors */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="inplace-provider" className="text-xs text-zinc-300 font-medium">
+                    <Label htmlFor="inplace-provider" className="text-xs text-slate-700 dark:text-slate-300 font-medium">
                       LLM Provider
                     </Label>
                     <CustomSelect
@@ -1605,7 +1605,7 @@ export default function ChatbotOverviewPage() {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="inplace-model" className="text-xs text-zinc-300 font-medium">
+                    <Label htmlFor="inplace-model" className="text-xs text-slate-700 dark:text-slate-300 font-medium">
                       Model Endpoint
                     </Label>
                     <CustomSelect
@@ -1621,7 +1621,7 @@ export default function ChatbotOverviewPage() {
                 {/* API Key field */}
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="inplace-api-key" className="text-xs text-zinc-300 font-medium">
+                    <Label htmlFor="inplace-api-key" className="text-xs text-slate-700 dark:text-slate-300 font-medium">
                       Custom Provider API Key (BYOK)
                     </Label>
                     {chatbot.hasApiKey && (
@@ -1643,12 +1643,12 @@ export default function ChatbotOverviewPage() {
                           ? "Enter new key to replace existing key..."
                           : "Paste your provider API key (sk-...)"
                       }
-                      className="pr-20 font-mono text-xs bg-zinc-900/80 border-zinc-800"
+                      className="pr-20 font-mono text-xs bg-slate-50 border-slate-200 text-slate-900 dark:bg-white/[0.04] dark:border-white/10 dark:text-white"
                     />
                     <button
                       type="button"
                       onClick={() => setShowEditApiKey(!showEditApiKey)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-200 px-1 py-0.5 rounded cursor-pointer"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 px-1 py-0.5 rounded cursor-pointer"
                     >
                       {showEditApiKey ? "Hide" : "Show"}
                     </button>
@@ -1659,11 +1659,11 @@ export default function ChatbotOverviewPage() {
                 </div>
 
                 {/* Session Message Limit */}
-                <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/40 p-3.5 flex flex-col gap-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/75 dark:border-white/10 dark:bg-white/[0.03] p-4 flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-xs font-semibold text-zinc-200">Session Message Rate Limit</Label>
-                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                      <Label className="text-xs font-semibold text-slate-900 dark:text-white">Session Message Rate Limit</Label>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                         Cap maximum consecutive queries a visitor can ask per session to prevent API credit exhaustion.
                       </p>
                     </div>
@@ -1673,29 +1673,29 @@ export default function ChatbotOverviewPage() {
                     <button
                       type="button"
                       onClick={() => setEditSessionLimitType("unlimited")}
-                      className={`px-3 py-2 text-xs font-medium rounded-md border transition-all text-left flex items-center justify-between cursor-pointer ${
+                      className={`px-3 py-2 text-xs font-medium rounded-lg border transition-all text-left flex items-center justify-between cursor-pointer ${
                         editSessionLimitType === "unlimited"
-                          ? "bg-zinc-800 border-zinc-600 text-white shadow-sm"
-                          : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                          ? "bg-white border-slate-300 text-slate-900 shadow-sm dark:bg-white/[0.1] dark:border-white/20 dark:text-white"
+                          : "border-slate-200 bg-white/50 text-slate-600 hover:text-slate-900 hover:bg-white dark:border-white/10 dark:bg-transparent dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.04]"
                       }`}
                     >
                       <span>Unlimited (No Cap)</span>
                       {editSessionLimitType === "unlimited" && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       )}
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditSessionLimitType("custom")}
-                      className={`px-3 py-2 text-xs font-medium rounded-md border transition-all text-left flex items-center justify-between cursor-pointer ${
+                      className={`px-3 py-2 text-xs font-medium rounded-lg border transition-all text-left flex items-center justify-between cursor-pointer ${
                         editSessionLimitType === "custom"
-                          ? "bg-zinc-800 border-zinc-600 text-white shadow-sm"
-                          : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                          ? "bg-white border-slate-300 text-slate-900 shadow-sm dark:bg-white/[0.1] dark:border-white/20 dark:text-white"
+                          : "border-slate-200 bg-white/50 text-slate-600 hover:text-slate-900 hover:bg-white dark:border-white/10 dark:bg-transparent dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.04]"
                       }`}
                     >
                       <span>Custom Limit</span>
                       {editSessionLimitType === "custom" && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       )}
                     </button>
                   </div>
@@ -1710,21 +1710,21 @@ export default function ChatbotOverviewPage() {
                           value={editSessionCustomLimit}
                           onChange={(e) => setEditSessionCustomLimit(e.target.value)}
                           disabled={isSavingSettings}
-                          className="w-24 text-xs font-mono bg-zinc-900 border-zinc-800 text-center"
+                          className="w-24 text-xs font-mono bg-white border-slate-200 text-slate-900 dark:bg-white/[0.05] dark:border-white/10 dark:text-white text-center"
                         />
-                        <span className="text-xs text-zinc-400">messages / session</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">messages / session</span>
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[11px] text-zinc-500 mr-1">Presets:</span>
+                        <span className="text-[11px] text-slate-500 mr-1">Presets:</span>
                         {[5, 10, 20, 50].map((preset) => (
                           <button
                             key={preset}
                             type="button"
                             onClick={() => setEditSessionCustomLimit(String(preset))}
-                            className={`px-2 py-0.5 rounded text-[11px] border font-medium transition-colors cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-md text-[11px] border font-medium transition-colors cursor-pointer ${
                               editSessionCustomLimit === String(preset)
-                                ? "bg-violet-500/20 text-violet-300 border-violet-500/40"
-                                : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-200"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40"
+                                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900 dark:bg-white/[0.04] dark:text-slate-400 dark:border-white/10 dark:hover:bg-white/[0.08] dark:hover:text-white"
                             }`}
                           >
                             {preset}
@@ -1736,10 +1736,10 @@ export default function ChatbotOverviewPage() {
                 </div>
 
                 {/* Temperature and Max Tokens */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-1 border-t border-zinc-800/60">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-1 border-t border-slate-200 dark:border-white/10">
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="inplace-temp" className="text-xs text-zinc-300 font-medium">
+                      <Label htmlFor="inplace-temp" className="text-xs text-slate-700 dark:text-slate-300 font-medium">
                         Temperature
                       </Label>
                       <span className="text-xs text-zinc-400 font-mono">{editTemperature}</span>
@@ -1753,14 +1753,14 @@ export default function ChatbotOverviewPage() {
                       value={editTemperature}
                       onChange={(e) => setEditTemperature(e.target.value)}
                       disabled={isSavingSettings}
-                      className="text-xs font-mono bg-zinc-900/80 border-zinc-800"
+                      className="text-xs font-mono bg-slate-50 border-slate-200 text-slate-900 dark:bg-white/[0.04] dark:border-white/10 dark:text-white"
                     />
                     <span className="text-[11px] text-zinc-500">0.0 = strict factuality, 1.0 = creative.</span>
                   </div>
 
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="inplace-tokens" className="text-xs text-zinc-300 font-medium">
+                      <Label htmlFor="inplace-tokens" className="text-xs text-slate-700 dark:text-slate-300 font-medium">
                         Max Tokens
                       </Label>
                       <span className="text-xs text-zinc-400 font-mono">{editMaxTokens}</span>
@@ -1774,14 +1774,14 @@ export default function ChatbotOverviewPage() {
                       value={editMaxTokens}
                       onChange={(e) => setEditMaxTokens(e.target.value)}
                       disabled={isSavingSettings}
-                      className="text-xs font-mono bg-zinc-900/80 border-zinc-800"
+                      className="text-xs font-mono bg-slate-50 border-slate-200 text-slate-900 dark:bg-white/[0.04] dark:border-white/10 dark:text-white"
                     />
                     <span className="text-[11px] text-zinc-500">Upper limit on length of generated responses.</span>
                   </div>
                 </div>
 
                 {/* Save Button */}
-                <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-white/10">
                   <span className="text-xs text-zinc-500">
                     Changes take effect immediately for playground and live widgets.
                   </span>
@@ -1789,7 +1789,7 @@ export default function ChatbotOverviewPage() {
                     type="submit"
                     size="sm"
                     disabled={isSavingSettings}
-                    className="h-8 px-4 text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white shadow-sm flex items-center gap-1.5 cursor-pointer"
+                    className="h-8 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 cursor-pointer rounded-lg"
                   >
                     {isSavingSettings ? (
                       <>
@@ -1808,11 +1808,11 @@ export default function ChatbotOverviewPage() {
             </Card>
 
             {/* Danger Zone: Delete Bot */}
-            <Card className="rounded-xl border border-red-950/40 bg-red-950/10 p-5 shadow-lg flex flex-col gap-3">
+            <Card className="rounded-xl border border-rose-200 bg-rose-50/50 dark:border-rose-950/40 dark:bg-rose-950/10 p-5 shadow-sm flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-semibold text-red-300">Danger Zone</h4>
-                  <p className="text-xs text-zinc-400 mt-0.5">
+                  <h4 className="text-sm font-semibold text-rose-700 dark:text-rose-300">Danger Zone</h4>
+                  <p className="text-xs text-rose-600/80 dark:text-slate-400 mt-0.5">
                     Permanently delete this Instant Bot and its vector knowledge base.
                   </p>
                 </div>
@@ -1870,20 +1870,20 @@ export default function ChatbotOverviewPage() {
       ) : null}
 
       {/* Top Deployment Control Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/80 dark:border-zinc-800 pb-5">
         <div className="flex items-start gap-3.5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-zinc-800 bg-[#0d0d0d] text-zinc-200">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-[#0d0d0d] text-zinc-200">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L1 21h22L12 2z" />
             </svg>
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-xl font-bold tracking-tight text-white">{chatbot.name}</h1>
+              <h1 className="font-display text-xl font-bold tracking-tight text-zinc-900 dark:text-white">{chatbot.name}</h1>
               <Badge variant={STATUS_BADGE_VARIANT[chatbot.status]}>
                 <span
                   className={`h-2 w-2 rounded-full ${chatbot.status === "ACTIVE"
-                      ? "bg-emerald-400 animate-pulse"
+                      ? "bg-emerald-600 anim-live-pulse"
                       : chatbot.status === "PAUSED"
                         ? "bg-amber-400"
                         : "bg-zinc-500"
@@ -1934,11 +1934,11 @@ export default function ChatbotOverviewPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Interactive Chat Sandbox Simulator (7 cols) */}
         <div className="flex flex-col gap-3 lg:col-span-7">
-          <Card className="flex flex-col h-[650px] overflow-hidden p-0 rounded-md border border-zinc-800 bg-[#000000]">
+          <Card className="flex flex-col h-[650px] overflow-hidden p-0 rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#000000]">
             {/* Simulator Header & Controls */}
-            <div className="flex items-center justify-between border-b border-zinc-800 bg-[#0a0a0a] px-4 py-3">
+            <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-[#0a0a0a] px-4 py-3">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="flex h-2 w-2 rounded-full bg-emerald-600 anim-live-pulse" />
                 <span className="font-medium text-sm text-zinc-200">Interactive Runtime Preview</span>
                 <span className="text-xs text-zinc-500 bg-zinc-900 rounded px-1.5 py-0.5 border border-zinc-800 font-mono">
                   Live Test
@@ -1953,7 +1953,7 @@ export default function ChatbotOverviewPage() {
                   className="rounded px-2.5 py-1 text-xs font-medium border border-emerald-500/30 text-emerald-300 hover:bg-emerald-950/30 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
                   title="Launch the floating bubble widget directly on this screen to preview it"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 anim-live-pulse shrink-0" />
                   <span className="hidden sm:inline">
                     {isFloatingWidgetActive ? "Close Widget" : "Test Floating Widget"}
                   </span>
@@ -2012,15 +2012,15 @@ export default function ChatbotOverviewPage() {
             </div>
 
             {/* Chat Device Stage */}
-            <div className="flex-1 flex items-center justify-center p-5 bg-[#050505] architect-grid overflow-hidden">
+            <div className="flex-1 flex items-center justify-center p-5 bg-zinc-100/70 dark:bg-[#050505] architect-grid overflow-hidden">
               <div
-                className={`flex flex-col rounded-md border border-zinc-800 bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${deviceMode === "widget"
+                className={`flex flex-col rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${deviceMode === "widget"
                     ? "w-full max-w-[440px] h-[530px]"
                     : "w-full max-w-[480px] h-[550px]"
                   }`}
               >
                 {/* Chat Widget Top Header */}
-                <div className="flex items-center justify-between border-b border-zinc-800 bg-[#111111] px-4 py-3">
+                <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-[#111111] px-4 py-3">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-6 w-6 items-center justify-center rounded bg-zinc-800 border border-zinc-700 text-white font-semibold text-xs">
                       {chatbot.name.charAt(0).toUpperCase()}
@@ -2043,10 +2043,10 @@ export default function ChatbotOverviewPage() {
                 >
                   {messages.length === 0 && (
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-5 my-auto">
-                      <div className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-800 flex items-center justify-center text-zinc-200 font-semibold mb-3 shadow-xs text-sm">
+                      <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold mb-3 shadow-sm text-sm">
                         {chatbot.name.charAt(0).toUpperCase()}
                       </div>
-                      <h3 className="text-sm font-semibold text-white">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                         Welcome to {chatbot.name}!
                       </h3>
                       <p className="text-xs text-zinc-400 mt-1 max-w-xs leading-relaxed">
@@ -2094,11 +2094,11 @@ export default function ChatbotOverviewPage() {
                         }`}
                     >
                       <div
-                        className={`rounded-md p-3.5 leading-relaxed text-sm ${msg.sender === "user"
-                            ? "bg-zinc-800 border border-zinc-700 text-white font-normal"
+                        className={`leading-relaxed text-sm transition-all ${msg.sender === "user"
+                            ? "bg-emerald-600 text-white font-medium rounded-[22px] rounded-br-sm px-4 py-2.5 shadow-sm"
                             : msg.isError
-                              ? "bg-red-950/40 border border-red-800/60 text-red-200 text-xs font-mono"
-                              : "bg-[#141414] border border-zinc-800 text-zinc-100 font-normal"
+                              ? "bg-rose-950/40 border border-rose-800/60 text-rose-200 text-xs font-mono rounded-[20px] p-3.5"
+                              : "bg-white border border-zinc-200 text-zinc-900 font-normal rounded-[22px] rounded-bl-sm p-4 shadow-xs dark:bg-white/[0.04] dark:border-white/[0.08] dark:text-zinc-100"
                           }`}
                       >
                         {msg.sender === "user" || msg.isError ? (
@@ -2107,7 +2107,7 @@ export default function ChatbotOverviewPage() {
                           <div className="relative">
                             <ChatMessageContent content={msg.text} />
                             {msg.isStreaming && (
-                              <span className="inline-block w-1.5 h-3.5 ml-1 bg-emerald-400 animate-pulse align-middle rounded-sm shadow-sm shadow-emerald-400" />
+                              <span className="inline-block w-1.5 h-3.5 ml-1 bg-emerald-600 anim-live-pulse align-middle rounded-sm shadow-sm shadow-emerald-400" />
                             )}
                           </div>
                         )}
@@ -2145,7 +2145,7 @@ export default function ChatbotOverviewPage() {
                 {/* Interactive Input Box */}
                 <form
                   onSubmit={handleSendMessage}
-                  className="border-t border-zinc-800 bg-[#0e0e0e] p-2.5 flex items-center gap-2"
+                  className="border-t border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#121420] p-3 flex items-center gap-2.5"
                 >
                   <input
                     type="text"
@@ -2153,28 +2153,26 @@ export default function ChatbotOverviewPage() {
                     disabled={isLoadingResponse || isStreaming}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder={isStreaming ? "Streaming answer…" : "Ask a test question…"}
-                    className="flex-1 rounded-md border border-zinc-800 bg-[#000000] px-3.5 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-500 disabled:opacity-50"
+                    className="flex-1 rounded-full border border-white/[0.1] bg-white/[0.03] px-5 py-2.5 text-sm text-white placeholder:text-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-50 font-sans transition-colors"
                   />
                   {isStreaming ? (
-                    <Button
+                    <button
                       type="button"
                       onClick={handleStopStreaming}
-                      size="default"
-                      className="h-9 px-3.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors"
+                      className="h-9 px-4 rounded-full bg-white/[0.08] hover:bg-white/[0.12] text-white border border-white/[0.1] cursor-pointer flex items-center gap-1.5 transition-colors text-xs font-semibold"
                       title="Stop generation"
                     >
-                      <span className="h-2.5 w-2.5 rounded-sm bg-emerald-400" />
+                      <span className="h-2 w-2 rounded-sm bg-emerald-600" />
                       <span>Stop</span>
-                    </Button>
+                    </button>
                   ) : (
-                    <Button
+                    <button
                       type="submit"
                       disabled={!inputValue.trim() || isLoadingResponse}
-                      size="default"
-                      className="h-9 px-3.5"
+                      className="h-9 px-5 rounded-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-xs shadow-sm transition-all cursor-pointer"
                     >
                       Send
-                    </Button>
+                    </button>
                   )}
                 </form>
               </div>
@@ -2185,10 +2183,10 @@ export default function ChatbotOverviewPage() {
         {/* Right Column: Studio Inspector & Embed Code (5 cols) */}
         <div className="flex flex-col gap-4 lg:col-span-5">
           {/* Multi-Tab Integration Snippet Card */}
-          <Card className="rounded-md border border-zinc-800 bg-[#000000] p-5">
+          <Card className="rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#000000] p-5">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-white">
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
                   Integration & Embed
                 </span>
                 <span className="text-xs text-zinc-500 font-mono">CLIENT SDK</span>
@@ -2231,7 +2229,7 @@ export default function ChatbotOverviewPage() {
 
             <div className="flex flex-col gap-3.5 pt-3.5">
               {/* Public ID Token Box */}
-              <div className="flex items-center justify-between rounded-md border border-zinc-800 bg-[#0a0a0a] p-3">
+              <div className="flex items-center justify-between rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#0a0a0a] p-3">
                 <div className="flex flex-col">
                   <span className="text-xs text-zinc-500 uppercase tracking-wider font-mono">Public Identifier</span>
                   <span className="font-mono text-sm font-semibold text-zinc-200 mt-0.5">{chatbot.publicId}</span>
@@ -2242,7 +2240,7 @@ export default function ChatbotOverviewPage() {
               </div>
 
               {/* Code Snippet Box */}
-              <div className="relative rounded-md border border-zinc-800 bg-[#0a0a0a] p-3">
+              <div className="relative rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#0a0a0a] p-3">
                 <pre className="font-mono text-xs text-zinc-300 overflow-x-auto leading-relaxed max-h-40">
                   {activeCodeTab === "script"
                     ? embedScriptCode
@@ -2263,9 +2261,9 @@ export default function ChatbotOverviewPage() {
           </Card>
 
           {/* AI Model Parameters */}
-          <Card className="rounded-md border border-zinc-800 bg-[#000000] p-5">
+          <Card className="rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#000000] p-5">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="text-sm font-semibold text-white">
+              <span className="text-sm font-bold text-slate-900 dark:text-white">
                 Runtime Parameters
               </span>
               <Link
@@ -2300,7 +2298,7 @@ export default function ChatbotOverviewPage() {
           </Card>
 
           {/* Knowledge Sources & Grounding Studio Hub */}
-          <Card className="rounded-md border border-zinc-800 bg-[#000000] p-5 flex flex-col gap-3.5">
+          <Card className="rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#000000] p-5 flex flex-col gap-3.5">
             {/* Hidden File Input for Instant Studio Ingestion */}
             <input
               ref={fileInputRef}
@@ -2312,7 +2310,7 @@ export default function ChatbotOverviewPage() {
 
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-white">
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
                   Knowledge Sources
                 </span>
                 <span className="font-mono text-xs text-zinc-500 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded">
@@ -2474,7 +2472,7 @@ export default function ChatbotOverviewPage() {
               </div>
             )}
 
-            <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between">
+            <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex items-center justify-between">
               <span className="text-[11px] text-zinc-500">
                 Top {chatbot.ragTopK || 5} chunks · Threshold {chatbot.ragSimilarityThreshold || 0.7}
               </span>

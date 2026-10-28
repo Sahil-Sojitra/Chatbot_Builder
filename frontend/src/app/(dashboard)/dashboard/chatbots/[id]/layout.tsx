@@ -64,7 +64,7 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col gap-6">
       {/* Dynamic Header: Instant Bot (Managed Playground) vs Custom Bot (Studio) */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200 dark:border-zinc-800 pb-5">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
             {isInstant ? (
@@ -86,14 +86,14 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-white">{botDisplayName}</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">{botDisplayName}</h1>
             {isInstant ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
                 Instant Bot
               </span>
             ) : (
-              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border border-zinc-800 bg-zinc-900/80 text-xs font-medium">
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/80 text-xs font-medium">
                 <span
                   className={`h-2 w-2 rounded-full ${
                     chatbot.status === "ACTIVE"
@@ -112,9 +112,9 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-[#0a0a0a] text-xs font-mono text-zinc-300">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-[#0a0a0a] text-xs font-mono text-zinc-300">
             <span className="text-zinc-500">ID:</span>
-            <span className="font-semibold text-white">{chatbot.publicId}</span>
+            <span className="font-semibold text-zinc-900 dark:text-white">{chatbot.publicId}</span>
           </div>
         </div>
       </div>
