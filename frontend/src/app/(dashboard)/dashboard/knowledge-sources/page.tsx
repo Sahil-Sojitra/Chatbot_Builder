@@ -40,7 +40,7 @@ function ChatbotKnowledgeViewer({ chatbotId }: { chatbotId: string }) {
           <button
             type="button"
             onClick={() => void refetch()}
-            className={buttonVariants({ variant: "default" })}
+            className="btn-volt rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-5 py-2 text-xs shadow-md"
           >
             Try again
           </button>
@@ -57,7 +57,7 @@ function ChatbotKnowledgeViewer({ chatbotId }: { chatbotId: string }) {
         action={
           <Link
             href={`/dashboard/chatbots/${chatbotId}/knowledge-sources/new`}
-            className={buttonVariants({ variant: "default" })}
+            className="btn-volt inline-flex items-center gap-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-5 py-2 text-xs shadow-[0_10px_28px_rgba(5, 150, 105, 0.35)]"
           >
             Add Knowledge
           </Link>
@@ -67,14 +67,14 @@ function ChatbotKnowledgeViewer({ chatbotId }: { chatbotId: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">
+        <span className="text-xs font-mono text-zinc-400">
           {knowledgeSources.length} {knowledgeSources.length === 1 ? "source" : "sources"} attached
         </span>
         <Link
           href={`/dashboard/chatbots/${chatbotId}/knowledge-sources/new`}
-          className={buttonVariants({ variant: "default", size: "sm" })}
+          className="btn-volt inline-flex items-center gap-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-4 py-2 text-xs shadow-[0_10px_26px_rgba(5, 150, 105, 0.35)]"
         >
           Add Knowledge
         </Link>
@@ -100,7 +100,7 @@ export default function GlobalKnowledgeSourcesPage() {
 
   if (orgStatus === "loading" || chatbotsStatus === "loading") {
     return (
-      <div className="flex flex-1 items-center justify-center py-16">
+      <div className="flex flex-1 items-center justify-center py-24">
         <Spinner label="Loading knowledge base…" />
       </div>
     );
@@ -112,7 +112,10 @@ export default function GlobalKnowledgeSourcesPage() {
         title="Create a chatbot first"
         description="Knowledge sources (documents, web pages, and plain text) are organized per chatbot. Once you create a chatbot, you can attach knowledge sources to it."
         action={
-          <Link href="/dashboard/chatbots/new" className={buttonVariants({ variant: "default" })}>
+          <Link
+            href="/dashboard/chatbots/new"
+            className="btn-volt inline-flex items-center gap-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-5 py-2 text-xs shadow-[0_10px_28px_rgba(5, 150, 105, 0.35)]"
+          >
             Create Chatbot
           </Link>
         }
@@ -124,49 +127,43 @@ export default function GlobalKnowledgeSourcesPage() {
   const currentChatbot = chatbots.find((c) => c.id === currentChatbotId) ?? chatbots[0];
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800 pb-5">
+    <div className="flex flex-col gap-8 pb-12">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/80 dark:border-white/[0.08] pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-400 uppercase tracking-wider font-mono">Workspace</span>
-            <span className="text-zinc-600">/</span>
-            <span className="text-xs text-zinc-300 font-mono">Knowledge Engine</span>
+            <span className="text-xs text-zinc-500 uppercase tracking-wider font-mono">Workspace</span>
+            <span className="text-zinc-400 dark:text-zinc-700">/</span>
+            <span className="text-xs text-zinc-700 dark:text-zinc-300 font-mono">Knowledge Engine</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white mt-1">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white mt-1">
             Knowledge Base
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-1 max-w-xl leading-relaxed">
             Manage vector documents, websites, and text corpora connected to your assistant runtime.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <label htmlFor="chatbot-selector" className="text-sm font-medium text-zinc-300 whitespace-nowrap">
+          <label htmlFor="chatbot-selector" className="text-xs font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
             Target Assistant:
           </label>
           <CustomSelect
             id="chatbot-selector"
             value={currentChatbotId}
             onChange={(val) => setSelectedChatbotId(val)}
-            className="w-64 sm:w-72 text-sm"
-            dropdownClassName="w-auto min-w-[280px] sm:min-w-[320px] right-0"
-          >
-            {chatbots.map((bot) => (
-              <option key={bot.id} value={bot.id}>
-                {bot.name}
-              </option>
-            ))}
-          </CustomSelect>
+            className="w-60 sm:w-68 text-xs font-mono"
+            options={chatbots.map((b) => ({ value: b.id, label: b.name }))}
+          />
         </div>
       </div>
 
-      <Card>
+      <Card className="rounded-[26px] border border-zinc-200/80 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#111218]/90 dark:shadow-2xl backdrop-blur-xl">
         <CardHeader className="flex-row items-center justify-between pb-3">
           <div>
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">{currentChatbot.name}</CardTitle>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <CardTitle className="font-display text-xl font-bold text-zinc-900 dark:text-white">{currentChatbot.name}</CardTitle>
               {currentChatbot.creationMode === "INSTANT" ? (
-                <Badge variant="accent">Instant Bot (Auto Indexed)</Badge>
+                <Badge variant="lime">Instant Bot (Auto Indexed)</Badge>
               ) : (
                 <Badge
                   variant={
@@ -176,31 +173,32 @@ export default function GlobalKnowledgeSourcesPage() {
                         ? "warning"
                         : "default"
                   }
+                  className="rounded-full"
                 >
                   {currentChatbot.status}
                 </Badge>
               )}
-              {currentChatbot.ragEnabled ? <Badge variant="accent">RAG Active</Badge> : null}
+              {currentChatbot.ragEnabled ? <Badge variant="accent" className="rounded-full">RAG Active</Badge> : null}
             </div>
-            <CardDescription className="mt-1">
+            <CardDescription className="mt-1.5 text-xs text-zinc-400">
               {currentChatbot.description ?? "No description provided."}
             </CardDescription>
           </div>
           <Link
             href={`/dashboard/chatbots/${currentChatbot.id}`}
-            className={buttonVariants({ variant: "ghost", size: "sm" })}
+            className="rounded-full px-4 py-2 text-xs text-zinc-600 hover:text-zinc-950 border border-zinc-200 hover:border-zinc-300 dark:text-zinc-400 dark:hover:text-white dark:border-white/[0.1] dark:hover:border-white/20 transition-all font-mono"
           >
             {currentChatbot.creationMode === "INSTANT" ? "Open Playground →" : "Chatbot Details →"}
           </Link>
         </CardHeader>
         <CardContent className="pt-2">
           {currentChatbot.creationMode === "INSTANT" ? (
-            <div className="rounded-lg border border-violet-500/20 bg-violet-950/15 p-6 flex flex-col gap-3">
+            <div className="rounded-[22px] border border-zinc-200 bg-zinc-50 dark:border-white/[0.08] dark:bg-white/[0.02] p-6 flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-violet-400" />
-                <span className="text-sm font-semibold text-white">Automated Website Knowledge Engine</span>
+                <span className="size-2 rounded-full bg-emerald-600 anim-live-pulse" />
+                <span className="text-sm font-semibold text-zinc-900 dark:text-white">Automated Website Knowledge Engine</span>
               </div>
-              <p className="text-sm text-zinc-300 leading-relaxed">
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
                 This assistant was created as an <strong>Instant Bot</strong>. Its knowledge index is crawled, extracted, and indexed directly from its target website through our automated FastAPI RAG service.
               </p>
               <p className="text-xs text-zinc-400">
@@ -209,7 +207,7 @@ export default function GlobalKnowledgeSourcesPage() {
               <div className="pt-2">
                 <Link
                   href={`/dashboard/chatbots/${currentChatbot.id}`}
-                  className={buttonVariants({ variant: "primary", size: "sm" })}
+                  className="btn-volt inline-flex items-center gap-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-5 py-2 text-xs shadow-[0_10px_28px_rgba(5, 150, 105, 0.35)]"
                 >
                   Test Chatbot in Playground &rarr;
                 </Link>

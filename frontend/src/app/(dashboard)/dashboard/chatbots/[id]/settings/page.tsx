@@ -498,11 +498,11 @@ export default function ChatbotSettingsPage() {
                   "flex flex-col items-start p-3.5 rounded-xl border text-left transition-all cursor-pointer",
                   sessionLimitType === "unlimited"
                     ? "border-violet-500 bg-violet-950/20 shadow-sm shadow-violet-500/10 ring-1 ring-violet-500/40"
-                    : "border-zinc-800 bg-[#0c0c10] hover:border-zinc-700 hover:bg-[#111116]",
+                    : "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-[#0c0c10] dark:hover:border-zinc-700 dark:hover:bg-[#111116]",
                 )}
               >
                 <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-medium text-sm text-zinc-100">Unlimited Messages</span>
+                  <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100">Unlimited Messages</span>
                   <span
                     className={cn(
                       "w-4 h-4 rounded-full border flex items-center justify-center",
@@ -512,7 +512,7 @@ export default function ChatbotSettingsPage() {
                     {sessionLimitType === "unlimited" && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
                   No restrictions. Public visitors can ask unlimited questions per conversation.
                 </p>
               </button>
@@ -525,11 +525,11 @@ export default function ChatbotSettingsPage() {
                   "flex flex-col items-start p-3.5 rounded-xl border text-left transition-all cursor-pointer",
                   sessionLimitType === "custom"
                     ? "border-violet-500 bg-violet-950/20 shadow-sm shadow-violet-500/10 ring-1 ring-violet-500/40"
-                    : "border-zinc-800 bg-[#0c0c10] hover:border-zinc-700 hover:bg-[#111116]",
+                    : "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-[#0c0c10] dark:hover:border-zinc-700 dark:hover:bg-[#111116]",
                 )}
               >
                 <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-medium text-sm text-zinc-100">Custom Limit</span>
+                  <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100">Custom Limit</span>
                   <span
                     className={cn(
                       "w-4 h-4 rounded-full border flex items-center justify-center",
@@ -539,7 +539,7 @@ export default function ChatbotSettingsPage() {
                     {sessionLimitType === "custom" && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
                   Caps questions per session to protect your API usage and quota.
                 </p>
               </button>
@@ -547,7 +547,7 @@ export default function ChatbotSettingsPage() {
 
             {/* If Custom Limit selected, show number input & quick presets */}
             {sessionLimitType === "custom" && (
-              <div className="flex flex-col gap-2 pt-2 p-3.5 rounded-xl border border-zinc-800/80 bg-[#09090d]">
+              <div className="flex flex-col gap-2 pt-2 p-3.5 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800/80 dark:bg-[#09090d]">
                 <Label htmlFor="setting-session-limit" className="text-xs text-zinc-300">
                   Maximum Messages Per Session
                 </Label>

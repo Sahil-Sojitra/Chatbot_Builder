@@ -257,10 +257,20 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
   };
 
   return (
-    <Card className="max-w-xl">
+    <Card className="max-w-xl mx-auto rounded-[26px] border border-zinc-200/80 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#111218]/90 dark:shadow-2xl backdrop-blur-xl">
       <CardHeader>
-        <CardTitle>Add Knowledge</CardTitle>
-        <CardDescription>Choose a source type, then fill in its details.</CardDescription>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+            <span className="size-1.5 rounded-full bg-emerald-600 anim-live-pulse" />
+            Knowledge Ingestion
+          </span>
+        </div>
+        <CardTitle className="font-display text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          Add Knowledge
+        </CardTitle>
+        <CardDescription className="text-zinc-400 text-xs sm:text-sm">
+          Choose a source type, then fill in its details.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div
@@ -277,10 +287,10 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
               onClick={() => handleTypeChange(option.value)}
               disabled={isSubmitting}
               className={cn(
-                "rounded-md border px-3.5 py-1.5 text-sm font-medium transition-colors cursor-pointer",
+                "rounded-full border px-4 py-1.5 text-xs font-medium transition-all cursor-pointer",
                 type === option.value
-                  ? "border-white bg-white text-black font-semibold shadow-sm"
-                  : "border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700 hover:text-white",
+                  ? "border-emerald-500 bg-emerald-600 text-white font-bold shadow-[0_0_15px_rgba(5, 150, 105, 0.3)]"
+                  : "border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-white",
                 isSubmitting ? "pointer-events-none opacity-40" : undefined,
               )}
             >
@@ -298,7 +308,7 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
           {formError ? (
             <p
               role="alert"
-              className="rounded-md border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm font-medium text-red-300"
+              className="rounded-[18px] border border-rose-500/30 bg-rose-950/40 px-4 py-2.5 text-xs font-mono text-rose-300"
             >
               {formError}
             </p>
@@ -307,7 +317,9 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
           {type === "FILE" ? (
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="knowledge-file">Choose file</Label>
+                <Label htmlFor="knowledge-file" className="text-xs font-medium text-zinc-300">
+                  Choose file
+                </Label>
                 <Input
                   id="knowledge-file"
                   type="file"
@@ -316,25 +328,25 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
                   disabled={isSubmitting}
                   aria-invalid={Boolean(fileError)}
                   aria-describedby={fileError ? "knowledge-file-error" : "knowledge-file-help"}
-                  className="cursor-pointer file:cursor-pointer file:rounded-md file:border file:border-zinc-700 file:bg-zinc-800 file:px-3 file:py-1 file:text-sm file:font-medium file:text-zinc-200 file:hover:bg-zinc-700"
+                  className="rounded-full bg-white/[0.03] border-white/[0.1] text-xs px-4 cursor-pointer file:cursor-pointer file:rounded-full file:border file:border-white/[0.1] file:bg-white/[0.05] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white file:hover:bg-white/[0.1]"
                 />
                 <p id="knowledge-file-help" className="text-xs text-zinc-400">
                   Supported formats: PDF, Word (.docx), PowerPoint (.pptx), Spreadsheets (.csv), Plain text (.txt, .md), and Images (PNG, JPG, WEBP). Maximum size: 25 MB.
                 </p>
                 {fileError ? (
-                  <p id="knowledge-file-error" role="alert" className="text-sm font-medium text-red-400">
+                  <p id="knowledge-file-error" role="alert" className="text-xs font-mono text-rose-400">
                     {fileError}
                   </p>
                 ) : null}
               </div>
 
               {selectedFile ? (
-                <div className="rounded-md border border-zinc-800 bg-[#0a0a0a] p-3 text-sm">
+                <div className="rounded-[18px] border border-white/[0.08] bg-white/[0.02] p-3 text-xs">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate font-medium text-zinc-200">
+                    <span className="truncate font-medium text-white">
                       {selectedFile.name}
                     </span>
-                    <span className="shrink-0 font-mono text-xs text-zinc-500">
+                    <span className="shrink-0 font-mono text-xs text-zinc-400">
                       {formatFileSize(selectedFile.size)}
                     </span>
                   </div>
@@ -344,7 +356,9 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
           ) : (
             <>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="knowledge-name">Name</Label>
+                <Label htmlFor="knowledge-name" className="text-xs font-medium text-zinc-300">
+                  Name
+                </Label>
                 <Input
                   id="knowledge-name"
                   value={name}
@@ -352,9 +366,10 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
                   disabled={isSubmitting}
                   aria-invalid={Boolean(nameError)}
                   aria-describedby={nameError ? "knowledge-name-error" : undefined}
+                  className="rounded-full bg-white/[0.03] border-white/[0.1] text-xs px-4"
                 />
                 {nameError ? (
-                  <p id="knowledge-name-error" role="alert" className="text-sm text-destructive">
+                  <p id="knowledge-name-error" role="alert" className="text-xs font-mono text-rose-400">
                     {nameError}
                   </p>
                 ) : null}
@@ -362,7 +377,9 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
 
               {type === "TEXT" ? (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="knowledge-text">Text content</Label>
+                  <Label htmlFor="knowledge-text" className="text-xs font-medium text-zinc-300">
+                    Text content
+                  </Label>
                   <Textarea
                     id="knowledge-text"
                     rows={6}
@@ -371,16 +388,19 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
                     disabled={isSubmitting}
                     aria-invalid={Boolean(valueError)}
                     aria-describedby={valueError ? "knowledge-value-error" : undefined}
+                    className="rounded-[18px] bg-white/[0.03] border-white/[0.1] text-xs font-mono leading-relaxed p-4"
                   />
                   {valueError ? (
-                    <p id="knowledge-value-error" role="alert" className="text-sm text-destructive">
+                    <p id="knowledge-value-error" role="alert" className="text-xs font-mono text-rose-400">
                       {valueError}
                     </p>
                   ) : null}
                 </div>
               ) : (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="knowledge-url">{type === "WEBPAGE" ? "Webpage URL" : "URL"}</Label>
+                  <Label htmlFor="knowledge-url" className="text-xs font-medium text-zinc-300">
+                    {type === "WEBPAGE" ? "Webpage URL" : "URL"}
+                  </Label>
                   <Input
                     id="knowledge-url"
                     type="url"
@@ -390,9 +410,10 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
                     disabled={isSubmitting}
                     aria-invalid={Boolean(valueError)}
                     aria-describedby={valueError ? "knowledge-value-error" : undefined}
+                    className="rounded-full bg-white/[0.03] border-white/[0.1] text-xs font-mono px-4"
                   />
                   {valueError ? (
-                    <p id="knowledge-value-error" role="alert" className="text-sm text-destructive">
+                    <p id="knowledge-value-error" role="alert" className="text-xs font-mono text-rose-400">
                       {valueError}
                     </p>
                   ) : null}
@@ -401,11 +422,11 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
             </>
           )}
 
-          <div className="mt-2 flex gap-2">
+          <div className="mt-3 flex gap-2.5">
             <Button
               type="submit"
               disabled={isSubmitting || (type === "FILE" && !selectedFile)}
-              className="flex-1"
+              className="btn-volt flex-1 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs py-2.5 shadow-[0_10px_28px_rgba(5, 150, 105, 0.35)]"
             >
               {isSubmitting
                 ? uploadStatus ?? (type === "FILE" ? "Uploading…" : "Adding…")
@@ -415,9 +436,10 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
             </Button>
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               disabled={isSubmitting}
               onClick={backToList}
+              className="rounded-full px-5 text-xs"
             >
               Cancel
             </Button>
