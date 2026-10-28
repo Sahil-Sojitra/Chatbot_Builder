@@ -87,7 +87,8 @@ async def test_crawl_multipage_aborts_immediately_on_root_challenge():
         error_message="Bot Protection Challenge: Challenge title matched",
     )
 
-    with patch.object(crawler, "crawl_page", return_value=mock_challenge_result):
+    with patch("app.services.web_crawler.validate_safe_url", return_value=("https://protected-site.com", "93.184.216.34")), \
+         patch.object(crawler, "crawl_page", return_value=mock_challenge_result):
         res = await crawler.crawl_multipage("https://protected-site.com", max_pages=10)
 
     assert res.success is False

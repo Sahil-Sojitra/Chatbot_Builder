@@ -68,7 +68,7 @@ def build_grounding_prompt(
         bot_name: Optional bot display name.
         website_url: Target website root URL.
         system_prompt: Optional user-configured system instructions.
-        chat_history: Optional list of recent conversation turns (up to 5 messages).
+        chat_history: Optional list of recent conversation turns (up to 5 turns / 10 messages).
 
     Returns:
         Complete formatted prompt ready for the Gemini generateContent API.
@@ -99,7 +99,7 @@ def build_grounding_prompt(
     history_section = ""
     if chat_history and len(chat_history) > 0:
         lines = []
-        for item in chat_history[-5:]:
+        for item in chat_history[-10:]:
             r = getattr(item, "role", "") or (item.get("role") if isinstance(item, dict) else "")
             c = getattr(item, "content", "") or (item.get("content") if isinstance(item, dict) else "")
             role_label = "User" if str(r).lower() == "user" else "Assistant"

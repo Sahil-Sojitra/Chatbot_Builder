@@ -106,14 +106,18 @@ export const chatbotsApi = {
     });
   },
 
-  chat: (id: string, message: string): Promise<ChatResponse> => {
+  chat: (
+    id: string,
+    message: string,
+    chatHistory?: Array<{ role: "user" | "assistant"; content: string }>,
+  ): Promise<ChatResponse> => {
     const trimmedId = id?.trim();
     if (!trimmedId) {
       return Promise.reject(new Error("Chatbot ID is required."));
     }
     return apiRequest<ChatResponse>(`/api/v1/chatbots/${trimmedId}/chat`, {
       method: "POST",
-      body: { message },
+      body: { message, chatHistory },
     });
   },
 

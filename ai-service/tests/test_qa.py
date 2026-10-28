@@ -326,3 +326,37 @@ class TestChatAPIRoutes:
 
             assert resp.status_code == 500
             assert "RAG service error" in resp.json()["detail"]
+
+    def test_prompt_builder_includes_last_5_turns(self):
+        """Verify prompt builder formats up to 5 conversation turns (10 messages) for conversational memory."""
+        from app.services.prompt_builder import build_grounding_prompt
+        from app.models.retrieval import RetrievedChunk
+
+        chunks = [
+            RetrievedChunk(
+                chunk_id="c1",
+                chatbot_id="bot_store_1",
+                source_url="https://example.com",
+                canonical_url="https://example.com",
+                content="Store hours are 9am to 5pm.",
+                score=0.9,
+            )
+        ]
+        words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"]
+        history = [
+            {"role": "user", "content": f"Question {words[i]}"} if i % 2 == 0 else {"role": "assistant", "content": f"Answer {words[i]}"}
+            for i in range(12)
+        ]
+
+        prompt = build_grounding_prompt(
+            question="What about weekends?",
+            evidence_chunks=chunks,
+            bot_name="SupportBot",
+            chat_history=history,
+        )
+
+        assert "=== RECENT CONVERSATION HISTORY (LAST 5 TURNS) ===" in prompt
+        assert "User: Question zero" not in prompt
+        assert "Assistant: Answer one" not in prompt
+        assert "User: Question two" in prompt
+        assert "Assistant: Answer eleven" in prompt

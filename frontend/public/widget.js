@@ -1109,13 +1109,15 @@
     return "cb_convo_" + (publicId || "default");
   }
 
+  const MAX_STORED_HISTORY = 100; // Store extensive conversation history in localStorage
+
   function loadStoredHistory() {
     try {
       const raw = localStorage.getItem(getStorageKey());
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        return parsed.slice(-5);
+        return parsed.slice(-MAX_STORED_HISTORY);
       }
     } catch {
       // LocalStorage access restricted
@@ -1125,12 +1127,12 @@
 
   function saveStoredHistory() {
     try {
-      const trimmed = messages.slice(-5).map((m) => ({
+      const serialized = messages.slice(-MAX_STORED_HISTORY).map((m) => ({
         role: m.role === "bot" ? "assistant" : m.role,
         content: m.content,
         sources: m.sources || [],
       }));
-      localStorage.setItem(getStorageKey(), JSON.stringify(trimmed));
+      localStorage.setItem(getStorageKey(), JSON.stringify(serialized));
     } catch {
       // LocalStorage restricted or full
     }
@@ -1140,6 +1142,21 @@
     try {
       localStorage.removeItem(getStorageKey());
     } catch {}
+  }
+
+  /**
+   * Extracts up to the last 5 turns of conversation (up to 10 messages:
+   * 5 user questions and 5 assistant answers) to provide memory context to the LLM.
+   */
+  function getRecentTurnHistory(msgs, maxTurns = 5) {
+    const maxMessages = maxTurns * 2;
+    const recent = msgs.slice(-maxMessages);
+    return recent
+      .filter((m) => m && m.content && String(m.content).trim().length > 0)
+      .map((m) => ({
+        role: m.role === "bot" ? "assistant" : (m.role === "user" ? "user" : "assistant"),
+        content: String(m.content).trim(),
+      }));
   }
 
   function restoreHistory() {
@@ -1154,6 +1171,7 @@
         const sender = msg.role === "assistant" || msg.role === "bot" ? "bot" : "user";
         appendMessage(sender, msg.content, msg.sources || []);
       });
+      chatBody.scrollTop = chatBody.scrollHeight;
     }
   }
 
@@ -1191,15 +1209,14 @@
       hero.style.display = "none";
     }
 
-    // Capture memory history (last 5 messages)
-    const historyToSend = messages.slice(-5).map((m) => ({
-      role: m.role === "bot" ? "assistant" : m.role,
-      content: m.content,
-    }));
+    // Capture memory history (last 5 questions and answers = up to 10 messages)
+    const historyToSend = getRecentTurnHistory(messages, 5);
 
     appendMessage("user", trimmed);
     messages.push({ role: "user", content: trimmed });
-    if (messages.length > 5) messages = messages.slice(-5);
+    if (messages.length > MAX_STORED_HISTORY) {
+      messages = messages.slice(-MAX_STORED_HISTORY);
+    }
     saveStoredHistory();
 
     chatInput.value = "";
@@ -1235,7 +1252,9 @@
 
       appendMessage("bot", answer, sources);
       messages.push({ role: "assistant", content: answer, sources });
-      if (messages.length > 5) messages = messages.slice(-5);
+      if (messages.length > MAX_STORED_HISTORY) {
+        messages = messages.slice(-MAX_STORED_HISTORY);
+      }
       saveStoredHistory();
     } catch {
       removeTypingIndicator();

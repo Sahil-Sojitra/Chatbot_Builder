@@ -191,6 +191,46 @@ describe("AIServiceClient (Node.js -> FastAPI)", () => {
     assert.equal(result.sources[0]?.source_url, "https://example.com/refunds");
   });
 
+  it("forwards up to 10 chatHistory items (5 turns) to the AI service", async () => {
+    let capturedBody = "";
+    globalThis.fetch = async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      capturedBody = String(init?.body ?? "");
+      return new Response(
+        JSON.stringify({
+          chatbot_id: "bot_test_123",
+          question: "Follow-up question",
+          answer: "Answer with context",
+          sources: [],
+          has_grounded_evidence: true,
+          stats: {
+            retrieval_duration_ms: 5,
+            generation_duration_ms: 50,
+            total_duration_ms: 55,
+            model_used: "gemini",
+            chunks_retrieved: 0,
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    };
+
+    const twelveMessages = Array.from({ length: 12 }, (_, i) => ({
+      role: i % 2 === 0 ? "user" : "assistant",
+      content: `Message ${i + 1}`,
+    }));
+
+    await client.askQuestion({
+      chatbotId: "bot_test_123",
+      question: "Follow-up question",
+      chatHistory: twelveMessages,
+    });
+
+    const parsed = JSON.parse(capturedBody);
+    assert.equal(parsed.chat_history.length, 10);
+    assert.equal(parsed.chat_history[0].content, "Message 3");
+    assert.equal(parsed.chat_history[9].content, "Message 12");
+  });
+
   it("checkHealth returns true on 200 and false on network failure", async () => {
     // 1. Success case
     globalThis.fetch = async () => new Response("OK", { status: 200 });

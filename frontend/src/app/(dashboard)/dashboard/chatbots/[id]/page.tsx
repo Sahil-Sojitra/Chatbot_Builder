@@ -602,8 +602,13 @@ export default function ChatbotOverviewPage() {
 
     logger.info("PLAYGROUND", `User asked: "${trimmed}"`);
 
+    const historyToSend = messages.slice(-10).map((m) => ({
+      role: (m.sender === "user" ? "user" : "assistant") as "user" | "assistant",
+      content: m.text,
+    }));
+
     try {
-      const response = await chatbotsApi.chat(chatbot.id, trimmed);
+      const response = await chatbotsApi.chat(chatbot.id, trimmed, historyToSend);
       setIsLoadingResponse(false);
       logger.info(
         "PLAYGROUND",

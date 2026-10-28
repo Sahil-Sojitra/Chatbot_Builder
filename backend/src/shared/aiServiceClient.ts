@@ -305,7 +305,7 @@ export class AIServiceClient {
           llm_provider: payload.llmProvider,
           llm_model: payload.llmModel,
           llm_api_key: payload.llmApiKey,
-          chat_history: payload.chatHistory?.slice(-5),
+          chat_history: payload.chatHistory?.slice(-10),
         }),
         signal: controller.signal,
       });
