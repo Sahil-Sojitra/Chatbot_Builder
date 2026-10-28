@@ -44,26 +44,26 @@ export function FaqAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <div className="flex flex-col gap-3 w-full max-w-3xl">
+    <div className="flex flex-col gap-3 w-full max-w-4xl xl:max-w-5xl">
       {FAQS.map((faq, idx) => {
         const isOpen = openIndex === idx;
         return (
           <div
             key={faq.question}
-            className="rounded-md border border-zinc-800 bg-[#0a0a0a] transition-all"
+            className="rounded-[20px] border border-zinc-200/80 bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#111218]/90 transition-all"
           >
             <button
               type="button"
               onClick={() => setOpenIndex(isOpen ? null : idx)}
-              className="flex w-full items-center justify-between p-4 text-left font-medium text-sm sm:text-base text-zinc-100 hover:text-white transition-colors cursor-pointer"
+              className="flex w-full items-center justify-between p-5 text-left font-display font-semibold text-sm sm:text-base text-zinc-900 dark:text-zinc-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
             >
               <span>{faq.question}</span>
-              <span className="ml-4 shrink-0 text-zinc-500 font-mono text-lg">
+              <span className="ml-4 shrink-0 text-zinc-400 dark:text-zinc-500 font-mono text-lg">
                 {isOpen ? "−" : "+"}
               </span>
             </button>
             {isOpen && (
-              <div className="border-t border-zinc-800/80 px-4 pb-4 pt-3 text-sm text-zinc-400 leading-relaxed">
+              <div className="border-t border-zinc-100 dark:border-white/[0.08] px-5 pb-5 pt-3.5 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-sans">
                 {faq.answer}
               </div>
             )}

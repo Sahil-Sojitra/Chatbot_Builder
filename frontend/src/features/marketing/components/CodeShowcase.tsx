@@ -80,19 +80,19 @@ print(f"Citations: {response.citations}")`,
   };
 
   return (
-    <div className="w-full max-w-4xl overflow-hidden rounded-md border border-zinc-800 bg-[#0a0a0a]">
+    <div className="w-full max-w-5xl xl:max-w-6xl overflow-hidden rounded-[22px] border border-zinc-200/80 bg-white shadow-xl dark:border-zinc-800 dark:bg-[#0a0a0a]">
       {/* Code Header Tabs */}
-      <div className="flex flex-wrap items-center justify-between border-b border-zinc-800 bg-[#000000] px-4 py-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-[#000000] px-4 py-2.5">
+        <div className="flex items-center gap-1.5">
           {(["html", "react", "curl", "python"] as CodeTab[]).map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`rounded-md px-3 py-1.5 text-xs font-mono font-medium transition-colors cursor-pointer ${
+              className={`rounded-full px-3 py-1 text-xs font-mono font-medium transition-colors cursor-pointer ${
                 activeTab === tab
-                  ? "bg-zinc-800 text-white font-semibold"
-                  : "text-zinc-400 hover:text-zinc-200"
+                  ? "bg-zinc-900 text-white font-semibold shadow-xs dark:bg-zinc-800"
+                  : "text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-200"
               }`}
             >
               {tab === "html" && "HTML Script"}
@@ -110,10 +110,10 @@ print(f"Citations: {response.citations}")`,
           <button
             type="button"
             onClick={() => void handleCopy()}
-            className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-[#0a0a0a] px-2.5 py-1 text-xs font-mono text-zinc-300 hover:border-zinc-700 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-mono text-zinc-700 hover:text-zinc-950 hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#0a0a0a] dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-white transition-colors cursor-pointer"
           >
             {copied ? (
-              <span className="text-emerald-400">Copied!</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">✓ Copied!</span>
             ) : (
               <span>Copy Code</span>
             )}
@@ -122,14 +122,14 @@ print(f"Citations: {response.citations}")`,
       </div>
 
       {/* Code Body */}
-      <div className="p-4 overflow-x-auto bg-[#050505]">
-        <pre className="font-mono text-xs sm:text-sm text-zinc-200 leading-relaxed">
+      <div className="p-5 overflow-x-auto bg-zinc-950 dark:bg-[#050505]">
+        <pre className="font-mono text-xs sm:text-sm text-zinc-100 leading-relaxed">
           <code>{snippets[activeTab].code}</code>
         </pre>
       </div>
 
       {/* Footer Info */}
-      <div className="flex items-center justify-between border-t border-zinc-800/80 bg-[#000000] px-4 py-2.5 text-xs text-zinc-500 font-mono">
+      <div className="flex items-center justify-between border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-[#000000] px-5 py-2.5 text-xs text-zinc-500 font-mono">
         <span>Zero-latency edge routing</span>
         <span>Shadow DOM isolation • CORS protected</span>
       </div>
