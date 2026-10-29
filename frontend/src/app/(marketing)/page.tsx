@@ -10,18 +10,7 @@ import { FaqAccordion } from "@/features/marketing/components/FaqAccordion";
 import { TechMarquee } from "@/features/marketing/components/TechMarquee";
 
 export default function Home() {
-  const [copiedNpm, setCopiedNpm] = useState(false);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "annually">("monthly");
-
-  const handleCopyNpm = async () => {
-    try {
-      await navigator.clipboard.writeText("npm i @chatbot-studio/widget");
-      setCopiedNpm(true);
-      setTimeout(() => setCopiedNpm(false), 2000);
-    } catch {
-      // Fallback
-    }
-  };
 
   return (
     <div className="flex flex-col items-center w-full min-h-screen bg-background text-foreground transition-colors overflow-x-hidden">
@@ -78,25 +67,6 @@ export default function Home() {
               Try Interactive Simulator
             </a>
           </div>
-
-          {/* Copyable Terminal Quick Command */}
-          <button
-            type="button"
-            onClick={handleCopyNpm}
-            className="anim-fade-up anim-delay-500 mt-6 flex items-center gap-2 rounded-full border border-zinc-200/90 bg-white/90 hover:border-emerald-500/50 hover:bg-white dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-emerald-500/40 px-3.5 py-1.5 font-mono text-xs text-zinc-600 dark:text-zinc-400 shadow-xs backdrop-blur-sm transition-all cursor-pointer group"
-            title="Click to copy package command"
-          >
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">$</span>
-            <span className="text-zinc-900 dark:text-zinc-200 font-medium group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
-              npm i @chatbot-studio/widget
-            </span>
-            <span className="text-zinc-300 dark:text-white/20">•</span>
-            {copiedNpm ? (
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Copied!</span>
-            ) : (
-              <span className="text-zinc-400 dark:text-zinc-500">v1.0.0</span>
-            )}
-          </button>
 
           {/* Live Edge Telemetry Micro-Pills */}
           <div className="anim-fade-up anim-delay-500 mt-7 flex flex-wrap items-center justify-center gap-2.5 text-xs font-mono">
