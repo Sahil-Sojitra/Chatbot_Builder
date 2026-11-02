@@ -234,16 +234,16 @@ export default function ChatbotSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Top Breadcrumb & Return Link */}
-      <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-        <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+      <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-white/10">
+        <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 dark:text-zinc-400">
           <Link
             href={`/dashboard/chatbots/${chatbot.id}`}
-            className="text-violet-400 hover:text-violet-300 hover:underline flex items-center gap-1 font-sans text-xs"
+            className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 font-sans text-xs font-medium"
           >
             ← Back to Chatbot Overview
           </Link>
-          <span className="text-zinc-600">/</span>
-          <span className="text-zinc-200 font-medium font-sans">Settings</span>
+          <span className="text-zinc-400 dark:text-zinc-600">/</span>
+          <span className="text-zinc-900 dark:text-zinc-200 font-medium font-sans">Settings</span>
         </div>
         <span className="text-xs text-zinc-500 font-mono">ID: {chatbot.publicId}</span>
       </div>
@@ -476,15 +476,17 @@ export default function ChatbotSettingsPage() {
         </Card>
 
         {/* Chat Usage & Session Rate Limits */}
-        <Card className="border-zinc-800 bg-zinc-950/60 backdrop-blur-sm">
+        <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121524] shadow-sm">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <CardTitle className="text-base sm:text-lg">Chat Usage & Session Rate Limits</CardTitle>
-              <Badge variant="outline" className="border-violet-500/30 text-violet-300 bg-violet-500/10 text-xs">
+              <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white font-bold">
+                Chat Usage & Session Rate Limits
+              </CardTitle>
+              <Badge variant="outline" className="border-emerald-500/30 text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-500/10 text-xs">
                 Cost Control
               </Badge>
             </div>
-            <CardDescription>
+            <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
               Control your LLM API spending by setting how many questions a public visitor can ask in a single chat session.
             </CardDescription>
           </CardHeader>
@@ -497,22 +499,24 @@ export default function ChatbotSettingsPage() {
                 className={cn(
                   "flex flex-col items-start p-3.5 rounded-xl border text-left transition-all cursor-pointer",
                   sessionLimitType === "unlimited"
-                    ? "border-violet-500 bg-violet-950/20 shadow-sm shadow-violet-500/10 ring-1 ring-violet-500/40"
-                    : "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-[#0c0c10] dark:hover:border-zinc-700 dark:hover:bg-[#111116]",
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs dark:border-emerald-500 dark:bg-emerald-950/30 dark:text-emerald-200"
+                    : "border-slate-200 bg-slate-50/70 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950 dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white",
                 )}
               >
                 <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100">Unlimited Messages</span>
+                  <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">Unlimited Messages</span>
                   <span
                     className={cn(
-                      "w-4 h-4 rounded-full border flex items-center justify-center",
-                      sessionLimitType === "unlimited" ? "border-violet-500 bg-violet-500" : "border-zinc-600",
+                      "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
+                      sessionLimitType === "unlimited"
+                        ? "border-emerald-600 bg-emerald-600 dark:border-emerald-500"
+                        : "border-slate-300 dark:border-zinc-600 bg-transparent",
                     )}
                   >
                     {sessionLimitType === "unlimited" && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                <p className="text-xs text-slate-600 dark:text-slate-400">
                   No restrictions. Public visitors can ask unlimited questions per conversation.
                 </p>
               </button>
@@ -524,22 +528,24 @@ export default function ChatbotSettingsPage() {
                 className={cn(
                   "flex flex-col items-start p-3.5 rounded-xl border text-left transition-all cursor-pointer",
                   sessionLimitType === "custom"
-                    ? "border-violet-500 bg-violet-950/20 shadow-sm shadow-violet-500/10 ring-1 ring-violet-500/40"
-                    : "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-[#0c0c10] dark:hover:border-zinc-700 dark:hover:bg-[#111116]",
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs dark:border-emerald-500 dark:bg-emerald-950/30 dark:text-emerald-200"
+                    : "border-slate-200 bg-slate-50/70 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950 dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white",
                 )}
               >
                 <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100">Custom Limit</span>
+                  <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">Custom Limit</span>
                   <span
                     className={cn(
-                      "w-4 h-4 rounded-full border flex items-center justify-center",
-                      sessionLimitType === "custom" ? "border-violet-500 bg-violet-500" : "border-zinc-600",
+                      "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
+                      sessionLimitType === "custom"
+                        ? "border-emerald-600 bg-emerald-600 dark:border-emerald-500"
+                        : "border-slate-300 dark:border-zinc-600 bg-transparent",
                     )}
                   >
                     {sessionLimitType === "custom" && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                <p className="text-xs text-slate-600 dark:text-slate-400">
                   Caps questions per session to protect your API usage and quota.
                 </p>
               </button>
@@ -547,8 +553,8 @@ export default function ChatbotSettingsPage() {
 
             {/* If Custom Limit selected, show number input & quick presets */}
             {sessionLimitType === "custom" && (
-              <div className="flex flex-col gap-2 pt-2 p-3.5 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800/80 dark:bg-[#09090d]">
-                <Label htmlFor="setting-session-limit" className="text-xs text-zinc-300">
+              <div className="flex flex-col gap-2.5 pt-2 p-3.5 rounded-xl border border-slate-200 bg-slate-50/80 dark:border-white/10 dark:bg-white/[0.03]">
+                <Label htmlFor="setting-session-limit" className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   Maximum Messages Per Session
                 </Label>
                 <div className="flex flex-wrap items-center gap-3">
@@ -561,20 +567,20 @@ export default function ChatbotSettingsPage() {
                     onChange={(e) => setSessionCustomLimit(e.target.value)}
                     disabled={isSubmitting}
                     placeholder="e.g. 10"
-                    className="w-28 font-mono text-sm"
+                    className="w-28 font-mono text-sm bg-white border border-slate-200 text-slate-900 rounded-lg dark:bg-[#0E0F15] dark:border-white/10 dark:text-white"
                   />
-                  <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                    <span>Quick presets:</span>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                    <span className="font-medium">Quick presets:</span>
                     {[5, 10, 20, 50].map((preset) => (
                       <button
                         key={preset}
                         type="button"
                         onClick={() => setSessionCustomLimit(String(preset))}
                         className={cn(
-                          "px-2.5 py-1 rounded text-xs border font-mono transition-colors cursor-pointer",
+                          "px-2.5 py-1 rounded-md text-xs border font-mono font-medium transition-colors cursor-pointer",
                           sessionCustomLimit === String(preset)
-                            ? "bg-violet-600 text-white border-violet-500"
-                            : "bg-zinc-800/60 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-white",
+                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                            : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:bg-white/[0.04] dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white",
                         )}
                       >
                         {preset}
@@ -582,7 +588,7 @@ export default function ChatbotSettingsPage() {
                     ))}
                   </div>
                 </div>
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Once a visitor reaches this limit, chat input will pause with a notice prompting them to refresh or start a new chat.
                 </p>
               </div>
