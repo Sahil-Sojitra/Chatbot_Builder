@@ -65,9 +65,10 @@ export function ChatbotCreationChooser({
             <button
               type="button"
               onClick={onSelectInstant}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-full text-sm shadow-xs transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-full text-sm shadow-xs transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5"
             >
-              Start with Website URL &rarr;
+              <span>Start with Website URL</span>
+              <span>→</span>
             </button>
           </div>
         </div>
@@ -116,9 +117,10 @@ export function ChatbotCreationChooser({
             <button
               type="button"
               onClick={onSelectCustom}
-              className="w-full border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-white font-semibold py-3 rounded-full text-sm transition-all cursor-pointer shadow-xs"
+              className="w-full border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-white font-semibold py-3 rounded-full text-sm transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
             >
-              Configure Custom Bot &rarr;
+              <span>Configure Custom Bot</span>
+              <span>→</span>
             </button>
           </div>
         </div>

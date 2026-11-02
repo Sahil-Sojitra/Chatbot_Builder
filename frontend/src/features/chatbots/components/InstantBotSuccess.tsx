@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { buttonVariants } from "@/components/ui";
 import type { InstantBotResult } from "../instantBotTypes";
 
 interface InstantBotSuccessProps {
@@ -33,46 +32,46 @@ export function InstantBotSuccess({ result, onReset }: InstantBotSuccessProps) {
 
   return (
     <div className="relative max-w-2xl mx-auto">
-      {/* Ambient Glow */}
+      {/* Ambient Radial Spotlight */}
       <div className="absolute -top-20 -right-20 size-56 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative rounded-[26px] border border-zinc-200/90 bg-white p-6 sm:p-8 shadow-xl dark:border-white/[0.08] dark:bg-[#111218]/90 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
         {/* Top Celebration */}
         <div className="flex flex-col items-center text-center pb-6 border-b border-zinc-200 dark:border-white/[0.08]">
-          <div className="size-14 rounded-full bg-emerald-500/15 border border-emerald-500/35 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 shadow-[0_0_24px_rgba(5,150,105,0.3)]">
+          <div className="size-14 rounded-full bg-emerald-100 border-2 border-emerald-300 text-emerald-700 dark:bg-emerald-500/15 dark:border-emerald-500/35 dark:text-emerald-400 flex items-center justify-center mb-4 shadow-[0_0_24px_rgba(5,150,105,0.25)]">
             <svg className="size-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/25 shadow-2xs">
               <span className="size-1.5 rounded-full bg-emerald-600 anim-live-pulse" />
               Ready for Deployment
             </span>
           </div>
-          <h2 className="font-display text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">
+          <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white tracking-tight">
             {result.name} is ready!
           </h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-md mt-1.5 leading-relaxed">
-            We crawled <span className="text-zinc-900 dark:text-white font-mono font-medium">{result.websiteUrl}</span>,
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-md mt-2 leading-relaxed">
+            We crawled <span className="inline-block text-emerald-800 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40 border border-emerald-500/20 px-2 py-0.5 rounded-md font-mono text-xs font-semibold">{result.websiteUrl}</span>,
             extracted knowledge pages, and generated your ready-to-test assistant.
           </p>
 
           {/* Quick Stats Strip */}
-          <div className="flex items-center justify-center gap-6 sm:gap-8 mt-5 py-3 px-6 rounded-full bg-zinc-50 border border-zinc-200 dark:bg-white/[0.03] dark:border-white/[0.08] text-xs shadow-2xs">
-            <div>
-              <span className="text-zinc-500 dark:text-zinc-400 block text-[11px] font-mono">Pages Found</span>
-              <span className="text-zinc-900 dark:text-white font-bold font-mono text-base">{result.pagesDiscovered}</span>
+          <div className="flex items-center justify-center gap-6 sm:gap-10 mt-6 py-3.5 px-6 sm:px-8 rounded-full bg-zinc-50 border border-zinc-200 dark:bg-white/[0.03] dark:border-white/[0.08] text-xs shadow-2xs">
+            <div className="text-center">
+              <span className="text-zinc-500 dark:text-zinc-400 block text-[11px] font-mono uppercase tracking-wider font-semibold">Pages Found</span>
+              <span className="text-zinc-950 dark:text-white font-extrabold font-mono text-base sm:text-lg">{result.pagesDiscovered ?? 0}</span>
             </div>
             <div className="w-px h-7 bg-zinc-200 dark:bg-white/[0.08]" />
-            <div>
-              <span className="text-zinc-500 dark:text-zinc-400 block text-[11px] font-mono">Chunks Indexed</span>
-              <span className="text-zinc-900 dark:text-white font-bold font-mono text-base">{result.documentsIndexed}</span>
+            <div className="text-center">
+              <span className="text-zinc-500 dark:text-zinc-400 block text-[11px] font-mono uppercase tracking-wider font-semibold">Chunks Indexed</span>
+              <span className="text-zinc-950 dark:text-white font-extrabold font-mono text-base sm:text-lg">{result.documentsIndexed ?? 0}</span>
             </div>
             <div className="w-px h-7 bg-zinc-200 dark:bg-white/[0.08]" />
-            <div>
-              <span className="text-zinc-500 dark:text-zinc-400 block text-[11px] font-mono">Status</span>
-              <span className="text-emerald-700 dark:text-emerald-400 font-bold text-base flex items-center gap-1">
+            <div className="text-center">
+              <span className="text-zinc-500 dark:text-zinc-400 block text-[11px] font-mono uppercase tracking-wider font-semibold">Status</span>
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold text-base flex items-center gap-1.5 justify-center">
                 <span className="size-1.5 rounded-full bg-emerald-600 anim-live-pulse" />
                 Active
               </span>
@@ -97,22 +96,36 @@ export function InstantBotSuccess({ result, onReset }: InstantBotSuccessProps) {
 
         <div className="space-y-6 pt-6">
           {/* Managed Platform Testing Ready Notice */}
-          <div className="rounded-[20px] border border-zinc-200 bg-zinc-50/80 dark:border-white/[0.08] dark:bg-white/[0.02] p-5 text-left flex flex-col gap-2">
+          <div className="rounded-2xl border border-emerald-500/25 bg-emerald-50/60 dark:border-emerald-500/20 dark:bg-emerald-950/20 p-5 text-left flex flex-col gap-3 shadow-2xs">
             <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-emerald-600 anim-live-pulse" />
-              <span className="text-sm font-semibold text-zinc-900 dark:text-white">Platform Testing Ready</span>
+              <span className="size-2 rounded-full bg-emerald-600 anim-live-pulse shrink-0" />
+              <span className="text-sm font-bold text-emerald-950 dark:text-white">Platform Testing Ready</span>
             </div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
+            <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal">
               Your Instant Bot is fully vectorized and ready for live question answering directly on our platform. 
               All AI parameters and knowledge embeddings are managed automatically with zero setup required.
             </p>
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-emerald-500/20 dark:border-white/[0.08] text-[11px] font-mono text-emerald-900 dark:text-emerald-300">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100/70 border border-emerald-500/25 dark:bg-emerald-900/40">
+                <span>⚡</span>
+                <span>Sub-50ms Streaming</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100/70 border border-emerald-500/25 dark:bg-emerald-900/40">
+                <span>🛡️</span>
+                <span>Isolated Shadow DOM</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100/70 border border-emerald-500/25 dark:bg-emerald-900/40">
+                <span>📚</span>
+                <span>Grounded Citations</span>
+              </span>
+            </div>
           </div>
 
           {/* Action Buttons */}
           <div className="pt-4 border-t border-zinc-200 dark:border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3">
             <Link
               href="/dashboard/chatbots"
-              className="rounded-full px-5 py-2.5 text-xs text-zinc-700 bg-white hover:text-zinc-950 border border-zinc-200 hover:bg-zinc-50 dark:bg-transparent dark:text-zinc-400 dark:hover:text-white dark:border-white/[0.1] dark:hover:border-white/20 transition-all shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-zinc-700 bg-white hover:text-zinc-950 border border-zinc-200 hover:bg-zinc-100 hover:border-zinc-300 dark:bg-white/[0.04] dark:text-zinc-300 dark:hover:text-white dark:border-white/10 dark:hover:bg-white/[0.08] transition-all shadow-2xs"
             >
               ← Return to Chatbots
             </Link>
@@ -120,15 +133,16 @@ export function InstantBotSuccess({ result, onReset }: InstantBotSuccessProps) {
               <button
                 type="button"
                 onClick={onReset}
-                className="text-xs text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white px-3 py-1.5 cursor-pointer transition-colors"
+                className="text-xs font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white px-3 py-1.5 cursor-pointer transition-colors underline-offset-4 hover:underline"
               >
                 Create another bot
               </button>
               <Link
                 href={`/dashboard/chatbots/${result.botId}`}
-                className="btn-volt inline-flex items-center justify-center rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs sm:text-sm px-6 py-2.5 shadow-[0_10px_28px_rgba(5,150,105,0.35)] hover:shadow-[0_12px_32px_rgba(5,150,105,0.5)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="btn-volt inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs sm:text-sm px-6 py-2.5 shadow-[0_10px_28px_rgba(5,150,105,0.35)] hover:shadow-[0_12px_32px_rgba(5,150,105,0.5)] transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
-                Test Chatbot in Playground →
+                <span>Test Chatbot in Playground</span>
+                <span>→</span>
               </Link>
             </div>
           </div>
