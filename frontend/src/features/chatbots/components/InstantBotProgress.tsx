@@ -28,33 +28,37 @@ export function InstantBotProgress({
       {/* Ambient Radial Glow */}
       <div className="absolute -top-16 -right-16 size-48 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative rounded-[26px] border border-zinc-200/80 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#111218]/90 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl p-6 sm:p-8">
+      <div className="relative rounded-3xl border border-zinc-200/90 bg-white shadow-xl dark:border-white/10 dark:bg-[#0E1B15] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl p-6 sm:p-8">
         {/* Header Info */}
-        <div className="flex flex-col gap-1 pb-5 border-b border-zinc-200 dark:border-white/[0.08]">
+        <div className="flex flex-col gap-1 pb-5 border-b border-zinc-200/90 dark:border-white/[0.08]">
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
-              <span className="size-1.5 rounded-full bg-emerald-600 anim-live-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-500/30 shadow-2xs">
+              <span className="size-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 anim-live-pulse" />
               Pipeline Ingestion
             </span>
-            <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+            <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-bold">
               {progressPercent}% Complete
             </span>
           </div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-zinc-900 dark:text-white mt-2">{chatbotName}</h2>
-          <div className="flex items-center gap-2 text-xs text-zinc-400 truncate mt-0.5">
-            <svg className="w-3.5 h-3.5 text-zinc-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+          <h2 className="font-display text-2xl font-bold tracking-tight text-zinc-900 dark:text-white mt-3">
+            {chatbotName}
+          </h2>
+
+          <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 truncate mt-1">
+            <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
             </svg>
-            <span className="font-mono text-zinc-700 dark:text-zinc-300 truncate">{websiteUrl}</span>
+            <span className="font-mono text-zinc-700 dark:text-zinc-300 truncate font-medium">{websiteUrl}</span>
           </div>
         </div>
 
         {/* Visual Progress Bar */}
         <div className="py-5">
-          <div className="h-2 w-full bg-zinc-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
+          <div className="h-2.5 w-full bg-zinc-100 dark:bg-white/[0.06] rounded-full overflow-hidden p-0.5 border border-zinc-200/80 dark:border-white/[0.08]">
             <div
-              className="h-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 rounded-full shadow-[0_0_12px_rgba(5, 150, 105, 0.4)] transition-all duration-500 ease-out"
-              style={{ width: `${Math.max(progressPercent, 10)}%` }}
+              className="h-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 rounded-full shadow-xs transition-all duration-500 ease-out"
+              style={{ width: `${Math.max(progressPercent, 8)}%` }}
             />
           </div>
         </div>
@@ -69,28 +73,28 @@ export function InstantBotProgress({
             return (
               <div
                 key={stage.id}
-                className={`flex items-start gap-3.5 p-3.5 rounded-[18px] border transition-all ${
+                className={`flex items-start gap-3.5 p-3.5 rounded-2xl border transition-all ${
                   isCurrent
-                    ? "border-emerald-500/40 bg-emerald-600/[0.04] shadow-[0_0_20px_rgba(5, 150, 105, 0.1)]"
+                    ? "border-emerald-500/50 bg-emerald-50/70 dark:border-emerald-500/40 dark:bg-emerald-950/30 ring-2 ring-emerald-500/20 shadow-xs"
                     : isDone
-                    ? "border-zinc-200 bg-zinc-50 dark:border-white/[0.08] dark:bg-white/[0.02]"
+                    ? "border-zinc-200/90 bg-zinc-50/80 dark:border-white/[0.08] dark:bg-white/[0.02]"
                     : isFailed
-                    ? "border-rose-500/40 bg-rose-500/5"
-                    : "border-transparent bg-transparent opacity-40"
+                    ? "border-rose-300 bg-rose-50/80 dark:border-rose-500/40 dark:bg-rose-950/20"
+                    : "border-zinc-200/60 bg-transparent dark:border-white/[0.04] opacity-50"
                 }`}
               >
                 {/* Icon badge */}
                 <div className="mt-0.5 shrink-0">
                   {isDone ? (
-                    <div className="size-6 rounded-full bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                    <div className="size-6 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-600/40 flex items-center justify-center">
                       <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                   ) : isCurrent ? (
-                    <div className="size-6 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center">
+                    <div className="size-6 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-400 dark:border-emerald-500 flex items-center justify-center">
                       <svg
-                        className="animate-spin size-3.5 text-emerald-600 dark:text-emerald-400"
+                        className="animate-spin size-3.5 text-emerald-700 dark:text-emerald-400"
                         fill="none"
                         viewBox="0 0 24 24"
                       >
@@ -110,13 +114,13 @@ export function InstantBotProgress({
                       </svg>
                     </div>
                   ) : isFailed ? (
-                    <div className="size-6 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400">
+                    <div className="size-6 rounded-full bg-rose-100 border border-rose-300 dark:bg-rose-950/50 dark:border-rose-500/40 flex items-center justify-center text-rose-700 dark:text-rose-400">
                       <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </div>
                   ) : (
-                    <div className="size-6 rounded-full border border-white/[0.1] bg-white/[0.04] flex items-center justify-center text-[10px] font-mono text-zinc-500">
+                    <div className="size-6 rounded-full border border-zinc-200 bg-zinc-100 dark:border-white/[0.1] dark:bg-white/[0.04] flex items-center justify-center text-[10px] font-mono text-zinc-500 dark:text-zinc-400 font-semibold">
                       {idx + 1}
                     </div>
                   )}
@@ -124,32 +128,44 @@ export function InstantBotProgress({
 
                 {/* Text info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <h4
-                      className={`text-sm font-semibold ${
+                      className={`text-sm font-semibold tracking-tight ${
                         isCurrent
-                          ? "text-white"
+                          ? "text-zinc-950 dark:text-white font-bold"
                           : isDone
-                          ? "text-zinc-200"
+                          ? "text-zinc-900 dark:text-zinc-100"
                           : isFailed
-                          ? "text-rose-300"
-                          : "text-zinc-500"
+                          ? "text-rose-700 dark:text-rose-300"
+                          : "text-zinc-500 dark:text-zinc-400"
                       }`}
                     >
                       {stage.label}
                     </h4>
                     {isCurrent && (
-                      <span className="text-[11px] font-mono font-medium text-emerald-600 dark:text-emerald-400 animate-pulse">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400 animate-pulse">
+                        <span className="size-1 rounded-full bg-emerald-600 dark:bg-emerald-400" />
                         Processing...
                       </span>
                     )}
                     {isDone && (
-                      <span className="text-[11px] font-mono font-medium text-emerald-600 dark:text-emerald-400">
+                      <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">
                         Done
                       </span>
                     )}
+                    {isFailed && (
+                      <span className="text-[11px] font-mono font-semibold text-rose-600 dark:text-rose-400">
+                        Failed
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
+                  <p
+                    className={`text-xs mt-1 leading-relaxed ${
+                      isCurrent
+                        ? "text-emerald-950/80 dark:text-emerald-300/80 font-medium"
+                        : "text-zinc-600 dark:text-zinc-400"
+                    }`}
+                  >
                     {stage.description}
                   </p>
                 </div>
@@ -160,29 +176,32 @@ export function InstantBotProgress({
 
         {/* Bot workspace created info card if bot ID is known */}
         {chatbotId && (
-          <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-[18px] bg-emerald-600/[0.06] border border-emerald-500/25 text-xs">
-            <div className="flex items-center gap-2.5 text-white">
-              <span className="size-2 rounded-full bg-emerald-600 anim-live-pulse" />
-              <span>Assistant initialized! Indexing runs autonomously in the background.</span>
+          <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-500/30 text-xs dark:bg-emerald-950/40 dark:border-emerald-500/30 shadow-2xs">
+            <div className="flex items-center gap-2.5 text-zinc-900 dark:text-emerald-200">
+              <span className="size-2 rounded-full bg-emerald-600 dark:bg-emerald-400 anim-live-pulse shrink-0" />
+              <span className="font-medium text-emerald-950 dark:text-emerald-200">
+                Assistant initialized! Indexing runs autonomously in the background.
+              </span>
             </div>
             <Link
               href={`/dashboard/chatbots/${chatbotId}`}
-              className="btn-volt inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-600 text-white font-bold text-xs shadow-[0_6px_20px_rgba(5, 150, 105, 0.3)] hover:bg-emerald-700 shrink-0"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-all shadow-xs hover:scale-[1.02] active:scale-[0.98] shrink-0"
             >
-              Open Studio now &rarr;
+              <span>Open Studio now</span>
+              <span>→</span>
             </Link>
           </div>
         )}
 
         {/* Footer action */}
-        <div className="mt-6 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs text-zinc-500">
+        <div className="mt-6 pt-4 border-t border-zinc-200/80 dark:border-white/[0.08] flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
           <span>You can safely refresh or navigate away — indexing will complete automatically.</span>
           {onCancel && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onCancel}
-              className="rounded-full text-zinc-400 hover:text-white"
+              className="rounded-full text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/[0.06]"
             >
               Cancel and Return
             </Button>
