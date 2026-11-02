@@ -66,44 +66,44 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
       {/* Dynamic Header: Instant Bot (Managed Playground) vs Custom Bot (Studio) */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200 dark:border-zinc-800 pb-5">
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+          <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 dark:text-zinc-400">
             {isInstant ? (
               <>
                 <span className="text-zinc-500">instant-bots</span>
-                <span className="text-zinc-600">/</span>
-                <span className="text-zinc-300 font-semibold">{botDisplayName.toLowerCase().replace(/\s+/g, "-")}</span>
-                <span className="text-zinc-600">•</span>
-                <span className="text-violet-400">managed-rag-pipeline</span>
+                <span className="text-zinc-400 dark:text-zinc-600">/</span>
+                <span className="text-zinc-700 dark:text-zinc-200 font-semibold">{botDisplayName.toLowerCase().replace(/\s+/g, "-")}</span>
+                <span className="text-zinc-400 dark:text-zinc-600">•</span>
+                <span className="text-violet-600 dark:text-violet-400 font-medium">managed-rag-pipeline</span>
               </>
             ) : (
               <>
                 <span className="text-zinc-500">deployments</span>
-                <span className="text-zinc-600">/</span>
-                <span className="text-zinc-300 font-semibold">{botDisplayName.toLowerCase().replace(/\s+/g, "-")}</span>
-                <span className="text-zinc-600">•</span>
-                <span className="text-zinc-400">{chatbot.provider || "openai"}:{chatbot.model || "gpt-4o-mini"}</span>
+                <span className="text-zinc-400 dark:text-zinc-600">/</span>
+                <span className="text-zinc-700 dark:text-zinc-200 font-semibold">{botDisplayName.toLowerCase().replace(/\s+/g, "-")}</span>
+                <span className="text-zinc-400 dark:text-zinc-600">•</span>
+                <span className="text-zinc-600 dark:text-zinc-400">{chatbot.provider || "openai"}:{chatbot.model || "gpt-4o-mini"}</span>
               </>
             )}
           </div>
           <div className="flex items-center gap-3">
             <h1 className="font-display text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">{botDisplayName}</h1>
             {isInstant ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
-                <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-500/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-violet-600 dark:bg-violet-400" />
                 Instant Bot
               </span>
             ) : (
-              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/80 text-xs font-medium">
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border border-zinc-200 bg-zinc-50 dark:border-white/10 dark:bg-white/[0.04] text-xs font-medium">
                 <span
                   className={`h-2 w-2 rounded-full ${
                     chatbot.status === "ACTIVE"
-                      ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]"
+                      ? "bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.7)]"
                       : chatbot.status === "PAUSED"
                         ? "bg-amber-400"
-                        : "bg-zinc-500"
+                        : "bg-zinc-400 dark:bg-zinc-500"
                   }`}
                 />
-                <span className="text-zinc-300">
+                <span className="text-zinc-700 dark:text-zinc-300 font-medium">
                   {chatbot.status === "ACTIVE" ? "Production Ready" : chatbot.status === "PAUSED" ? "Paused" : "Draft"}
                 </span>
               </div>
@@ -112,7 +112,7 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-200 bg-zinc-50 dark:border-white/[0.08] dark:bg-[#0E1B15] text-xs font-mono text-zinc-300">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-200 bg-zinc-50 dark:border-white/[0.08] dark:bg-[#0E1B15] text-xs font-mono text-zinc-700 dark:text-zinc-300">
             <span className="text-zinc-500">ID:</span>
             <span className="font-semibold text-zinc-900 dark:text-white">{chatbot.publicId}</span>
           </div>
