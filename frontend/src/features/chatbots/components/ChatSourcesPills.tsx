@@ -128,7 +128,7 @@ export function ChatSourcesPills({ sources }: ChatSourcesPillsProps) {
 
   return (
     <div className="mt-3 pt-2.5 border-t border-zinc-200 dark:border-white/[0.08] flex flex-col gap-2 text-xs">
-      <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
+      <div className="flex items-center justify-between text-[11px] font-mono">
         <div className="flex items-center gap-1.5">
           <span className="size-1.5 rounded-full bg-emerald-600 ring-2 ring-emerald-500/30 anim-live-pulse" />
           <span className="font-semibold uppercase tracking-wider text-[10px] text-zinc-700 dark:text-zinc-300">
@@ -140,14 +140,14 @@ export function ChatSourcesPills({ sources }: ChatSourcesPillsProps) {
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-[10px] text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-sans"
+            className="text-[10px] text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-sans font-medium"
           >
             {isExpanded ? "Show less" : `+${uniqueSources.length - INITIAL_MAX} more`}
           </button>
         ) : null}
       </div>
 
-      {/* Sleek, responsive wrapping chips */}
+      {/* Sleek, responsive wrapping chips with high contrast in Light and Dark modes */}
       <div className="flex flex-wrap gap-1.5">
         {visibleSources.map((source, index) => {
           const citation = parseDocumentCitation(source.source_url, source.title);
@@ -156,17 +156,17 @@ export function ChatSourcesPills({ sources }: ChatSourcesPillsProps) {
 
           const badgeClasses = citation.isDocument
             ? citation.fileType === "pdf"
-              ? "border-rose-500/30 bg-rose-500/10 text-rose-300 hover:border-rose-500/50 hover:bg-rose-500/20"
+              ? "border-rose-200 bg-rose-50 text-rose-800 hover:border-rose-300 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:border-rose-500/50 dark:hover:bg-rose-500/20"
               : citation.fileType === "pptx"
-              ? "border-amber-500/30 bg-amber-500/10 text-amber-300 hover:border-amber-500/50 hover:bg-amber-500/20"
+              ? "border-amber-200 bg-amber-50 text-amber-900 hover:border-amber-300 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:border-amber-500/50 dark:hover:bg-amber-500/20"
               : citation.fileType === "docx"
-              ? "border-sky-500/30 bg-sky-500/10 text-sky-300 hover:border-sky-500/50 hover:bg-sky-500/20"
+              ? "border-sky-200 bg-sky-50 text-sky-800 hover:border-sky-300 hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300 dark:hover:border-sky-500/50 dark:hover:bg-sky-500/20"
               : citation.fileType === "csv"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:border-emerald-500/50 hover:bg-emerald-500/20"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-300 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:border-emerald-500/50 dark:hover:bg-emerald-500/20"
               : citation.fileType === "image"
-              ? "border-purple-500/30 bg-purple-500/10 text-purple-300 hover:border-purple-500/50 hover:bg-purple-500/20"
-              : "border-white/[0.1] bg-white/[0.04] text-zinc-300 hover:border-white/20 hover:bg-white/[0.08]"
-            : "border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-white";
+              ? "border-purple-200 bg-purple-50 text-purple-800 hover:border-purple-300 hover:bg-purple-100 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300 dark:hover:border-purple-500/50 dark:hover:bg-purple-500/20"
+              : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-950 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-300 dark:hover:border-white/20 dark:hover:bg-white/[0.08] dark:hover:text-white"
+            : "border-zinc-200 bg-zinc-50/90 text-zinc-800 hover:border-emerald-500/50 hover:bg-emerald-50 hover:text-emerald-900 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-300 dark:hover:border-emerald-500/50 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300 shadow-2xs";
 
           const tooltipText = source.snippet
             ? `Source: ${citation.displayTitle}\n\n"${source.snippet.slice(0, 200)}${source.snippet.length > 200 ? "..." : ""}"`
@@ -180,11 +180,11 @@ export function ChatSourcesPills({ sources }: ChatSourcesPillsProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 title={tooltipText}
-                className={`group inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] transition-all duration-150 cursor-pointer shadow-xs max-w-full ${badgeClasses}`}
+                className={`group inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] transition-all duration-150 cursor-pointer max-w-full ${badgeClasses}`}
               >
                 {/* Globe Icon */}
                 <svg
-                  className="size-3 shrink-0 text-zinc-400 group-hover:text-emerald-600 dark:text-emerald-400 transition-colors"
+                  className="size-3 shrink-0 text-emerald-600/70 group-hover:text-emerald-700 dark:text-zinc-400 dark:group-hover:text-emerald-400 transition-colors"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -202,7 +202,7 @@ export function ChatSourcesPills({ sources }: ChatSourcesPillsProps) {
                 </span>
 
                 <svg
-                  className="size-2.5 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-zinc-400 group-hover:text-white"
+                  className="size-2.5 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-zinc-400 group-hover:text-emerald-700 dark:text-zinc-400 dark:group-hover:text-emerald-300"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -225,31 +225,31 @@ export function ChatSourcesPills({ sources }: ChatSourcesPillsProps) {
               type="button"
               onClick={() => setActiveSnippetModal(source)}
               title={tooltipText}
-              className={`group inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] transition-all duration-150 cursor-pointer shadow-xs max-w-full ${badgeClasses}`}
+              className={`group inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] transition-all duration-150 cursor-pointer max-w-full ${badgeClasses}`}
             >
               {citation.fileType === "pdf" ? (
-                <span className="font-mono text-[9px] font-bold text-rose-400 bg-rose-500/20 px-1 py-0.2 rounded shrink-0">
+                <span className="font-mono text-[9px] font-bold text-rose-700 bg-rose-100 dark:text-rose-400 dark:bg-rose-500/20 px-1 py-0.2 rounded shrink-0">
                   PDF
                 </span>
               ) : citation.fileType === "pptx" ? (
-                <span className="font-mono text-[9px] font-bold text-amber-400 bg-amber-500/20 px-1 py-0.2 rounded shrink-0">
+                <span className="font-mono text-[9px] font-bold text-amber-800 bg-amber-100 dark:text-amber-400 dark:bg-amber-500/20 px-1 py-0.2 rounded shrink-0">
                   PPTX
                 </span>
               ) : citation.fileType === "docx" ? (
-                <span className="font-mono text-[9px] font-bold text-sky-400 bg-sky-500/20 px-1 py-0.2 rounded shrink-0">
+                <span className="font-mono text-[9px] font-bold text-sky-700 bg-sky-100 dark:text-sky-400 dark:bg-sky-500/20 px-1 py-0.2 rounded shrink-0">
                   DOCX
                 </span>
               ) : citation.fileType === "csv" ? (
-                <span className="font-mono text-[9px] font-bold text-emerald-400 bg-emerald-500/20 px-1 py-0.2 rounded shrink-0">
+                <span className="font-mono text-[9px] font-bold text-emerald-800 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/20 px-1 py-0.2 rounded shrink-0">
                   CSV
                 </span>
               ) : citation.fileType === "image" ? (
-                <span className="font-mono text-[9px] font-bold text-purple-400 bg-purple-500/20 px-1 py-0.2 rounded shrink-0">
+                <span className="font-mono text-[9px] font-bold text-purple-800 bg-purple-100 dark:text-purple-400 dark:bg-purple-500/20 px-1 py-0.2 rounded shrink-0">
                   IMG
                 </span>
               ) : (
                 <svg
-                  className="size-3 shrink-0 text-zinc-400 group-hover:text-zinc-200 transition-colors"
+                  className="size-3 shrink-0 text-zinc-500 group-hover:text-emerald-700 dark:text-zinc-400 dark:group-hover:text-zinc-200 transition-colors"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -268,7 +268,7 @@ export function ChatSourcesPills({ sources }: ChatSourcesPillsProps) {
               </span>
 
               <svg
-                className="size-2.5 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity"
+                className="size-2.5 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity text-zinc-400 group-hover:text-emerald-700 dark:text-zinc-400 dark:group-hover:text-zinc-200"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -311,7 +311,7 @@ export function ChatSourcesPills({ sources }: ChatSourcesPillsProps) {
               <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
                 <span>Citation Source</span>
                 {activeSnippetModal.score ? (
-                  <span className="text-emerald-600 dark:text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
                     Relevance Score: {(activeSnippetModal.score * 100).toFixed(0)}%
                   </span>
                 ) : null}
