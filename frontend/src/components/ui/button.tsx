@@ -23,7 +23,7 @@ const buttonVariants = cva(
           "border border-zinc-300 bg-transparent text-zinc-800 hover:bg-zinc-100 hover:text-zinc-950 dark:border-white/12 dark:bg-transparent dark:text-[#EDEDF0] dark:hover:border-white/25 dark:hover:bg-white/[0.05] dark:hover:text-white",
         destructive:
           "border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300 hover:bg-rose-500/20 active:bg-rose-500/30",
-        link: "text-zinc-600 dark:text-white/70 underline-offset-4 hover:underline hover:text-zinc-900 dark:hover:text-emerald-600 dark:text-emerald-400",
+        link: "text-zinc-600 dark:text-zinc-400 underline-offset-4 hover:underline hover:text-zinc-900 dark:hover:text-emerald-400",
       },
       size: {
         default: "h-10 px-5 py-2 rounded-full",

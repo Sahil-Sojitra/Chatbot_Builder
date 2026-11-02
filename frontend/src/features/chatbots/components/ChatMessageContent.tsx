@@ -259,7 +259,7 @@ function CodeBlock({
   };
 
   return (
-    <div className="my-2.5 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-950 text-zinc-100 overflow-hidden text-xs shadow-xs">
+    <div className="my-2.5 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-950 dark:bg-[#070D0A] text-zinc-100 overflow-hidden text-xs shadow-xs">
       <div className="flex items-center justify-between px-3.5 py-1.5 bg-white/[0.04] border-b border-white/[0.08] text-zinc-400 font-mono text-[11px]">
         <span>{language || "code"}</span>
         <button
@@ -660,7 +660,7 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.04] bg-white dark:bg-[#0c0c10]">
+                  <tbody className="divide-y divide-zinc-200 dark:divide-white/[0.04] bg-white dark:bg-[#0E1B15]">
                     {block.rows.map((row, rIndex) => (
                       <tr
                         key={rIndex}

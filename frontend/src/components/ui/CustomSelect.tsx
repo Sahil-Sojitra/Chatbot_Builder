@@ -147,9 +147,9 @@ export function CustomSelect({
         className={cn(
           "flex h-11 w-full items-center justify-between rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs sm:text-sm text-zinc-900 transition-all outline-none cursor-pointer",
           "hover:border-zinc-300 hover:bg-zinc-50",
-          "dark:border-white/10 dark:bg-[#0E0F15] dark:text-white dark:hover:border-white/20 dark:hover:bg-[#14151E]",
+          "dark:border-white/10 dark:bg-[#070D0A] dark:text-white dark:hover:border-white/20 dark:hover:bg-[#0E1B15]",
           "focus-visible:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500/35",
-          isOpen && "border-emerald-500 ring-2 ring-emerald-500/35 bg-zinc-50 dark:bg-[#14151E]",
+          isOpen && "border-emerald-500 ring-2 ring-emerald-500/35 bg-zinc-50 dark:bg-[#0E1B15]",
           disabled && "cursor-not-allowed opacity-50 bg-zinc-100 dark:bg-zinc-950",
         )}
       >
@@ -195,7 +195,7 @@ export function CustomSelect({
           tabIndex={-1}
           className={cn(
             "absolute z-50 mt-2 w-full min-w-full sm:min-w-[280px] rounded-[20px] border border-zinc-200 bg-white/95 p-2 shadow-xl shadow-zinc-900/10 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 overflow-hidden",
-            "dark:border-white/12 dark:bg-[#0E0F15]/95 dark:shadow-2xl dark:shadow-black/90",
+            "dark:border-white/12 dark:bg-[#0E1B15]/95 dark:shadow-2xl dark:shadow-black/90",
             dropdownClassName,
           )}
         >
@@ -219,8 +219,8 @@ export function CustomSelect({
                     className={cn(
                       "flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-left transition-colors cursor-pointer w-full",
                       isSelected
-                        ? "bg-emerald-500/25 text-zinc-900 font-semibold border border-emerald-500/70 dark:bg-emerald-500/15 dark:text-emerald-600 dark:text-emerald-400 dark:border-emerald-500/30"
-                        : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-white",
+                        ? "bg-emerald-500/25 text-zinc-900 font-semibold border border-emerald-500/70 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30"
+                        : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-white/[0.06] dark:hover:text-white",
                       opt.disabled && "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-zinc-400 dark:hover:text-zinc-500",
                     )}
                   >

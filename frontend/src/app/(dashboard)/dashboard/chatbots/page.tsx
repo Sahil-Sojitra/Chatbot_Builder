@@ -190,7 +190,7 @@ export default function ChatbotsPage() {
             </Link>
           </div>
         ) : filteredChatbots.length === 0 ? (
-          <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#0b0b0e] p-6 text-center text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="rounded-2xl border border-zinc-200 bg-white dark:border-white/[0.08] dark:bg-[#0E1B15] p-6 text-center text-xs text-zinc-600 dark:text-zinc-400">
             <p>No chatbots found matching "{searchQuery}".</p>
             <button
               type="button"

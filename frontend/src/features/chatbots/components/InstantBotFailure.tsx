@@ -29,7 +29,7 @@ export function InstantBotFailure({
 
   return (
     <div className="relative max-w-xl mx-auto">
-      <div className="relative rounded-[26px] border border-rose-300 bg-white p-6 sm:p-8 shadow-xl dark:border-rose-500/40 dark:bg-[#111218]/90 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+      <div className="relative rounded-[26px] border border-rose-300 bg-white p-6 sm:p-8 shadow-xl dark:border-rose-500/40 dark:bg-[#0E1B15]/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
         <div className="flex flex-col items-center text-center pb-6 border-b border-zinc-200 dark:border-white/[0.08]">
           <div
             className={`size-14 rounded-full flex items-center justify-center mb-3.5 shadow-md ${

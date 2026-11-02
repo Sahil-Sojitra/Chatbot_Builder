@@ -290,7 +290,7 @@ export function ChatSourcesPills({ sources }: ChatSourcesPillsProps) {
           onClick={() => setActiveSnippetModal(null)}
         >
           <div
-            className="w-full max-w-lg rounded-[26px] border border-zinc-200 bg-white dark:border-white/[0.12] dark:bg-[#111218] p-6 shadow-2xl flex flex-col gap-4"
+            className="w-full max-w-lg rounded-[26px] border border-zinc-200 bg-white dark:border-white/[0.12] dark:bg-[#0E1B15] p-6 shadow-2xl flex flex-col gap-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.08] pb-3">

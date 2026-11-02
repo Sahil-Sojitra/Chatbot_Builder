@@ -20,7 +20,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-zinc-300 bg-white dark:border-white/10 dark:bg-[#111218]/60 p-10 text-center shadow-xs transition-colors hover:border-zinc-400 dark:hover:border-white/20",
+        "flex flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-zinc-300 bg-white dark:border-white/10 dark:bg-[#0E1B15]/60 p-10 text-center shadow-xs transition-colors hover:border-zinc-400 dark:hover:border-white/20",
         className,
       )}
     >

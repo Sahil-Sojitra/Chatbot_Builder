@@ -35,7 +35,7 @@ export function InstantBotSuccess({ result, onReset }: InstantBotSuccessProps) {
       {/* Ambient Radial Spotlight */}
       <div className="absolute -top-20 -right-20 size-56 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative rounded-[26px] border border-zinc-200/90 bg-white p-6 sm:p-8 shadow-xl dark:border-white/[0.08] dark:bg-[#111218]/90 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+      <div className="relative rounded-[26px] border border-zinc-200/90 bg-white p-6 sm:p-8 shadow-xl dark:border-white/[0.08] dark:bg-[#0E1B15]/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
         {/* Top Celebration */}
         <div className="flex flex-col items-center text-center pb-6 border-b border-zinc-200 dark:border-white/[0.08]">
           <div className="size-14 rounded-full bg-emerald-100 border-2 border-emerald-300 text-emerald-700 dark:bg-emerald-500/15 dark:border-emerald-500/35 dark:text-emerald-400 flex items-center justify-center mb-4 shadow-[0_0_24px_rgba(5,150,105,0.25)]">

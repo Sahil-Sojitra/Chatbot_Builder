@@ -172,7 +172,7 @@ export function KnowledgeSourceCard({
   };
 
   return (
-    <Card className="rounded-[22px] border border-zinc-200/80 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.04)] dark:border-white/[0.08] dark:bg-[#111218]/90 dark:shadow-xl backdrop-blur-md transition-all duration-200 hover:border-zinc-300 dark:hover:border-white/20">
+    <Card className="rounded-[22px] border border-zinc-200/80 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.04)] dark:border-white/[0.08] dark:bg-[#0E1B15]/90 dark:shadow-xl backdrop-blur-md transition-all duration-200 hover:border-zinc-300 dark:hover:border-white/20">
       <CardHeader className="flex-col gap-3 sm:flex-row sm:items-start sm:justify-between pb-3">
         <div className="flex items-start gap-3.5 min-w-0 flex-1">
           {/* Document Type Icon */}

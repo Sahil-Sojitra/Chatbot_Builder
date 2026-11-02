@@ -943,7 +943,7 @@ export default function ChatbotOverviewPage() {
 
           {/* Ingestion in Progress / Retrying Card */}
           {(isProcessing || isRetryingIngestion) ? (
-            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/30 dark:bg-[#0E101A] p-4 shadow-sm text-xs space-y-3 animate-in fade-in duration-300">
+            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/30 dark:bg-[#0E1B15] p-4 shadow-sm text-xs space-y-3 animate-in fade-in duration-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="relative flex h-2.5 w-2.5">
@@ -1008,9 +1008,9 @@ export default function ChatbotOverviewPage() {
           )}
 
         {/* Focused Full-Width Playground Card */}
-        <div className="flex flex-col h-[580px] sm:h-[650px] overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0B0D14] shadow-xl">
+        <div className="flex flex-col h-[580px] sm:h-[650px] overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0E1B15] shadow-xl">
           {/* Playground Header & Controls */}
-          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/90 dark:border-white/[0.08] dark:bg-[#121420] px-3 sm:px-4 py-2.5 sm:py-3 gap-2">
+          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/90 dark:border-white/[0.08] dark:bg-[#13241C] px-3 sm:px-4 py-2.5 sm:py-3 gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <span
                 className={`flex h-2 w-2 rounded-full shrink-0 ${
@@ -1090,16 +1090,16 @@ export default function ChatbotOverviewPage() {
           </div>
 
           {/* Chat Stage */}
-          <div className="flex-1 flex items-center justify-center p-2.5 sm:p-5 bg-slate-100/60 dark:bg-[#08090E] architect-grid overflow-hidden">
+          <div className="flex-1 flex items-center justify-center p-2.5 sm:p-5 bg-slate-100/60 dark:bg-[#070D0A] architect-grid overflow-hidden">
             <div
-              className={`flex flex-col rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#10121C] shadow-2xl transition-all duration-200 overflow-hidden ${
+              className={`flex flex-col rounded-2xl border border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#0E1B15] shadow-2xl transition-all duration-200 overflow-hidden ${
                 deviceMode === "widget"
                   ? "w-full max-w-[500px] h-full sm:h-[530px]"
                   : "w-full max-w-[640px] h-full sm:h-[550px]"
               }`}
             >
               {/* Chat Widget Top Header */}
-              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/90 dark:border-white/10 dark:bg-[#151826] px-4 py-3">
+              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/90 dark:border-white/10 dark:bg-[#13241C] px-4 py-3">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white font-semibold text-xs shadow-xs">
                     {botDisplayName.charAt(0).toUpperCase()}
@@ -1238,7 +1238,7 @@ export default function ChatbotOverviewPage() {
               {/* Interactive Input Box */}
               <form
                 onSubmit={handleSendMessage}
-                className="border-t border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#121420] p-3 flex items-center gap-2.5"
+                className="border-t border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#13241C] p-3 flex items-center gap-2.5"
               >
                 <input
                   type="text"
@@ -1288,11 +1288,11 @@ export default function ChatbotOverviewPage() {
         {instantActiveTab === "integration" && (
           <div className="flex flex-col gap-5">
             {/* Instant Bot Integration & Embed Hub Card */}
-            <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121524] p-6 shadow-sm flex flex-col gap-5">
+            <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0E1B15] p-6 shadow-sm flex flex-col gap-5">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-base font-semibold text-white">
+                    <span className="text-base font-semibold text-slate-900 dark:text-white">
                       Website Integration &amp; Floating Widget
                     </span>
                     <Badge
@@ -1397,7 +1397,7 @@ export default function ChatbotOverviewPage() {
                   </span>
                 </div>
 
-                <div className="relative rounded-lg border border-zinc-800 bg-[#050507] p-4">
+                <div className="relative rounded-lg border border-zinc-800 bg-[#050507] dark:bg-[#070D0A] p-4">
                   <pre className="font-mono text-xs text-emerald-300 dark:text-emerald-400 overflow-x-auto leading-relaxed max-h-48">
                     {getActiveIntegrationCode()}
                   </pre>
@@ -1455,7 +1455,7 @@ export default function ChatbotOverviewPage() {
         {instantActiveTab === "settings" && (
           <div className="flex flex-col gap-5">
             {/* Website Knowledge Source Card */}
-            <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121524] p-5 shadow-sm flex flex-col gap-4">
+            <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0E1B15] p-5 shadow-sm flex flex-col gap-4">
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-slate-900 dark:text-white">Website Knowledge Base</span>
@@ -1548,7 +1548,7 @@ export default function ChatbotOverviewPage() {
             </Card>
 
             {/* AI Runtime Configuration & Direct Engine Controls */}
-            <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121524] p-6 shadow-sm flex flex-col gap-5">
+            <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0E1B15] p-6 shadow-sm flex flex-col gap-5">
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
@@ -1745,7 +1745,7 @@ export default function ChatbotOverviewPage() {
                           value={editSessionCustomLimit}
                           onChange={(e) => setEditSessionCustomLimit(e.target.value)}
                           disabled={isSavingSettings}
-                          className="w-24 text-xs font-mono bg-white border-slate-200 text-slate-900 rounded-lg dark:bg-[#0E0F15] dark:border-white/10 dark:text-white text-center"
+                          className="w-24 text-xs font-mono bg-white border-slate-200 text-slate-900 rounded-lg dark:bg-[#070D0A] dark:border-white/10 dark:text-white text-center"
                         />
                         <span className="text-xs text-slate-500 dark:text-slate-400">messages / session</span>
                       </div>
@@ -1967,9 +1967,9 @@ export default function ChatbotOverviewPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Interactive Chat Sandbox Simulator (7 cols) */}
         <div className="flex flex-col gap-3 lg:col-span-7">
-          <Card className="flex flex-col h-[650px] overflow-hidden p-0 rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#121420] shadow-sm">
+          <Card className="flex flex-col h-[650px] overflow-hidden p-0 rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#0E1B15] shadow-sm">
             {/* Simulator Header & Controls */}
-            <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 dark:border-white/10 dark:bg-[#161827] px-4 py-3">
+            <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 dark:border-white/10 dark:bg-[#13241C] px-4 py-3">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-2 w-2 rounded-full bg-emerald-600 anim-live-pulse" />
                 <span className="font-semibold text-sm text-zinc-900 dark:text-white">Interactive Runtime Preview</span>
@@ -2045,15 +2045,15 @@ export default function ChatbotOverviewPage() {
             </div>
 
             {/* Chat Device Stage */}
-            <div className="flex-1 flex items-center justify-center p-2.5 sm:p-5 bg-zinc-100/60 dark:bg-[#08090E] architect-grid overflow-hidden">
+            <div className="flex-1 flex items-center justify-center p-2.5 sm:p-5 bg-zinc-100/60 dark:bg-[#070D0A] architect-grid overflow-hidden">
               <div
-                className={`flex flex-col rounded-2xl border border-zinc-200 bg-white dark:border-white/[0.08] dark:bg-[#10121C] shadow-2xl transition-all duration-200 overflow-hidden ${deviceMode === "widget"
+                className={`flex flex-col rounded-2xl border border-zinc-200 bg-white dark:border-white/[0.08] dark:bg-[#0E1B15] shadow-2xl transition-all duration-200 overflow-hidden ${deviceMode === "widget"
                     ? "w-full max-w-[460px] h-full sm:h-[530px]"
                     : "w-full max-w-[580px] h-full sm:h-[550px]"
                   }`}
               >
                 {/* Chat Widget Top Header */}
-                <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 dark:border-white/10 dark:bg-[#151826] px-4 py-3">
+                <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 dark:border-white/10 dark:bg-[#13241C] px-4 py-3">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white font-semibold text-xs shadow-xs">
                       {chatbot.name.charAt(0).toUpperCase()}
@@ -2206,7 +2206,7 @@ export default function ChatbotOverviewPage() {
                 {/* Interactive Input Box */}
                 <form
                   onSubmit={handleSendMessage}
-                  className="border-t border-zinc-200 bg-white dark:border-white/[0.08] dark:bg-[#121420] p-3 flex items-center gap-2.5"
+                  className="border-t border-zinc-200 bg-white dark:border-white/[0.08] dark:bg-[#13241C] p-3 flex items-center gap-2.5"
                 >
                   <input
                     type="text"
@@ -2244,7 +2244,7 @@ export default function ChatbotOverviewPage() {
         {/* Right Column: Studio Inspector & Embed Code (5 cols) */}
         <div className="flex flex-col gap-4 lg:col-span-5">
           {/* Multi-Tab Integration Snippet Card */}
-          <Card className="rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#121524] p-5 shadow-sm">
+          <Card className="rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#0E1B15] p-5 shadow-sm">
             <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-zinc-900 dark:text-white">
@@ -2290,7 +2290,7 @@ export default function ChatbotOverviewPage() {
 
             <div className="flex flex-col gap-3.5 pt-3.5">
               {/* Public ID Token Box */}
-              <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/80 dark:border-white/10 dark:bg-[#0d0e17] p-3.5">
+              <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/80 dark:border-white/10 dark:bg-white/[0.04] p-3.5">
                 <div className="flex flex-col">
                   <span className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-mono">Public Identifier</span>
                   <span className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100 mt-0.5">{chatbot.publicId}</span>
@@ -2301,7 +2301,7 @@ export default function ChatbotOverviewPage() {
               </div>
 
               {/* Code Snippet Box */}
-              <div className="relative rounded-xl border border-zinc-800 bg-[#050507] p-3.5">
+              <div className="relative rounded-xl border border-zinc-800 bg-[#050507] dark:bg-[#070D0A] p-3.5">
                 <pre className="font-mono text-xs text-emerald-300 dark:text-emerald-400 overflow-x-auto leading-relaxed max-h-40">
                   {activeCodeTab === "script"
                     ? embedScriptCode
@@ -2322,7 +2322,7 @@ export default function ChatbotOverviewPage() {
           </Card>
 
           {/* AI Model Parameters */}
-          <Card className="rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#121524] p-5 shadow-sm">
+          <Card className="rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#0E1B15] p-5 shadow-sm">
             <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/10 pb-3">
               <span className="text-sm font-bold text-zinc-900 dark:text-white">
                 Runtime Parameters
@@ -2359,7 +2359,7 @@ export default function ChatbotOverviewPage() {
           </Card>
 
           {/* Knowledge Sources & Grounding Studio Hub */}
-          <Card className="rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#121524] p-5 shadow-sm flex flex-col gap-3.5">
+          <Card className="rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#0E1B15] p-5 shadow-sm flex flex-col gap-3.5">
             {/* Hidden File Input for Instant Studio Ingestion */}
             <input
               ref={fileInputRef}

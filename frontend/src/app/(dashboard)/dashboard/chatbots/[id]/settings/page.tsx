@@ -476,7 +476,7 @@ export default function ChatbotSettingsPage() {
         </Card>
 
         {/* Chat Usage & Session Rate Limits */}
-        <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121524] shadow-sm">
+        <Card className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0E1B15] shadow-sm">
           <CardHeader>
             <div className="flex items-center gap-2">
               <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white font-bold">
@@ -567,7 +567,7 @@ export default function ChatbotSettingsPage() {
                     onChange={(e) => setSessionCustomLimit(e.target.value)}
                     disabled={isSubmitting}
                     placeholder="e.g. 10"
-                    className="w-28 font-mono text-sm bg-white border border-slate-200 text-slate-900 rounded-lg dark:bg-[#0E0F15] dark:border-white/10 dark:text-white"
+                    className="w-28 font-mono text-sm bg-white border border-slate-200 text-slate-900 rounded-lg dark:bg-[#070D0A] dark:border-white/10 dark:text-white"
                   />
                   <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
                     <span className="font-medium">Quick presets:</span>

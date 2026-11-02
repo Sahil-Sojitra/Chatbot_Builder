@@ -112,7 +112,7 @@ function ChatbotDetailShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-[#0a0a0a] text-xs font-mono text-zinc-300">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-200 bg-zinc-50 dark:border-white/[0.08] dark:bg-[#0E1B15] text-xs font-mono text-zinc-300">
             <span className="text-zinc-500">ID:</span>
             <span className="font-semibold text-zinc-900 dark:text-white">{chatbot.publicId}</span>
           </div>

@@ -159,7 +159,7 @@ export function InstantBotUrlForm({
       <div className="absolute -top-16 -right-16 size-48 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-16 -left-16 size-48 bg-[#7A4CFF]/15 rounded-full blur-3xl pointer-events-none" />
 
-      <Card className="relative rounded-[26px] border border-zinc-200/80 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#111218]/90 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl overflow-hidden">
+      <Card className="relative rounded-[26px] border border-zinc-200/80 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#0E1B15]/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl overflow-hidden">
         <CardHeader className="pb-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
@@ -376,7 +376,7 @@ export function InstantBotUrlForm({
                     value={sessionCustomLimit}
                     onChange={(e) => setSessionCustomLimit(e.target.value)}
                     disabled={isSubmitting}
-                    className="h-9 w-24 text-xs font-mono font-bold bg-white border border-zinc-200 text-zinc-900 text-center rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:bg-[#0E0F15] dark:border-white/10 dark:text-white"
+                    className="h-9 w-24 text-xs font-mono font-bold bg-white border border-zinc-200 text-zinc-900 text-center rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:bg-[#070D0A] dark:border-white/10 dark:text-white"
                   />
                   <div className="flex items-center gap-1.5 text-[11px] ml-auto">
                     {[5, 10, 20].map((preset) => (

@@ -50,7 +50,7 @@ export function FaqAccordion() {
         return (
           <div
             key={faq.question}
-            className="rounded-[20px] border border-zinc-200/80 bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#111218]/90 transition-all"
+            className="rounded-[20px] border border-zinc-200/80 bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#0E1B15]/90 transition-all"
           >
             <button
               type="button"

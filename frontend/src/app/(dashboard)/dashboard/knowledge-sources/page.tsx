@@ -157,7 +157,7 @@ export default function GlobalKnowledgeSourcesPage() {
         </div>
       </div>
 
-      <Card className="rounded-[26px] border border-zinc-200/80 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#111218]/90 dark:shadow-2xl backdrop-blur-xl">
+      <Card className="rounded-[26px] border border-zinc-200/80 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#0E1B15]/90 dark:shadow-2xl backdrop-blur-xl">
         <CardHeader className="flex-row items-center justify-between pb-3">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">

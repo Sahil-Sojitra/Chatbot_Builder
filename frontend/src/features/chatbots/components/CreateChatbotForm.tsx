@@ -511,7 +511,7 @@ export function CreateChatbotForm({ onBack }: CreateChatbotFormProps) {
           STEP 1: MODEL SELECTION & BRING YOUR OWN KEY (BYOK)
       ========================================================================= */}
       {currentStep === 1 && (
-        <Card className="rounded-3xl border border-zinc-200/90 bg-white shadow-lg dark:border-white/[0.08] dark:bg-[#0E1015]/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+        <Card className="rounded-3xl border border-zinc-200/90 bg-white shadow-lg dark:border-white/[0.08] dark:bg-[#0E1B15]/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
           <CardHeader className="pb-5 border-b border-zinc-100 dark:border-white/[0.06]">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
@@ -669,7 +669,7 @@ export function CreateChatbotForm({ onBack }: CreateChatbotFormProps) {
           STEP 2: BOT IDENTITY, PERSONA & PROMPTS
       ========================================================================= */}
       {currentStep === 2 && (
-        <Card className="rounded-3xl border border-zinc-200/90 bg-white shadow-lg dark:border-white/[0.08] dark:bg-[#0E1015]/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+        <Card className="rounded-3xl border border-zinc-200/90 bg-white shadow-lg dark:border-white/[0.08] dark:bg-[#0E1B15]/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
           <CardHeader className="pb-5 border-b border-zinc-100 dark:border-white/[0.06]">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
@@ -899,7 +899,7 @@ export function CreateChatbotForm({ onBack }: CreateChatbotFormProps) {
           STEP 3: MULTI-SOURCE KNOWLEDGE INGESTION
       ========================================================================= */}
       {currentStep === 3 && (
-        <Card className="rounded-3xl border border-zinc-200/90 bg-white shadow-lg dark:border-white/[0.08] dark:bg-[#0E1015]/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+        <Card className="rounded-3xl border border-zinc-200/90 bg-white shadow-lg dark:border-white/[0.08] dark:bg-[#0E1B15]/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
           <CardHeader className="pb-5 border-b border-zinc-100 dark:border-white/[0.06]">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
@@ -924,7 +924,7 @@ export function CreateChatbotForm({ onBack }: CreateChatbotFormProps) {
               className={`relative flex flex-col items-center justify-center rounded-3xl border-2 border-dashed p-8 transition-all cursor-pointer ${
                 isDragging
                   ? "border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/20"
-                  : "border-zinc-300 bg-zinc-50/70 hover:border-emerald-500 hover:bg-emerald-50/30 dark:border-white/15 dark:bg-[#0E1015]/60 dark:hover:border-emerald-500/50 dark:hover:bg-emerald-950/20"
+                  : "border-zinc-300 bg-zinc-50/70 hover:border-emerald-500 hover:bg-emerald-50/30 dark:border-white/15 dark:bg-white/[0.03] dark:hover:border-emerald-500/50 dark:hover:bg-emerald-950/20"
               }`}
             >
               <input
@@ -1066,7 +1066,7 @@ export function CreateChatbotForm({ onBack }: CreateChatbotFormProps) {
       {/* Submission & Ingestion Overlay Modal */}
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-6 sm:p-8 shadow-2xl text-center space-y-4 dark:border-white/10 dark:bg-[#0E1015]">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-6 sm:p-8 shadow-2xl text-center space-y-4 dark:border-white/10 dark:bg-[#0E1B15]">
             <Spinner className="mx-auto h-8 w-8 text-emerald-600 dark:text-emerald-400" />
             <div>
               <h3 className="font-display text-lg font-bold text-zinc-900 dark:text-white">

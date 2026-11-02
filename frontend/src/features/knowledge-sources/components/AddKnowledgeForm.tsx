@@ -257,7 +257,7 @@ export function AddKnowledgeForm({ chatbotId }: AddKnowledgeFormProps) {
   };
 
   return (
-    <Card className="max-w-xl mx-auto rounded-[26px] border border-zinc-200/80 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#111218]/90 dark:shadow-2xl backdrop-blur-xl">
+    <Card className="max-w-xl mx-auto rounded-[26px] border border-zinc-200/80 bg-white shadow-xl dark:border-white/[0.08] dark:bg-[#0E1B15]/90 dark:shadow-2xl backdrop-blur-xl">
       <CardHeader>
         <div className="flex items-center gap-2 mb-1">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
