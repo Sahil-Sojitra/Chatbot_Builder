@@ -1895,10 +1895,8 @@ export default function ChatbotOverviewPage() {
       {/* Top Deployment Control Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/80 dark:border-zinc-800 pb-5">
         <div className="flex items-start gap-3.5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-[#0d0d0d] text-zinc-200">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L1 21h22L12 2z" />
-            </svg>
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold text-lg shadow-sm">
+            {chatbot.name.charAt(0).toUpperCase()}
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
@@ -1915,18 +1913,18 @@ export default function ChatbotOverviewPage() {
                 {chatbot.status === "ACTIVE" ? "Ready" : chatbot.status}
               </Badge>
               {chatbot.ragEnabled ? (
-                <span className="rounded-md bg-emerald-950/40 border border-emerald-800/60 px-2 py-0.5 text-xs font-medium text-emerald-400">
+                <span className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-500/25 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-400 px-2 py-0.5 text-xs font-semibold">
                   RAG Online
                 </span>
               ) : null}
             </div>
 
-            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
-              <span className="font-mono text-zinc-300">/{chatbot.slug}</span>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <span className="font-mono text-zinc-800 dark:text-zinc-200">/{chatbot.slug}</span>
               <span>&middot;</span>
-              <span className="font-mono text-xs text-zinc-500">Public ID: {chatbot.publicId}</span>
+              <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">Public ID: {chatbot.publicId}</span>
               <span>&middot;</span>
-              <span className="text-zinc-400 font-mono text-xs">{chatbot.provider || "openai"}:{chatbot.model || "gpt-4o-mini"}</span>
+              <span className="text-zinc-500 dark:text-zinc-400 font-mono text-xs">{chatbot.provider || "openai"}:{chatbot.model || "gpt-4o-mini"}</span>
             </div>
           </div>
         </div>
@@ -1957,13 +1955,13 @@ export default function ChatbotOverviewPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Interactive Chat Sandbox Simulator (7 cols) */}
         <div className="flex flex-col gap-3 lg:col-span-7">
-          <Card className="flex flex-col h-[650px] overflow-hidden p-0 rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#000000]">
+          <Card className="flex flex-col h-[650px] overflow-hidden p-0 rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#121420] shadow-sm">
             {/* Simulator Header & Controls */}
-            <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-[#0a0a0a] px-4 py-3">
+            <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 dark:border-white/10 dark:bg-[#161827] px-4 py-3">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-2 w-2 rounded-full bg-emerald-600 anim-live-pulse" />
-                <span className="font-medium text-sm text-zinc-200">Interactive Runtime Preview</span>
-                <span className="text-xs text-zinc-500 bg-zinc-900 rounded px-1.5 py-0.5 border border-zinc-800 font-mono">
+                <span className="font-semibold text-sm text-zinc-900 dark:text-white">Interactive Runtime Preview</span>
+                <span className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-200/70 dark:bg-white/10 rounded px-1.5 py-0.5 border border-zinc-300 dark:border-white/10 font-mono">
                   Live Test
                 </span>
               </div>
@@ -1973,7 +1971,7 @@ export default function ChatbotOverviewPage() {
                 <button
                   type="button"
                   onClick={handleToggleFloatingWidget}
-                  className="rounded px-2.5 py-1 text-xs font-medium border border-emerald-500/30 text-emerald-300 hover:bg-emerald-950/30 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+                  className="rounded-lg px-2.5 py-1 text-xs font-medium border border-emerald-300 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
                   title="Launch the floating bubble widget directly on this screen to preview it"
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 anim-live-pulse shrink-0" />
@@ -1999,24 +1997,24 @@ export default function ChatbotOverviewPage() {
                       setInputValue("");
                       setChatError(null);
                     }}
-                    className="rounded px-2 py-1 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                    className="rounded-lg px-2 py-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors cursor-pointer flex items-center gap-1 shrink-0"
                     title="Reset conversation"
                   >
-                    <svg className="w-3 h-3 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3 h-3 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     <span className="hidden sm:inline">Clear</span>
                   </button>
                 )}
 
-                <div className="h-3 w-px bg-zinc-800 hidden md:block" />
+                <div className="h-3 w-px bg-zinc-200 dark:bg-white/10 hidden md:block" />
 
                 <button
                   type="button"
                   onClick={() => setDeviceMode("widget")}
-                  className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${deviceMode === "widget"
-                      ? "bg-zinc-800 text-white font-semibold"
-                      : "text-zinc-400 hover:text-zinc-200"
+                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${deviceMode === "widget"
+                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold shadow-xs"
+                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
                     }`}
                 >
                   Widget View
@@ -2024,9 +2022,9 @@ export default function ChatbotOverviewPage() {
                 <button
                   type="button"
                   onClick={() => setDeviceMode("mobile")}
-                  className={`rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${deviceMode === "mobile"
-                      ? "bg-zinc-800 text-white font-semibold"
-                      : "text-zinc-400 hover:text-zinc-200"
+                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${deviceMode === "mobile"
+                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold shadow-xs"
+                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
                     }`}
                 >
                   Full Dock
@@ -2035,28 +2033,38 @@ export default function ChatbotOverviewPage() {
             </div>
 
             {/* Chat Device Stage */}
-            <div className="flex-1 flex items-center justify-center p-5 bg-zinc-100/70 dark:bg-[#050505] architect-grid overflow-hidden">
+            <div className="flex-1 flex items-center justify-center p-2.5 sm:p-5 bg-zinc-100/60 dark:bg-[#08090E] architect-grid overflow-hidden">
               <div
-                className={`flex flex-col rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#0a0a0a] shadow-xl transition-all duration-200 overflow-hidden ${deviceMode === "widget"
-                    ? "w-full max-w-[440px] h-[530px]"
-                    : "w-full max-w-[480px] h-[550px]"
+                className={`flex flex-col rounded-2xl border border-zinc-200 bg-white dark:border-white/[0.08] dark:bg-[#10121C] shadow-2xl transition-all duration-200 overflow-hidden ${deviceMode === "widget"
+                    ? "w-full max-w-[460px] h-full sm:h-[530px]"
+                    : "w-full max-w-[580px] h-full sm:h-[550px]"
                   }`}
               >
                 {/* Chat Widget Top Header */}
-                <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-[#111111] px-4 py-3">
+                <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 dark:border-white/10 dark:bg-[#151826] px-4 py-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-6 w-6 items-center justify-center rounded bg-zinc-800 border border-zinc-700 text-white font-semibold text-xs">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white font-semibold text-xs shadow-xs">
                       {chatbot.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white leading-tight">{chatbot.name}</p>
-                      <p className="text-xs text-zinc-400">
+                      <p className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-white leading-tight">{chatbot.name}</p>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                         {chatbot.status === "ACTIVE" ? "Ready · Serving queries" : "Preview Sandbox Mode"}
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-zinc-400 text-sm hover:text-zinc-200 cursor-pointer">&times;</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMessages([]);
+                      setInputValue("");
+                    }}
+                    className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-base font-medium cursor-pointer"
+                    title="Reset"
+                  >
+                    &times;
+                  </button>
                 </div>
 
                 {/* Message Stream */}
@@ -2065,20 +2073,20 @@ export default function ChatbotOverviewPage() {
                   className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm scroll-smooth"
                 >
                   {messages.length === 0 && (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-5 my-auto">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 my-auto">
                       <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold mb-3 shadow-sm text-sm">
                         {chatbot.name.charAt(0).toUpperCase()}
                       </div>
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
                         Welcome to {chatbot.name}!
                       </h3>
-                      <p className="text-xs text-zinc-400 mt-1 max-w-xs leading-relaxed">
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 max-w-sm leading-relaxed">
                         {chatbot.description ||
                           "Ask any question about your ingested documents or click a starter question below:"}
                       </p>
 
                       {/* Interactive Starter Questions Chips */}
-                      <div className="mt-4 flex flex-col gap-2 w-full max-w-sm">
+                      <div className="mt-4 flex flex-col gap-2 w-full max-w-md">
                         {(chatbot.starterQuestions && chatbot.starterQuestions.length > 0
                           ? chatbot.starterQuestions
                           : [
@@ -2093,11 +2101,28 @@ export default function ChatbotOverviewPage() {
                             type="button"
                             disabled={isLoadingResponse || isStreaming}
                             onClick={() => void sendQuestion(question)}
-                            className="text-left text-xs text-zinc-300 bg-zinc-900/70 hover:bg-zinc-800 hover:text-white border border-zinc-800 hover:border-zinc-700 rounded-lg px-3 py-2 transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center justify-between gap-2 group shadow-xs"
+                            className="text-left text-xs text-zinc-800 dark:text-zinc-200 bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-zinc-200 dark:border-white/10 hover:border-emerald-300 dark:hover:border-emerald-500/40 rounded-xl px-3.5 py-2.5 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none flex items-center justify-between gap-2.5 group shadow-xs"
                           >
-                            <span className="truncate font-medium">{question}</span>
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="p-1 rounded-md border border-zinc-200 bg-white text-zinc-500 group-hover:text-emerald-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:group-hover:text-emerald-300 transition-colors shrink-0">
+                                <svg
+                                  className="w-3.5 h-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.874-.75 2.25 2.25 0 01.077-.52 5.955 5.955 0 01-1.39-3.95C3.223 15.75 3 13.924 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
+                                  />
+                                </svg>
+                              </span>
+                              <span className="truncate font-medium">{question}</span>
+                            </div>
                             <svg
-                              className="w-3 h-3 text-zinc-500 group-hover:text-emerald-400 shrink-0 transition-colors"
+                              className="w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -2142,12 +2167,12 @@ export default function ChatbotOverviewPage() {
                   ))}
 
                   {isLoadingResponse ? (
-                    <div className="self-start flex items-center gap-2.5 rounded-lg bg-zinc-900/90 border border-emerald-500/30 px-3.5 py-2.5 text-xs text-zinc-300 font-mono shadow-md animate-in fade-in duration-200">
+                    <div className="self-start flex items-center gap-2.5 rounded-lg bg-zinc-900/90 border border-emerald-500/30 px-3.5 py-2.5 text-xs text-zinc-200 font-mono shadow-md animate-in fade-in duration-200">
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                       </span>
-                      <span className="text-emerald-200 font-medium">{thinkingStage}</span>
+                      <span className="text-emerald-300 font-medium">{thinkingStage}</span>
                     </div>
                   ) : null}
                   <div ref={messagesEndRef} className="h-0 w-0 flex-shrink-0" />
@@ -2169,7 +2194,7 @@ export default function ChatbotOverviewPage() {
                 {/* Interactive Input Box */}
                 <form
                   onSubmit={handleSendMessage}
-                  className="border-t border-slate-200 bg-white dark:border-white/[0.08] dark:bg-[#121420] p-3 flex items-center gap-2.5"
+                  className="border-t border-zinc-200 bg-white dark:border-white/[0.08] dark:bg-[#121420] p-3 flex items-center gap-2.5"
                 >
                   <input
                     type="text"
@@ -2177,13 +2202,13 @@ export default function ChatbotOverviewPage() {
                     disabled={isLoadingResponse || isStreaming}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder={isStreaming ? "Streaming answer…" : "Ask a test question…"}
-                    className="flex-1 rounded-full border border-white/[0.1] bg-white/[0.03] px-5 py-2.5 text-sm text-white placeholder:text-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-50 font-sans transition-colors"
+                    className="flex-1 rounded-full border border-zinc-200 bg-zinc-50 px-5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed font-sans transition-colors dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-white dark:placeholder:text-zinc-500"
                   />
                   {isStreaming ? (
                     <button
                       type="button"
                       onClick={handleStopStreaming}
-                      className="h-9 px-4 rounded-full bg-white/[0.08] hover:bg-white/[0.12] text-white border border-white/[0.1] cursor-pointer flex items-center gap-1.5 transition-colors text-xs font-semibold"
+                      className="h-9 px-4 rounded-full bg-zinc-200 hover:bg-zinc-300 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-zinc-800 dark:text-white border border-zinc-300 dark:border-white/[0.1] cursor-pointer flex items-center gap-1.5 transition-colors text-xs font-semibold"
                       title="Stop generation"
                     >
                       <span className="h-2 w-2 rounded-sm bg-emerald-600" />
@@ -2207,13 +2232,13 @@ export default function ChatbotOverviewPage() {
         {/* Right Column: Studio Inspector & Embed Code (5 cols) */}
         <div className="flex flex-col gap-4 lg:col-span-5">
           {/* Multi-Tab Integration Snippet Card */}
-          <Card className="rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#000000] p-5">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+          <Card className="rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#121524] p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                <span className="text-sm font-bold text-zinc-900 dark:text-white">
                   Integration & Embed
                 </span>
-                <span className="text-xs text-zinc-500 font-mono">CLIENT SDK</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">CLIENT SDK</span>
               </div>
 
               {/* Snippet format switcher */}
@@ -2221,9 +2246,9 @@ export default function ChatbotOverviewPage() {
                 <button
                   type="button"
                   onClick={() => setActiveCodeTab("script")}
-                  className={`rounded px-2 py-0.5 cursor-pointer transition-colors ${activeCodeTab === "script"
-                      ? "bg-zinc-800 text-white font-medium"
-                      : "text-zinc-500 hover:text-zinc-300"
+                  className={`rounded-md px-2.5 py-1 cursor-pointer transition-colors ${activeCodeTab === "script"
+                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold shadow-xs"
+                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
                     }`}
                 >
                   HTML
@@ -2231,9 +2256,9 @@ export default function ChatbotOverviewPage() {
                 <button
                   type="button"
                   onClick={() => setActiveCodeTab("curl")}
-                  className={`rounded px-2 py-0.5 cursor-pointer transition-colors ${activeCodeTab === "curl"
-                      ? "bg-zinc-800 text-white font-medium"
-                      : "text-zinc-500 hover:text-zinc-300"
+                  className={`rounded-md px-2.5 py-1 cursor-pointer transition-colors ${activeCodeTab === "curl"
+                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold shadow-xs"
+                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
                     }`}
                 >
                   cURL
@@ -2241,9 +2266,9 @@ export default function ChatbotOverviewPage() {
                 <button
                   type="button"
                   onClick={() => setActiveCodeTab("json")}
-                  className={`rounded px-2 py-0.5 cursor-pointer transition-colors ${activeCodeTab === "json"
-                      ? "bg-zinc-800 text-white font-medium"
-                      : "text-zinc-500 hover:text-zinc-300"
+                  className={`rounded-md px-2.5 py-1 cursor-pointer transition-colors ${activeCodeTab === "json"
+                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold shadow-xs"
+                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
                     }`}
                 >
                   JSON
@@ -2253,19 +2278,19 @@ export default function ChatbotOverviewPage() {
 
             <div className="flex flex-col gap-3.5 pt-3.5">
               {/* Public ID Token Box */}
-              <div className="flex items-center justify-between rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#0a0a0a] p-3">
+              <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/80 dark:border-white/10 dark:bg-[#0d0e17] p-3.5">
                 <div className="flex flex-col">
-                  <span className="text-xs text-zinc-500 uppercase tracking-wider font-mono">Public Identifier</span>
-                  <span className="font-mono text-sm font-semibold text-zinc-200 mt-0.5">{chatbot.publicId}</span>
+                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-mono">Public Identifier</span>
+                  <span className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100 mt-0.5">{chatbot.publicId}</span>
                 </div>
-                <Button size="sm" variant="secondary" className="h-7 text-xs font-mono" onClick={() => void handleCopyPublicId()}>
+                <Button size="sm" variant="secondary" className="h-8 text-xs font-mono cursor-pointer" onClick={() => void handleCopyPublicId()}>
                   {copiedId ? "Copied!" : "Copy ID"}
                 </Button>
               </div>
 
               {/* Code Snippet Box */}
-              <div className="relative rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#0a0a0a] p-3">
-                <pre className="font-mono text-xs text-zinc-300 overflow-x-auto leading-relaxed max-h-40">
+              <div className="relative rounded-xl border border-zinc-800 bg-[#050507] p-3.5">
+                <pre className="font-mono text-xs text-emerald-300 dark:text-emerald-400 overflow-x-auto leading-relaxed max-h-40">
                   {activeCodeTab === "script"
                     ? embedScriptCode
                     : activeCodeTab === "curl"
@@ -2275,7 +2300,7 @@ export default function ChatbotOverviewPage() {
                 <Button
                   size="default"
                   variant="secondary"
-                  className="mt-3 w-full text-xs font-medium"
+                  className="mt-3 w-full text-xs font-medium cursor-pointer"
                   onClick={() => void handleCopyScript()}
                 >
                   {copiedScript ? "✓ Copied to Clipboard" : "Copy Embed Snippet"}
@@ -2285,44 +2310,44 @@ export default function ChatbotOverviewPage() {
           </Card>
 
           {/* AI Model Parameters */}
-          <Card className="rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#000000] p-5">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="text-sm font-bold text-slate-900 dark:text-white">
+          <Card className="rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#121524] p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/10 pb-3">
+              <span className="text-sm font-bold text-zinc-900 dark:text-white">
                 Runtime Parameters
               </span>
               <Link
                 href={`/dashboard/chatbots/${chatbot.id}/settings`}
-                className="text-xs text-zinc-400 hover:text-white font-medium"
+                className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium"
               >
                 Edit Parameters &rarr;
               </Link>
             </div>
-            <div className="flex flex-col divide-y divide-zinc-800/80 pt-1 text-sm">
+            <div className="flex flex-col divide-y divide-zinc-200 dark:divide-white/10 pt-1 text-sm">
               <div className="flex items-center justify-between py-2.5">
-                <span className="text-zinc-400">LLM Provider</span>
-                <span className="text-zinc-100 font-medium capitalize">{chatbot.provider || "OpenAI"}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">LLM Provider</span>
+                <span className="text-zinc-900 dark:text-white font-medium capitalize">{chatbot.provider || "OpenAI"}</span>
               </div>
               <div className="flex items-center justify-between py-2.5">
-                <span className="text-zinc-400">Model Name</span>
-                <span className="text-zinc-100 font-mono font-medium">{chatbot.model || "gpt-4o-mini"}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">Model Name</span>
+                <span className="text-zinc-900 dark:text-white font-mono font-medium">{chatbot.model || "gpt-4o-mini"}</span>
               </div>
               <div className="flex items-center justify-between py-2.5">
-                <span className="text-zinc-400">Sampling Temperature</span>
-                <span className="text-zinc-100 font-mono">{chatbot.temperature ?? 0.7}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">Sampling Temperature</span>
+                <span className="text-zinc-900 dark:text-white font-mono">{chatbot.temperature ?? 0.7}</span>
               </div>
               <div className="flex items-center justify-between py-2.5">
-                <span className="text-zinc-400">Max Generation Tokens</span>
-                <span className="text-zinc-100 font-mono">{chatbot.maxTokens ?? 2048}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">Max Generation Tokens</span>
+                <span className="text-zinc-900 dark:text-white font-mono">{chatbot.maxTokens ?? 2048}</span>
               </div>
               <div className="flex items-center justify-between py-2.5">
-                <span className="text-zinc-400">Storage Backend</span>
-                <span className="text-zinc-100 font-mono text-xs">Backblaze B2 / S3</span>
+                <span className="text-zinc-600 dark:text-zinc-400">Storage Backend</span>
+                <span className="text-zinc-900 dark:text-white font-mono text-xs">Backblaze B2 / S3</span>
               </div>
             </div>
           </Card>
 
           {/* Knowledge Sources & Grounding Studio Hub */}
-          <Card className="rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#000000] p-5 flex flex-col gap-3.5">
+          <Card className="rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#121524] p-5 shadow-sm flex flex-col gap-3.5">
             {/* Hidden File Input for Instant Studio Ingestion */}
             <input
               ref={fileInputRef}
@@ -2332,12 +2357,12 @@ export default function ChatbotOverviewPage() {
               className="hidden"
             />
 
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                <span className="text-sm font-bold text-zinc-900 dark:text-white">
                   Knowledge Sources
                 </span>
-                <span className="font-mono text-xs text-zinc-500 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded">
+                <span className="font-mono text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/10 px-2 py-0.5 rounded-md">
                   {knowledgeSources.length} {knowledgeSources.length === 1 ? "source" : "sources"}
                 </span>
               </div>
@@ -2358,11 +2383,11 @@ export default function ChatbotOverviewPage() {
                 variant="secondary"
                 disabled={isUploadingSource}
                 onClick={() => fileInputRef.current?.click()}
-                className="h-8 text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 cursor-pointer flex items-center gap-1.5 flex-1"
+                className="h-8 text-xs font-semibold bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border border-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] dark:text-white dark:border-white/10 cursor-pointer flex items-center justify-center gap-1.5 flex-1 rounded-lg"
               >
                 {isUploadingSource ? (
                   <>
-                    <svg className="animate-spin w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none">
+                    <svg className="animate-spin w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
@@ -2370,7 +2395,7 @@ export default function ChatbotOverviewPage() {
                   </>
                 ) : (
                   <>
-                    <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                     </svg>
                     <span>Upload Document</span>
@@ -2380,7 +2405,7 @@ export default function ChatbotOverviewPage() {
 
               <Link
                 href={`/dashboard/chatbots/${chatbot.id}/knowledge-sources/new`}
-                className="h-8 px-3 rounded-md text-xs font-medium border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                className="h-8 px-3 rounded-lg text-xs font-medium border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 hover:text-zinc-900 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-zinc-300 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1 shrink-0"
               >
                 <span>+ Web URL</span>
               </Link>
@@ -2419,8 +2444,8 @@ export default function ChatbotOverviewPage() {
                 Loading knowledge sources…
               </div>
             ) : knowledgeSources.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-zinc-800 p-4 text-center">
-                <p className="text-xs text-zinc-400">
+              <div className="rounded-xl border border-dashed border-zinc-200 dark:border-white/10 p-4 text-center bg-zinc-50/50 dark:bg-transparent">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
                   No documents ingested yet. Ground your chatbot by uploading PDF, DOCX, PPTX, CSV, TXT, or Image files.
                 </p>
               </div>
@@ -2436,52 +2461,52 @@ export default function ChatbotOverviewPage() {
                   return (
                     <div
                       key={source.id}
-                      className="flex items-center justify-between gap-2.5 rounded-md border border-zinc-800/80 bg-zinc-950/60 px-3 py-2 text-xs"
+                      className="flex items-center justify-between gap-2.5 rounded-lg border border-zinc-200 bg-zinc-50/80 text-zinc-800 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-200 px-3 py-2 text-xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         {/* Format Badge */}
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold shrink-0 ${
                           isUrl
-                            ? "bg-violet-500/20 text-violet-300"
+                            ? "bg-violet-500/20 text-violet-700 dark:text-violet-300"
                             : ext === "pdf"
-                            ? "bg-rose-500/20 text-rose-300"
+                            ? "bg-rose-500/20 text-rose-700 dark:text-rose-300"
                             : ext === "docx" || ext === "doc"
-                            ? "bg-sky-500/20 text-sky-300"
+                            ? "bg-sky-500/20 text-sky-700 dark:text-sky-300"
                             : ext === "pptx" || ext === "ppt"
-                            ? "bg-amber-500/20 text-amber-300"
+                            ? "bg-amber-500/20 text-amber-700 dark:text-amber-300"
                             : ext === "csv"
-                            ? "bg-emerald-500/20 text-emerald-300"
+                            ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
                             : ["png", "jpg", "jpeg", "webp"].includes(ext)
-                            ? "bg-purple-500/20 text-purple-300"
-                            : "bg-zinc-800 text-zinc-300"
+                            ? "bg-purple-500/20 text-purple-700 dark:text-purple-300"
+                            : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
                         }`}>
                           {isUrl ? "URL" : ext.toUpperCase() || "DOC"}
                         </span>
 
-                        <span className="truncate text-zinc-200 font-medium font-mono" title={source.name}>
+                        <span className="truncate text-zinc-800 dark:text-zinc-200 font-medium font-mono" title={source.name}>
                           {source.name}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
                         {isReady ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-mono">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                             Ready
                           </span>
                         ) : isProcessing ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-amber-400 font-mono">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-mono">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
                             Indexing…
                           </span>
                         ) : isFailed ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] text-rose-400 font-mono">Failed</span>
+                            <span className="text-[11px] text-rose-600 dark:text-rose-400 font-mono">Failed</span>
                             <button
                               type="button"
                               onClick={() => void handleRetryCustomSource(source.id)}
                               disabled={retryingSourceId === source.id}
-                              className="px-2 py-0.5 rounded text-[10px] bg-rose-950 border border-rose-800 text-rose-200 hover:bg-rose-900 cursor-pointer disabled:opacity-50"
+                              className="px-2 py-0.5 rounded text-[10px] bg-rose-100 border border-rose-300 text-rose-700 hover:bg-rose-200 dark:bg-rose-950 dark:border-rose-800 dark:text-rose-200 dark:hover:bg-rose-900 cursor-pointer disabled:opacity-50"
                             >
                               {retryingSourceId === source.id ? "…" : "Retry"}
                             </button>
@@ -2496,13 +2521,13 @@ export default function ChatbotOverviewPage() {
               </div>
             )}
 
-            <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex items-center justify-between">
-              <span className="text-[11px] text-zinc-500">
+            <div className="pt-2 border-t border-zinc-200 dark:border-white/10 flex items-center justify-between">
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
                 Top {chatbot.ragTopK || 5} chunks · Threshold {chatbot.ragSimilarityThreshold || 0.7}
               </span>
               <Link
                 href={`/dashboard/chatbots/${chatbot.id}/knowledge-sources`}
-                className="text-xs text-zinc-400 hover:text-white font-medium flex items-center gap-1"
+                className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1"
               >
                 <span>Full Manager</span>
                 <span>&rarr;</span>
