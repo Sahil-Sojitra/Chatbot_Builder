@@ -458,13 +458,22 @@ export default function ChatbotOverviewPage() {
 
     if (typeof window !== "undefined") {
       const apiHost =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        process.env.NEXT_PUBLIC_API_URL ||
+        (window.location.origin.startsWith("http")
+          ? window.location.origin
+          : "http://localhost:5000");
+
+      const initialConfig = {
+        name: botDisplayName || chatbot.name,
+        description: chatbot.description,
+        starterQuestions: chatbot.starterQuestions && chatbot.starterQuestions.length > 0 ? chatbot.starterQuestions : undefined,
+      };
 
       if ((window as any).ChatbotWidget) {
         if (typeof (window as any).ChatbotWidget.show === "function") {
           (window as any).ChatbotWidget.show();
         }
-        (window as any).ChatbotWidget.init(chatbot.publicId, apiHost);
+        (window as any).ChatbotWidget.init(chatbot.publicId, apiHost, initialConfig);
         setTimeout(() => {
           if ((window as any).ChatbotWidget) {
             (window as any).ChatbotWidget.open();
@@ -481,6 +490,16 @@ export default function ChatbotOverviewPage() {
       script.src = "/widget.js";
       script.setAttribute("data-chatbot-id", chatbot.publicId);
       script.setAttribute("data-api-host", apiHost);
+      script.setAttribute("data-bot-name", botDisplayName || chatbot.name);
+      if (chatbot.description) {
+        script.setAttribute("data-bot-description", chatbot.description);
+      }
+      if (chatbot.starterQuestions && chatbot.starterQuestions.length > 0) {
+        script.setAttribute(
+          "data-starter-questions",
+          JSON.stringify(chatbot.starterQuestions),
+        );
+      }
       script.defer = true;
       document.body.appendChild(script);
 
@@ -489,6 +508,9 @@ export default function ChatbotOverviewPage() {
           if ((window as any).ChatbotWidget) {
             if (typeof (window as any).ChatbotWidget.show === "function") {
               (window as any).ChatbotWidget.show();
+            }
+            if (typeof (window as any).ChatbotWidget.init === "function") {
+              (window as any).ChatbotWidget.init(chatbot.publicId, apiHost, initialConfig);
             }
             (window as any).ChatbotWidget.open();
           }
@@ -1114,9 +1136,10 @@ export default function ChatbotOverviewPage() {
                       {(chatbot.starterQuestions && chatbot.starterQuestions.length > 0
                         ? chatbot.starterQuestions
                         : [
-                          "What products or services do you offer?",
-                          "How do I contact customer support?",
+                          `What products or services does ${botDisplayName} offer?`,
+                          `How do I get started with ${botDisplayName}?`,
                           "Where can I find pricing or subscription plans?",
+                          "How can I get in touch with customer support?",
                         ]
                       ).map((question, idx) => (
                         <button
@@ -2059,9 +2082,10 @@ export default function ChatbotOverviewPage() {
                         {(chatbot.starterQuestions && chatbot.starterQuestions.length > 0
                           ? chatbot.starterQuestions
                           : [
-                            "Summarize key information from the knowledge base",
-                            "What topics and services are documented?",
-                            "How do I get started?",
+                            `What products or services does ${botDisplayName} offer?`,
+                            `How do I get started with ${botDisplayName}?`,
+                            "Where can I find pricing or subscription plans?",
+                            "How can I get in touch with customer support?",
                           ]
                         ).map((question, idx) => (
                           <button

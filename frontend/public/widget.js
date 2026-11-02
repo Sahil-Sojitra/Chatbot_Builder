@@ -35,6 +35,15 @@
     window.CHATBOT_BUILDER_ID ||
     "";
 
+  const scriptBotName = currentScript && currentScript.getAttribute("data-bot-name");
+  const scriptBotDesc = currentScript && currentScript.getAttribute("data-bot-description");
+  let scriptStarterQuestions = [];
+  if (currentScript && currentScript.getAttribute("data-starter-questions")) {
+    try {
+      scriptStarterQuestions = JSON.parse(currentScript.getAttribute("data-starter-questions"));
+    } catch {}
+  }
+
   // API Host derivation
   let apiHost =
     (currentScript && currentScript.getAttribute("data-api-host")) ||
@@ -51,6 +60,14 @@
       }
     } catch {
       apiHost = "http://localhost:5000";
+    }
+  }
+
+  if (typeof window !== "undefined" && window.location) {
+    if (!apiHost) {
+      apiHost = window.location.origin;
+    } else if (window.location.protocol === "https:" && apiHost.startsWith("http://")) {
+      apiHost = window.location.origin;
     }
   }
 
@@ -87,10 +104,10 @@
   // Widget State
   let isOpen = false;
   let botConfig = {
-    name: "AI Assistant",
-    description: "Ask me anything",
+    name: scriptBotName || "AI Assistant",
+    description: scriptBotDesc || "Ask me anything",
     primaryColor: "#059669",
-    starterQuestions: [],
+    starterQuestions: Array.isArray(scriptStarterQuestions) && scriptStarterQuestions.length > 0 ? scriptStarterQuestions : [],
     isPublished: true,
     status: "ACTIVE",
     sessionMessageLimit: null,
@@ -1422,64 +1439,56 @@
     handleSendQuestion(chatInput.value);
   });
 
-  // Fetch Public Configuration
-  async function loadConfig() {
-    if (!publicId) return;
+  function renderBotConfig() {
+    const name = botConfig.name || "AI Assistant";
+    if (botNameEl) botNameEl.textContent = name;
+    const initial = name.charAt(0).toUpperCase();
+    if (botAvatarEl) botAvatarEl.textContent = initial;
+    if (heroIconEl) heroIconEl.textContent = initial;
 
-    try {
-      const res = await fetch(`${apiHost}/api/v1/public/chatbots/${publicId}`);
-      if (!res.ok) return;
+    if (chatInput) chatInput.placeholder = `Ask anything about ${name}...`;
 
-      const body = await res.json();
-      const cfg = body.data || body;
-      botConfig = { ...botConfig, ...cfg };
+    const statusIndicator = shadow.querySelector(".bot-status-indicator");
+    const launcherStatusDot = shadow.querySelector(".status-dot");
 
-      // Update UI elements
-      const name = botConfig.name || "AI Assistant";
-      botNameEl.textContent = name;
-      const initial = name.charAt(0).toUpperCase();
-      botAvatarEl.textContent = initial;
-      if (heroIconEl) heroIconEl.textContent = initial;
-
-      chatInput.placeholder = `Ask anything about ${name}...`;
-
-      const statusIndicator = shadow.querySelector(".bot-status-indicator");
-      const launcherStatusDot = shadow.querySelector(".status-dot");
-
-      if (botConfig.status === "ACTIVE" && botConfig.isPublished) {
-        statusTextEl.textContent = "Online • Replies instantly";
-        if (statusIndicator) {
-          statusIndicator.style.backgroundColor = "#10b981";
-          statusIndicator.style.boxShadow = "0 0 8px rgba(16, 185, 129, 0.9)";
-        }
-        if (launcherStatusDot) {
-          launcherStatusDot.style.backgroundColor = "#10b981";
-        }
-      } else {
-        statusTextEl.textContent = "Preview Mode • Ready";
-        if (statusIndicator) {
-          statusIndicator.style.backgroundColor = "#10B981";
-          statusIndicator.style.boxShadow = "0 0 8px rgba(16, 185, 129, 0.9)";
-        }
-        if (launcherStatusDot) {
-          launcherStatusDot.style.backgroundColor = "#10B981";
-        }
+    if (botConfig.status === "ACTIVE" && botConfig.isPublished) {
+      if (statusTextEl) statusTextEl.textContent = "Online • Replies instantly";
+      if (statusIndicator) {
+        statusIndicator.style.backgroundColor = "#10b981";
+        statusIndicator.style.boxShadow = "0 0 8px rgba(16, 185, 129, 0.9)";
       }
+      if (launcherStatusDot) {
+        launcherStatusDot.style.backgroundColor = "#10b981";
+      }
+    } else {
+      if (statusTextEl) statusTextEl.textContent = "Preview Mode • Ready";
+      if (statusIndicator) {
+        statusIndicator.style.backgroundColor = "#10B981";
+        statusIndicator.style.boxShadow = "0 0 8px rgba(16, 185, 129, 0.9)";
+      }
+      if (launcherStatusDot) {
+        launcherStatusDot.style.backgroundColor = "#10B981";
+      }
+    }
 
-      welcomeTitleEl.textContent = `Welcome to ${name}!`;
+    if (welcomeTitleEl) welcomeTitleEl.textContent = `Welcome to ${name}!`;
+    if (welcomeDescEl) {
       welcomeDescEl.textContent =
         botConfig.description ||
         `Ask any question about our services, products, or documentation.`;
+    }
 
-      // Populate starter questions
+    // Populate opening starter questions (render up to 4 questions)
+    if (starterQuestionsEl) {
       starterQuestionsEl.innerHTML = "";
       const questions =
         botConfig.starterQuestions && botConfig.starterQuestions.length > 0
-          ? botConfig.starterQuestions.slice(0, 3)
+          ? botConfig.starterQuestions.slice(0, 4)
           : [
-              `What products or services do you offer?`,
-              `How do I get started?`,
+              `What products or services does ${name} offer?`,
+              `How do I get started with ${name}?`,
               `Where can I find pricing or subscription plans?`,
+              `How can I get in touch with customer support?`,
             ];
 
       questions.forEach((q) => {
@@ -1495,8 +1504,28 @@
         qBtn.addEventListener("click", () => handleSendQuestion(q));
         starterQuestionsEl.appendChild(qBtn);
       });
+    }
+  }
+
+  // Fetch Public Configuration
+  async function loadConfig() {
+    // Render initial questions and branding immediately so widget is never blank
+    renderBotConfig();
+
+    if (!publicId) return;
+
+    try {
+      const res = await fetch(`${apiHost}/api/v1/public/chatbots/${publicId}`);
+      if (!res.ok) return;
+
+      const body = await res.json();
+      const cfg = body.data || body;
+      botConfig = { ...botConfig, ...cfg };
+
+      renderBotConfig();
     } catch {
       // Non-blocking fallback
+      renderBotConfig();
     }
   }
 
@@ -1543,10 +1572,18 @@
       const script = document.getElementById("cb-live-preview-script");
       if (script) script.remove();
     },
-    init: (newPublicId, newApiHost) => {
+    init: (newPublicId, newApiHost, initialConfig) => {
       const idChanged = newPublicId && newPublicId !== publicId;
       if (newPublicId) publicId = newPublicId;
-      if (newApiHost) apiHost = newApiHost;
+      if (newApiHost) {
+        apiHost = newApiHost;
+        if (typeof window !== "undefined" && window.location && window.location.protocol === "https:" && apiHost.startsWith("http://")) {
+          apiHost = window.location.origin;
+        }
+      }
+      if (initialConfig) {
+        botConfig = { ...botConfig, ...initialConfig };
+      }
       if (!document.body.contains(host)) {
         document.body.appendChild(host);
       }
@@ -1556,6 +1593,7 @@
         rows.forEach((r) => r.remove());
         restoreHistory();
       }
+      renderBotConfig();
       loadConfig();
     },
   };

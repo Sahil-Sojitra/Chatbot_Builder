@@ -522,9 +522,10 @@ export const chatbotService = {
         chatbot.starterQuestions && chatbot.starterQuestions.length > 0
           ? chatbot.starterQuestions
           : [
-              "What services do you offer?",
-              "How can I get started?",
-              "Where can I find pricing information?",
+              `What products or services does ${displayName} offer?`,
+              `How do I get started with ${displayName}?`,
+              "Where can I find pricing or subscription plans?",
+              "How can I get in touch with customer support?",
             ],
       websiteUrl: websiteSource?.sourceUrl || null,
       sessionMessageLimit: chatbot.sessionMessageLimit ?? null,

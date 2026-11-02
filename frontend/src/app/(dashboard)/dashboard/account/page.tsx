@@ -25,7 +25,6 @@ export default function AccountSettingsPage() {
 
   // Profile fields
   const [name, setName] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
@@ -41,7 +40,6 @@ export default function AccountSettingsPage() {
   useEffect(() => {
     if (user) {
       setName(user.name);
-      setAvatarUrl(user.avatarUrl ?? "");
     }
   }, [user]);
 
@@ -69,7 +67,6 @@ export default function AccountSettingsPage() {
     try {
       const response = await authApi.updateMe({
         name: trimmedName,
-        avatarUrl: avatarUrl.trim() || null,
       });
       dispatch(updateUser(response.user));
       setProfileSuccess("Profile updated successfully.");
@@ -139,7 +136,7 @@ export default function AccountSettingsPage() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Personal Profile</CardTitle>
-              <CardDescription>Update your display name and public avatar.</CardDescription>
+              <CardDescription>Update your display name.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant={user.status === "ACTIVE" ? "success" : "destructive"}>
@@ -191,18 +188,6 @@ export default function AccountSettingsPage() {
                 onChange={(e) => setName(e.target.value)}
                 disabled={isUpdatingProfile}
                 required
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="account-avatar">Avatar URL</Label>
-              <Input
-                id="account-avatar"
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                disabled={isUpdatingProfile}
-                placeholder="https://example.com/avatar.png (optional)"
               />
             </div>
 
