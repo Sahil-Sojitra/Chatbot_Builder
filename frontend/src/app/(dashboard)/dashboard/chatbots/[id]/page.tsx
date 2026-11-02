@@ -69,7 +69,10 @@ export default function ChatbotOverviewPage() {
   const [deviceMode, setDeviceMode] = useState<"widget" | "mobile">("widget");
   const [activeCodeTab, setActiveCodeTab] = useState<"script" | "curl" | "json">("script");
   const [instantIntegrationTab, setInstantIntegrationTab] = useState<"html" | "react" | "curl">("html");
+  const [customIntegrationTab, setCustomIntegrationTab] = useState<"html" | "react" | "curl">("html");
   const [copiedIntegration, setCopiedIntegration] = useState(false);
+  const [copiedCustomIntegration, setCopiedCustomIntegration] = useState(false);
+  const [embedHostMode, setEmbedHostMode] = useState<"production" | "local">("production");
   const [isFloatingWidgetActive, setIsFloatingWidgetActive] = useState(false);
 
   // In-place Settings State for AI Engine & Parameters
@@ -409,10 +412,23 @@ export default function ChatbotOverviewPage() {
     }
   };
 
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.endsWith(".local"));
+
+  const productionOrigin =
+    process.env.NEXT_PUBLIC_APP_URL || "https://chatbot-builder-pearl-sigma.vercel.app";
+
   const appOrigin =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://chatbot-builder-pearl-sigma.vercel.app";
+    isLocalhost && embedHostMode === "local"
+      ? (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000")
+      : isLocalhost
+        ? productionOrigin
+        : typeof window !== "undefined"
+          ? window.location.origin
+          : productionOrigin;
 
   const embedScriptCode = `<script\n  src="${appOrigin}/widget.js"\n  data-chatbot-id="${chatbot.publicId}"\n  defer\n></script>`;
 
@@ -420,8 +436,8 @@ export default function ChatbotOverviewPage() {
 
   const curlCode = `curl -X POST "${appOrigin}/api/v1/public/chatbots/${chatbot.publicId}/chat" \\\n  -H "Content-Type: application/json" \\\n  -d '{"message": "Hello from website"}'`;
 
-  const getActiveIntegrationCode = () => {
-    switch (instantIntegrationTab) {
+  const getActiveIntegrationCode = (tab: "html" | "react" | "curl" = instantIntegrationTab) => {
+    switch (tab) {
       case "html":
         return embedScriptCode;
       case "react":
@@ -433,9 +449,19 @@ export default function ChatbotOverviewPage() {
 
   const handleCopyIntegrationSnippet = async () => {
     try {
-      await navigator.clipboard.writeText(getActiveIntegrationCode());
+      await navigator.clipboard.writeText(getActiveIntegrationCode(instantIntegrationTab));
       setCopiedIntegration(true);
       setTimeout(() => setCopiedIntegration(false), 2000);
+    } catch {
+      // Fallback
+    }
+  };
+
+  const handleCopyCustomIntegrationSnippet = async () => {
+    try {
+      await navigator.clipboard.writeText(getActiveIntegrationCode(customIntegrationTab));
+      setCopiedCustomIntegration(true);
+      setTimeout(() => setCopiedCustomIntegration(false), 2000);
     } catch {
       // Fallback
     }
@@ -549,15 +575,7 @@ export default function ChatbotOverviewPage() {
     }
   };
 
-  const handleCopyScript = async () => {
-    try {
-      await navigator.clipboard.writeText(embedScriptCode);
-      setCopiedScript(true);
-      setTimeout(() => setCopiedScript(false), 2000);
-    } catch {
-      // Fallback
-    }
-  };
+  const handleCopyScript = handleCopyCustomIntegrationSnippet;
 
   const handleTogglePublish = async () => {
     setIsPublishing(true);
@@ -1396,6 +1414,36 @@ export default function ChatbotOverviewPage() {
                         : "Public JSON API"}
                   </span>
                 </div>
+
+                {isLocalhost && (
+                  <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-zinc-100/70 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 text-xs">
+                    <span className="text-zinc-500 dark:text-zinc-400">Embed Snippet Host:</span>
+                    <div className="flex items-center gap-1 font-mono text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setEmbedHostMode("production")}
+                        className={`px-2.5 py-0.5 rounded cursor-pointer transition-colors ${
+                          embedHostMode === "production"
+                            ? "bg-emerald-600 text-white font-medium shadow-xs"
+                            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                        }`}
+                      >
+                        Production CDN
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEmbedHostMode("local")}
+                        className={`px-2.5 py-0.5 rounded cursor-pointer transition-colors ${
+                          embedHostMode === "local"
+                            ? "bg-emerald-600 text-white font-medium shadow-xs"
+                            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                        }`}
+                      >
+                        Localhost Dev
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="relative rounded-lg border border-zinc-800 bg-[#050507] dark:bg-[#070D0A] p-4">
                   <pre className="font-mono text-xs text-emerald-300 dark:text-emerald-400 overflow-x-auto leading-relaxed max-h-48">
@@ -2245,78 +2293,170 @@ export default function ChatbotOverviewPage() {
         <div className="flex flex-col gap-4 lg:col-span-5">
           {/* Multi-Tab Integration Snippet Card */}
           <Card className="rounded-2xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#0E1B15] p-5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/10 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-zinc-900 dark:text-white">
-                  Integration & Embed
-                </span>
+            <div className="flex flex-col gap-2.5 border-b border-zinc-200 dark:border-white/10 pb-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-zinc-900 dark:text-white">
+                    Website Integration &amp; Embed
+                  </span>
+                  <Badge
+                    variant={chatbot.status === "ACTIVE" ? "success" : "default"}
+                    className="text-[10px] px-2 py-0.5"
+                  >
+                    {chatbot.status === "ACTIVE" ? "Ready to Embed" : "Draft (Unpublished)"}
+                  </Badge>
+                </div>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">CLIENT SDK</span>
               </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Add this AI assistant to any website with a single line of JavaScript or React component. Works on Shopify, WordPress, Webflow, and custom apps.
+              </p>
+            </div>
 
-              {/* Snippet format switcher */}
-              <div className="flex items-center gap-1 font-mono text-xs">
-                <button
-                  type="button"
-                  onClick={() => setActiveCodeTab("script")}
-                  className={`rounded-md px-2.5 py-1 cursor-pointer transition-colors ${activeCodeTab === "script"
-                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold shadow-xs"
-                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
-                    }`}
-                >
-                  HTML
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveCodeTab("curl")}
-                  className={`rounded-md px-2.5 py-1 cursor-pointer transition-colors ${activeCodeTab === "curl"
-                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold shadow-xs"
-                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
-                    }`}
-                >
-                  cURL
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveCodeTab("json")}
-                  className={`rounded-md px-2.5 py-1 cursor-pointer transition-colors ${activeCodeTab === "json"
-                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold shadow-xs"
-                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
-                    }`}
-                >
-                  JSON
-                </button>
-              </div>
+            {/* Publication notice banner */}
+            <div className="mt-3.5">
+              {chatbot.status !== "ACTIVE" ? (
+                <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 px-3.5 py-2.5 flex items-center justify-between gap-2.5 text-xs text-amber-200">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                    <span>
+                      Status: <strong>{chatbot.status}</strong>. Deploy to activate live answers.
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    disabled={isPublishing}
+                    onClick={() => void handleTogglePublish()}
+                    className="h-7 text-[11px] bg-amber-500 hover:bg-amber-600 text-black font-semibold shrink-0 cursor-pointer"
+                  >
+                    {isPublishing ? "Deploying…" : "Deploy"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-950/20 px-3.5 py-2 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 anim-live-pulse shrink-0" />
+                  <span>
+                    <strong>Assistant is Live!</strong> Ready to answer questions on any website.
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-3.5 pt-3.5">
               {/* Public ID Token Box */}
-              <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/80 dark:border-white/10 dark:bg-white/[0.04] p-3.5">
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-mono">Public Identifier</span>
-                  <span className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100 mt-0.5">{chatbot.publicId}</span>
+              <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/80 dark:border-white/10 dark:bg-white/[0.04] p-3">
+                <div className="flex flex-col min-w-0 pr-2">
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-mono">Public Identifier</span>
+                  <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 mt-0.5 truncate select-all">{chatbot.publicId}</span>
                 </div>
-                <Button size="sm" variant="secondary" className="h-8 text-xs font-mono cursor-pointer" onClick={() => void handleCopyPublicId()}>
-                  {copiedId ? "Copied!" : "Copy ID"}
+                <Button size="sm" variant="secondary" className="h-7 text-xs font-mono cursor-pointer shrink-0" onClick={() => void handleCopyPublicId()}>
+                  {copiedId ? "✓ Copied" : "Copy ID"}
                 </Button>
               </div>
 
-              {/* Code Snippet Box */}
-              <div className="relative rounded-xl border border-zinc-800 bg-[#050507] dark:bg-[#070D0A] p-3.5">
-                <pre className="font-mono text-xs text-emerald-300 dark:text-emerald-400 overflow-x-auto leading-relaxed max-h-40">
-                  {activeCodeTab === "script"
-                    ? embedScriptCode
-                    : activeCodeTab === "curl"
-                      ? curlCode
-                      : jsonConfigCode}
-                </pre>
-                <Button
-                  size="default"
-                  variant="secondary"
-                  className="mt-3 w-full text-xs font-medium cursor-pointer"
-                  onClick={() => void handleCopyScript()}
-                >
-                  {copiedScript ? "✓ Copied to Clipboard" : "Copy Embed Snippet"}
-                </Button>
+              {/* Multi-Framework Tab Switcher */}
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-slate-200 dark:border-zinc-800 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setCustomIntegrationTab("html")}
+                      className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer text-xs ${
+                        customIntegrationTab === "html"
+                          ? "bg-white text-slate-900 dark:bg-zinc-800 dark:text-white font-semibold shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                      }`}
+                    >
+                      HTML / Shopify
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomIntegrationTab("react")}
+                      className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer text-xs ${
+                        customIntegrationTab === "react"
+                          ? "bg-white text-slate-900 dark:bg-zinc-800 dark:text-white font-semibold shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                      }`}
+                    >
+                      Next.js / React
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomIntegrationTab("curl")}
+                      className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer text-xs ${
+                        customIntegrationTab === "curl"
+                          ? "bg-white text-slate-900 dark:bg-zinc-800 dark:text-white font-semibold shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                      }`}
+                    >
+                      cURL / API
+                    </button>
+                  </div>
+
+                  <span className="text-[11px] text-zinc-500 font-mono">
+                    {customIntegrationTab === "html"
+                      ? "Standard Script Tag"
+                      : customIntegrationTab === "react"
+                        ? "React Script Component"
+                        : "Public JSON API"}
+                  </span>
+                </div>
+
+                {/* Local Dev vs Production Host Toggle (only visible when running on localhost) */}
+                {isLocalhost && (
+                  <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-zinc-100/70 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">Snippet Host:</span>
+                    <div className="flex items-center gap-1 font-mono">
+                      <button
+                        type="button"
+                        onClick={() => setEmbedHostMode("production")}
+                        className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                          embedHostMode === "production"
+                            ? "bg-emerald-600 text-white font-medium shadow-xs"
+                            : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                        }`}
+                      >
+                        Production CDN
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEmbedHostMode("local")}
+                        className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                          embedHostMode === "local"
+                            ? "bg-emerald-600 text-white font-medium shadow-xs"
+                            : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                        }`}
+                      >
+                        Localhost Dev
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Code Snippet Box */}
+                <div className="relative rounded-xl border border-zinc-800 bg-[#050507] dark:bg-[#070D0A] p-3.5">
+                  <pre className="font-mono text-xs text-emerald-300 dark:text-emerald-400 overflow-x-auto leading-relaxed max-h-44">
+                    {getActiveIntegrationCode(customIntegrationTab)}
+                  </pre>
+                  <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-2.5 border-t border-slate-200 dark:border-white/10">
+                    <span className="text-[11px] text-zinc-400 leading-snug">
+                      {customIntegrationTab === "html"
+                        ? "Paste just before the closing </body> tag of your website."
+                        : customIntegrationTab === "react"
+                          ? "Drop into your RootLayout or main page component."
+                          : "Direct HTTP endpoint for custom mobile apps or headless SDKs."}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 text-xs font-semibold cursor-pointer shrink-0"
+                      onClick={() => void handleCopyCustomIntegrationSnippet()}
+                    >
+                      {copiedCustomIntegration ? "✓ Copied to Clipboard" : "Copy Code Snippet"}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>

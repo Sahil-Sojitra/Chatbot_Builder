@@ -271,10 +271,20 @@ export class InstantBotService {
     onStageUpdate([...stages]);
     onStatusChange("ready");
 
-    const appOrigin =
-      typeof window !== "undefined" && window.location.origin
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname.endsWith(".local"));
+
+    const productionOrigin =
+      process.env.NEXT_PUBLIC_APP_URL || "https://chatbot-builder-pearl-sigma.vercel.app";
+
+    const appOrigin = isLocalhost
+      ? productionOrigin
+      : typeof window !== "undefined" && window.location.origin
         ? window.location.origin
-        : "http://localhost:3000";
+        : productionOrigin;
 
     const publicUrl = `${appOrigin}/chat/${createdChatbot.publicId}`;
     const embedSnippet = `<script\n  src="${appOrigin}/widget.js"\n  data-chatbot-id="${createdChatbot.publicId}"\n  defer\n></script>`;
