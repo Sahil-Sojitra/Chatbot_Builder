@@ -631,6 +631,16 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
+    .message-bubble strong {
+      font-weight: 700;
+      color: inherit;
+    }
+
+    .message-bubble em {
+      font-style: italic;
+      color: inherit;
+    }
+
     .message-bubble a {
       color: var(--cb-primary);
       text-decoration: underline;
@@ -1094,6 +1104,8 @@
   function formatMessageText(text) {
     if (!text) return "";
     let formatted = text
+      .replace(/\r\n/g, "\n")
+      .replace(/\n\s*([,.:;?!])/g, "$1")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
@@ -1119,7 +1131,8 @@
       '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
     );
 
-    // Newlines
+    // Normalize multiple newlines
+    formatted = formatted.replace(/\n{3,}/g, "\n\n");
     formatted = formatted.replace(/\n/g, "<br />");
     return formatted;
   }

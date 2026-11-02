@@ -10,7 +10,7 @@ interface ChatMessageContentProps {
  * Checks if a link text is an explicit call-to-action (e.g. "Book a Demo", "Contact Us")
  */
 function isCtaText(text: string): boolean {
-  return /^(Book a Demo|Schedule a Demo|Contact Us|Get Started|Try (Now|Free)|Request (a )?Demo|Sign Up|Talk to (an )?Expert|Book Call)$/i.test(
+  return /^(Book a Demo|Schedule a Demo|Contact Us|Get Started|Try (Now|Free)|Request (a )?Demo|Sign Up|Talk to (an )?Expert|Book Call|Click Here to Whatsapp)$/i.test(
     text.trim(),
   );
 }
@@ -31,7 +31,7 @@ function renderLink(
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="btn-volt inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-[0_4px_16px_rgba(5, 150, 105, 0.3)] hover:shadow-[0_6px_20px_rgba(5, 150, 105, 0.45)] transition-all transform hover:-translate-y-0.5 mx-1 no-underline"
+        className="btn-volt inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs hover:shadow-sm transition-all transform hover:-translate-y-0.5 mx-1 no-underline"
       >
         <span>{title}</span>
         <svg
@@ -57,7 +57,7 @@ function renderLink(
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-600 dark:text-emerald-400 hover:underline underline-offset-2 transition-colors mx-0.5"
+      className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 underline underline-offset-2 transition-colors mx-0.5"
     >
       <span>{title}</span>
       <svg
@@ -83,21 +83,34 @@ function renderLink(
 function normalizeMessageMarkdown(raw: string): string {
   let text = raw.replace(/\r\n/g, "\n");
 
+  // Remove raw source citation markers
   text = text.replace(/\[Source\s*\d+(?:,\s*(?:Source\s*)?\d+)*\]/gi, "");
   text = text.replace(/\bSource\s*\d+\b/gi, "");
 
+  // Attach orphaned punctuation on newline directly to the previous word
+  text = text.replace(/\n\s*([,.:;?!])/g, "$1");
+
+  // Normalize broken markdown link layouts
   text = text.replace(/\[([^\]]+)\]\s*\n\s*(\d+\.|\*|\-|\u2022|\[\d+\])\s*\((https?:\/\/[^\s\)]+)\)/g, "$2 [$1]($3)");
   text = text.replace(/\[([^\]]+)\]\s*\n\s*\((https?:\/\/[^\s\)]+)\)/g, "[$1]($2)");
   text = text.replace(/\[([^\]]+)\]\s+\((https?:\/\/[^\s\)]+)\)/g, "[$1]($2)");
 
+  // Clean double bold markers around links
   text = text.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
   text = text.replace(/([\*\-\+\u2022]\s+)\*\*\s*(\[[^\]]+\]\([^\)]+\))/g, "$1$2");
   text = text.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))/g, "$1");
   text = text.replace(/(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
 
-  text = text.replace(/^([\*\-\+\u2022]\s+)\*\*\s+([^:\n\*]+)(:|\s|$)/gm, (match, bullet, term, rest) => {
+  // Trim inner spaces inside bold markers
+  text = text.replace(/\*\*\s+/g, "**").replace(/\s+\*\*/g, "**");
+
+  // Normalize list bullet bold terms
+  text = text.replace(/^([\*\-\+\u2022]\s+)\*\*\s*([^:\n\*]+?)\s*\*\*(:|\s|$)/gm, (match, bullet, term, rest) => {
     return `${bullet}**${term.trim()}**${rest}`;
   });
+
+  // Collapse 3+ newlines to 2
+  text = text.replace(/\n{3,}/g, "\n\n");
 
   return text;
 }
@@ -146,7 +159,7 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 hover:underline underline-offset-2 break-all transition-colors mx-0.5"
+          className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 underline underline-offset-2 break-all transition-colors mx-0.5"
         >
           <span>{part}</span>
           <svg
@@ -167,9 +180,10 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
       continue;
     }
 
+    // Bold text **text** - High contrast in both light (zinc-950) and dark (white) modes
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       elements.push(
-        <strong key={`b-${i}`} className="font-semibold text-white">
+        <strong key={`b-${i}`} className="font-semibold text-zinc-950 dark:text-white">
           {renderInlineContent(part.slice(2, -2))}
         </strong>,
       );
@@ -179,27 +193,29 @@ function renderInlineContent(rawText: string): React.ReactNode[] {
     const unclosedBold = part.match(/^\*\*\s*([^*]+)$/);
     if (unclosedBold) {
       elements.push(
-        <strong key={`b-${i}`} className="font-semibold text-white">
+        <strong key={`b-${i}`} className="font-semibold text-zinc-950 dark:text-white">
           {renderInlineContent(unclosedBold[1])}
         </strong>,
       );
       continue;
     }
 
+    // Italic text *text* - High contrast in both light (zinc-700) and dark (zinc-300) modes
     if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
       elements.push(
-        <em key={`i-${i}`} className="italic text-zinc-300">
+        <em key={`i-${i}`} className="italic text-zinc-700 dark:text-zinc-300">
           {part.slice(1, -1)}
         </em>,
       );
       continue;
     }
 
+    // Inline code `code`
     if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
       elements.push(
         <code
           key={`c-${i}`}
-          className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 border border-zinc-200 dark:border-white/[0.08]"
+          className="rounded-md bg-zinc-100 dark:bg-white/[0.06] px-1.5 py-0.5 text-[11px] font-mono font-medium text-emerald-800 dark:text-emerald-400 border border-zinc-200/80 dark:border-white/[0.08]"
         >
           {part.slice(1, -1)}
         </code>,
@@ -232,20 +248,20 @@ function CodeBlock({
   };
 
   return (
-    <div className="my-3 rounded-[18px] border border-zinc-200 dark:border-white/[0.08] bg-[#0c0c10] overflow-hidden text-xs">
-      <div className="flex items-center justify-between px-4 py-2 bg-white/[0.02] border-b border-white/[0.06] text-zinc-400 font-mono text-[11px]">
+    <div className="my-2.5 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-950 text-zinc-100 overflow-hidden text-xs shadow-xs">
+      <div className="flex items-center justify-between px-3.5 py-1.5 bg-white/[0.04] border-b border-white/[0.08] text-zinc-400 font-mono text-[11px]">
         <span>{language || "code"}</span>
         <button
           type="button"
           onClick={handleCopy}
-          className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
         >
           {copied ? (
             <>
-              <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Copied!</span>
+              <span className="text-emerald-400 font-semibold">Copied!</span>
             </>
           ) : (
             <>
@@ -257,7 +273,7 @@ function CodeBlock({
           )}
         </button>
       </div>
-      <pre className="p-4 overflow-x-auto text-zinc-200 font-mono text-[12px] leading-relaxed">
+      <pre className="p-3.5 overflow-x-auto font-mono text-[11.5px] leading-relaxed text-zinc-200">
         <code>{code}</code>
       </pre>
     </div>
@@ -281,7 +297,7 @@ function isTableRow(line: string): boolean {
 type Block =
   | { type: "paragraph"; lines: string[] }
   | { type: "lead_in"; text: string }
-  | { type: "list"; items: string[] }
+  | { type: "list"; items: string[]; isOrdered: boolean }
   | { type: "heading"; level: number; text: string }
   | { type: "quote"; lines: string[] }
   | { type: "divider" }
@@ -380,11 +396,12 @@ function parseBlocks(rawContent: string): Block[] {
     if (isListItem(line)) {
       flushParagraph();
       const listItems: string[] = [];
+      const isOrdered = /^\d+\.\s+/.test(trimmed);
       while (i < lines.length && isListItem(lines[i])) {
         listItems.push(lines[i].trim());
         i++;
       }
-      blocks.push({ type: "list", items: listItems });
+      blocks.push({ type: "list", items: listItems, isOrdered });
       continue;
     }
 
@@ -400,8 +417,12 @@ function parseBlocks(rawContent: string): Block[] {
       continue;
     }
 
+    // Only recognize standalone short action buttons as CTA blocks (<= 90 chars),
+    // NEVER regular sentences or paragraphs that contain an inline link.
+    const isShortStandaloneCall = trimmed.length <= 90;
     if (
-      /\[(Book a Demo|Schedule a Demo|Contact Us|Get Started|Try Now|Request Demo)[^\]]*\]/i.test(
+      isShortStandaloneCall &&
+      /^\s*(?:[🚀👉⚡]\s*)?\[(Book a Demo|Schedule a Demo|Contact Us|Get Started|Try (Now|Free)|Request Demo|Click Here to Whatsapp)[^\]]*\]/i.test(
         trimmed,
       )
     ) {
@@ -419,13 +440,41 @@ function parseBlocks(rawContent: string): Block[] {
   return blocks;
 }
 
-function renderStructuredListItem(item: string, index: number) {
+/**
+ * Renders paragraph lines with natural soft wrapping:
+ * Standard Markdown treats single newlines inside a paragraph as soft spaces,
+ * preserving natural sentence flow without broken mid-sentence line breaks.
+ */
+function renderParagraphContent(lines: string[]): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const hasHardBreak = line.endsWith("  ") || line.endsWith("\\");
+    const cleanLine = hasHardBreak ? line.replace(/(\s\s|\\)$/, "") : line;
+
+    nodes.push(
+      <React.Fragment key={i}>
+        {i > 0 && !hasHardBreak ? " " : null}
+        {renderInlineContent(cleanLine)}
+        {hasHardBreak ? <br /> : null}
+      </React.Fragment>,
+    );
+  }
+  return nodes;
+}
+
+/**
+ * Renders structured list items with clean, compact spacing and high contrast.
+ * Eliminates oversized cards, empty lines, and excessive padding.
+ */
+function renderStructuredListItem(item: string, index: number, isOrdered: boolean = false) {
   let cleanItem = item.replace(/^[\*\-\+\u2022]\s+/, "");
-  const isNumbered = /^\d+\.\s+/.test(cleanItem);
-  if (isNumbered) {
+  const hasItemNumber = /^\d+\.\s+/.test(cleanItem);
+  if (hasItemNumber) {
     cleanItem = cleanItem.replace(/^\d+\.\s+/, "");
   }
 
+  // Case 1: [Link Title](url): Description
   const linkFeatureMatch = cleanItem.match(
     /^(?:\*\*)?\[([^\]]+)\]\s*\((https?:\/\/[^\s\)]+)\)(?:\*\*)?\s*:\s*(.+)$/,
   );
@@ -437,54 +486,73 @@ function renderStructuredListItem(item: string, index: number) {
     return (
       <li
         key={index}
-        className="group relative flex flex-col gap-2 p-4 rounded-[20px] bg-white/[0.02] hover:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:border-emerald-500/30 transition-all duration-200 shadow-sm"
+        className="group flex items-start gap-2.5 py-1 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200"
       >
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-xs font-mono font-bold shrink-0">
+        {isOrdered || hasItemNumber ? (
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold mt-0.5 shadow-2xs">
             {index + 1}
           </span>
-          <div className="font-semibold text-zinc-900 dark:text-white text-[13px] tracking-wide">
-            {renderLink(`feature-link-${index}`, linkTitle, linkUrl)}
-          </div>
-        </div>
-        <div className="pl-8 leading-relaxed text-zinc-700 dark:text-zinc-300 text-sm">
-          {renderInlineContent(description)}
+        ) : (
+          <span className="size-1.5 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400 mt-2 opacity-80" />
+        )}
+        <div className="flex-1 min-w-0">
+          <span className="font-semibold text-zinc-950 dark:text-white mr-1.5">
+            {renderLink(`feature-link-${index}`, linkTitle, linkUrl)}:
+          </span>
+          <span className="text-zinc-700 dark:text-zinc-300">
+            {renderInlineContent(description)}
+          </span>
         </div>
       </li>
     );
   }
 
+  // Case 2: **Bold Title**: Description
   const boldFeatureMatch = cleanItem.match(/^(\*\*[^*]+\*\*)\s*:\s*(.+)$/);
   if (boldFeatureMatch) {
-    const boldTitle = boldFeatureMatch[1];
-    const description = boldFeatureMatch[2];
+    const boldTitle = boldFeatureMatch[1].replace(/^\*\*/, "").replace(/\*\*$/, "").trim();
+    const description = boldFeatureMatch[2].trim();
 
     return (
       <li
         key={index}
-        className="group relative flex flex-col gap-2 p-4 rounded-[20px] bg-white/[0.02] hover:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:border-emerald-500/30 transition-all duration-200 shadow-sm"
+        className="group flex items-start gap-2.5 py-1 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200"
       >
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-xs font-mono font-bold shrink-0">
+        {isOrdered || hasItemNumber ? (
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold mt-0.5 shadow-2xs">
             {index + 1}
           </span>
-          <div className="font-semibold text-zinc-900 dark:text-white text-[13px] tracking-wide">
-            {renderInlineContent(boldTitle)}
-          </div>
-        </div>
-        <div className="pl-8 leading-relaxed text-zinc-700 dark:text-zinc-300 text-sm">
-          {renderInlineContent(description)}
+        ) : (
+          <span className="size-1.5 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400 mt-2 opacity-80" />
+        )}
+        <div className="flex-1 min-w-0">
+          <strong className="font-semibold text-zinc-950 dark:text-white mr-1.5">
+            {renderInlineContent(boldTitle)}:
+          </strong>
+          <span className="text-zinc-700 dark:text-zinc-300">
+            {renderInlineContent(description)}
+          </span>
         </div>
       </li>
     );
   }
 
+  // Case 3: Standard List item
   const normalizedItem = cleanItem.replace(/^\*\*\s*(.+?)\s*\*\*$/, "$1").replace(/^\*\*\s*/, "");
 
   return (
-    <li key={index} className="flex items-start gap-2.5 leading-relaxed text-zinc-800 dark:text-zinc-200 pl-1">
-      <span className="size-1.5 rounded-full bg-emerald-600 mt-2 shrink-0 opacity-80" />
-      <span className="flex-1">{renderInlineContent(normalizedItem)}</span>
+    <li
+      key={index}
+      className="flex items-start gap-2.5 py-0.5 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200"
+    >
+      {isOrdered || hasItemNumber ? (
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold mt-0.5 shadow-2xs">
+          {index + 1}
+        </span>
+      ) : (
+        <span className="size-1.5 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400 mt-2 opacity-80" />
+      )}
+      <div className="flex-1 min-w-0">{renderInlineContent(normalizedItem)}</div>
     </li>
   );
 }
@@ -495,14 +563,14 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
   const blocks = parseBlocks(content);
 
   return (
-    <div className="flex flex-col gap-3 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+    <div className="flex flex-col gap-2.5 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
       {blocks.map((block, blockIndex) => {
         switch (block.type) {
           case "lead_in":
             return (
               <div
                 key={blockIndex}
-                className="font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-2 pt-1 text-sm tracking-wide"
+                className="font-semibold text-zinc-950 dark:text-zinc-100 flex items-center gap-2 pt-0.5 text-sm tracking-tight"
               >
                 <span className="size-1.5 rounded-full bg-emerald-600 shrink-0 anim-live-pulse" />
                 <span>{renderInlineContent(block.text)}</span>
@@ -511,9 +579,9 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
 
           case "list":
             return (
-              <ul key={blockIndex} className="my-1.5 flex flex-col gap-2.5">
+              <ul key={blockIndex} className="my-1 flex flex-col gap-1.5">
                 {block.items.map((item, itemIndex) =>
-                  renderStructuredListItem(item, itemIndex),
+                  renderStructuredListItem(item, itemIndex, block.isOrdered),
                 )}
               </ul>
             );
@@ -522,16 +590,14 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
             return (
               <div
                 key={blockIndex}
-                className="my-3 rounded-[22px] border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent p-5 shadow-sm"
+                className="my-2 rounded-2xl border border-emerald-500/25 bg-emerald-50/70 dark:bg-emerald-950/30 dark:border-emerald-500/30 p-3.5 shadow-2xs"
               >
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 text-zinc-200 text-sm font-medium">
-                    <span className="flex size-9 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0 text-base">
-                      🚀
-                    </span>
-                    <span className="leading-relaxed">
-                      {renderInlineContent(block.text)}
-                    </span>
+                <div className="flex items-center gap-3 text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm font-medium">
+                  <span className="flex size-7 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shrink-0 text-sm">
+                    🚀
+                  </span>
+                  <div className="leading-relaxed flex-1">
+                    {renderInlineContent(block.text)}
                   </div>
                 </div>
               </div>
@@ -548,8 +614,8 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
                     : "h4";
             const headingClasses =
               block.level <= 2
-                ? "font-display text-base font-bold text-zinc-900 dark:text-white tracking-tight mt-2 mb-1"
-                : "text-sm font-semibold text-zinc-800 dark:text-zinc-100 mt-1.5 mb-0.5";
+                ? "font-display text-base font-bold text-zinc-950 dark:text-white tracking-tight mt-2 mb-1"
+                : "text-sm font-semibold text-zinc-900 dark:text-zinc-100 mt-1 mb-0.5";
 
             return (
               <HeadingTag key={blockIndex} className={headingClasses}>
@@ -571,13 +637,13 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
             return (
               <div
                 key={blockIndex}
-                className="my-3 overflow-x-auto rounded-[18px] border border-zinc-200 dark:border-white/[0.08]"
+                className="my-2.5 overflow-x-auto rounded-xl border border-zinc-200 dark:border-white/[0.08]"
               >
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="bg-zinc-50 text-zinc-700 dark:bg-white/[0.04] dark:text-zinc-300 font-semibold border-b border-zinc-200 dark:border-white/[0.08]">
                     <tr>
                       {block.headers.map((h, i) => (
-                        <th key={i} className="p-3">
+                        <th key={i} className="p-2.5">
                           {renderInlineContent(h)}
                         </th>
                       ))}
@@ -587,10 +653,10 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
                     {block.rows.map((row, rIndex) => (
                       <tr
                         key={rIndex}
-                        className="hover:bg-white/[0.02] transition-colors"
+                        className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.02] transition-colors"
                       >
                         {row.map((cell, cIndex) => (
-                          <td key={cIndex} className="p-3 text-zinc-800 dark:text-zinc-200">
+                          <td key={cIndex} className="p-2.5 text-zinc-800 dark:text-zinc-200">
                             {renderInlineContent(cell)}
                           </td>
                         ))}
@@ -605,7 +671,7 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
             return (
               <blockquote
                 key={blockIndex}
-                className="my-2 border-l-2 border-emerald-500 bg-emerald-500/15 dark:bg-emerald-600/[0.04] pl-3.5 py-2 text-zinc-800 dark:text-zinc-300 text-sm rounded-r-[12px]"
+                className="my-1.5 border-l-2 border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/20 pl-3 py-1.5 text-zinc-800 dark:text-zinc-300 text-sm rounded-r-lg"
               >
                 {block.lines.map((l, i) => (
                   <p key={i}>{renderInlineContent(l)}</p>
@@ -622,12 +688,7 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
           default:
             return (
               <div key={blockIndex} className="leading-relaxed">
-                {block.lines.map((line, lineIndex) => (
-                  <React.Fragment key={lineIndex}>
-                    {lineIndex > 0 ? <br /> : null}
-                    {renderInlineContent(line)}
-                  </React.Fragment>
-                ))}
+                {renderParagraphContent(block.lines)}
               </div>
             );
         }
