@@ -1110,6 +1110,20 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
 
+    // Split clumped inline bullets onto distinct newlines
+    formatted = formatted.replace(/([^\n])\s+([-•]\s+)/g, "$1\n$2");
+    formatted = formatted.replace(/([^\n])\s+([-•])(?=[A-Za-z0-9\*])/g, "$1\n$2 ");
+
+    // Ensure bullet points have a space after marker
+    formatted = formatted.replace(/^([-•\+])(?!\s)(?:\*\*)?/gm, function(match, bullet) {
+      return match.includes("**") ? bullet + " **" : bullet + " ";
+    });
+
+    // Safely trim accidental inner spaces inside bold markers without touching outer spaces
+    formatted = formatted.replace(/\*\*\s+([^*\n]+?)\s+\*\*/g, "**$1**");
+    formatted = formatted.replace(/\*\*\s+([^*\n]+?)\*\*/g, "**$1**");
+    formatted = formatted.replace(/\*\*([^*\n]+?)\s+\*\*/g, "**$1**");
+
     // Markdown bold **text**
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
@@ -1130,6 +1144,9 @@
       /(?<!href=")(https?:\/\/[^\s<]+)/g,
       '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
     );
+
+    // Render bullet points as clean flex items with emerald dot
+    formatted = formatted.replace(/^[-•]\s+(.+)$/gm, '<div style="display:flex;align-items:start;gap:7px;margin:3px 0;"><span style="color:#059669;font-weight:bold;line-height:1.4;">•</span><span style="flex:1;">$1</span></div>');
 
     // Normalize multiple newlines
     formatted = formatted.replace(/\n{3,}/g, "\n\n");

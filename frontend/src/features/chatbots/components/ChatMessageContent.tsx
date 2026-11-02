@@ -90,6 +90,15 @@ function normalizeMessageMarkdown(raw: string): string {
   // Attach orphaned punctuation on newline directly to the previous word
   text = text.replace(/\n\s*([,.:;?!])/g, "$1");
 
+  // If bullets were emitted clumped inline without newlines, split them
+  text = text.replace(/([^\n])\s+([-•]\s+)/g, "$1\n$2");
+  text = text.replace(/([^\n])\s+([-•])(?=[A-Za-z0-9\*])/g, "$1\n$2 ");
+
+  // Ensure bullet points at the start of a line have a space after marker: "-Item" -> "- Item", "-**Item" -> "- **Item"
+  text = text.replace(/^([-•\+])(?!\s)(?:\*\*)?/gm, (match, bullet) => {
+    return match.includes("**") ? `${bullet} **` : `${bullet} `;
+  });
+
   // Normalize broken markdown link layouts
   text = text.replace(/\[([^\]]+)\]\s*\n\s*(\d+\.|\*|\-|\u2022|\[\d+\])\s*\((https?:\/\/[^\s\)]+)\)/g, "$2 [$1]($3)");
   text = text.replace(/\[([^\]]+)\]\s*\n\s*\((https?:\/\/[^\s\)]+)\)/g, "[$1]($2)");
@@ -101,8 +110,10 @@ function normalizeMessageMarkdown(raw: string): string {
   text = text.replace(/\*\*\s*(\[[^\]]+\]\([^\)]+\))/g, "$1");
   text = text.replace(/(\[[^\]]+\]\([^\)]+\))\s*\*\*/g, "$1");
 
-  // Trim inner spaces inside bold markers
-  text = text.replace(/\*\*\s+/g, "**").replace(/\s+\*\*/g, "**");
+  // Safely trim accidental inner spaces inside bold markers WITHOUT stripping outer word spaces
+  text = text.replace(/\*\*\s+([^*\n]+?)\s+\*\*/g, "**$1**");
+  text = text.replace(/\*\*\s+([^*\n]+?)\*\*/g, "**$1**");
+  text = text.replace(/\*\*([^*\n]+?)\s+\*\*/g, "**$1**");
 
   // Normalize list bullet bold terms
   text = text.replace(/^([\*\-\+\u2022]\s+)\*\*\s*([^:\n\*]+?)\s*\*\*(:|\s|$)/gm, (match, bullet, term, rest) => {
@@ -282,7 +293,9 @@ function CodeBlock({
 
 function isListItem(line: string): boolean {
   const trimmed = line.trim();
+  if (/^(\-{3,}|\*{3,}|_{3,})$/.test(trimmed)) return false;
   if (/^[\*\-\+\u2022]\s+/.test(trimmed)) return true;
+  if (/^[\*\-\+\u2022]\*\*/.test(trimmed)) return true;
   if (/^\d+\.\s+/.test(trimmed)) return true;
   if (/^(?:\*\*)?\[[^\]]+\]\s*\([^\)]+\)(?:\*\*)?\s*:/.test(trimmed)) return true;
   if (/^\*\*[^*]+\*\*\s*:/.test(trimmed)) return true;
@@ -393,18 +406,6 @@ function parseBlocks(rawContent: string): Block[] {
       continue;
     }
 
-    if (isListItem(line)) {
-      flushParagraph();
-      const listItems: string[] = [];
-      const isOrdered = /^\d+\.\s+/.test(trimmed);
-      while (i < lines.length && isListItem(lines[i])) {
-        listItems.push(lines[i].trim());
-        i++;
-      }
-      blocks.push({ type: "list", items: listItems, isOrdered });
-      continue;
-    }
-
     if (
       trimmed.endsWith(":") &&
       trimmed.length < 140 &&
@@ -414,6 +415,18 @@ function parseBlocks(rawContent: string): Block[] {
       flushParagraph();
       blocks.push({ type: "lead_in", text: trimmed });
       i++;
+      continue;
+    }
+
+    if (isListItem(line)) {
+      flushParagraph();
+      const listItems: string[] = [];
+      const isOrdered = /^\d+\.\s+/.test(trimmed);
+      while (i < lines.length && isListItem(lines[i])) {
+        listItems.push(lines[i].trim());
+        i++;
+      }
+      blocks.push({ type: "list", items: listItems, isOrdered });
       continue;
     }
 
@@ -538,8 +551,6 @@ function renderStructuredListItem(item: string, index: number, isOrdered: boolea
   }
 
   // Case 3: Standard List item
-  const normalizedItem = cleanItem.replace(/^\*\*\s*(.+?)\s*\*\*$/, "$1").replace(/^\*\*\s*/, "");
-
   return (
     <li
       key={index}
@@ -552,7 +563,7 @@ function renderStructuredListItem(item: string, index: number, isOrdered: boolea
       ) : (
         <span className="size-1.5 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400 mt-2 opacity-80" />
       )}
-      <div className="flex-1 min-w-0">{renderInlineContent(normalizedItem)}</div>
+      <div className="flex-1 min-w-0">{renderInlineContent(cleanItem)}</div>
     </li>
   );
 }
